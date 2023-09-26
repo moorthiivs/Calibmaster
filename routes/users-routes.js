@@ -1,0 +1,21 @@
+const express = require("express");
+
+const Authorization = require("../middleware/check-auth");
+
+const usersController = require("../controllers/users-controller");
+
+const router = express.Router();
+
+router.post("/login", usersController.login);
+
+router.post("/adduser", Authorization, usersController.adduser);
+
+router.post("/getall", Authorization, usersController.getAllUsers);
+
+router.post("/getuserbyid", Authorization, usersController.getuserbyid);
+
+router.post("/updateuser", Authorization, usersController.updateuser);
+
+router.post("/deleteuser", Authorization, usersController.deleteuser);
+
+module.exports = router;

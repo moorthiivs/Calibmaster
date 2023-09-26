@@ -1,0 +1,31 @@
+"use strict";
+const { Model } = require("sequelize");
+module.exports = (sequelize, DataTypes) => {
+  const Certificate = sequelize.define("Certificate", {
+    // Model attributes are defined here
+    id: {
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      allowNull: false,
+      primaryKey: true,
+    },
+    fileName: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    rstatus: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
+  });
+  Certificate.associate = function (models) {
+    Certificate.belongsTo(models.SRFItem, {
+      as: "srfitem",
+      constrains: true,
+      onDelete: "CASCADE",
+      foreignKey: "srfitemId",
+    });
+  };
+
+  return Certificate;
+};

@@ -1,0 +1,7 @@
+npm install --save-dev nodemon
+npm install --save-dev sequelize-cli
+
+ limageData: {
+    type: DataTypes.BLOB("long"),
+    allowNull: false,
+},
