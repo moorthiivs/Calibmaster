@@ -12,7 +12,9 @@ const nodeMailer = require("nodemailer");
 const ExcelJS = require("exceljs");
 
 let err;
+
 const addSRFHandler = async (req, res, next) => {
+
   const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
   let code = 200;
   const path = "/api/srf/add";
@@ -21,6 +23,7 @@ const addSRFHandler = async (req, res, next) => {
   const sessionId = req.sessionId;
   let isError = false;
   //console.log(req.body);
+
   if (!req.body || !req.body.srf || !req.body.items || !req.body.labId) {
     isError = true;
     code = 400;
@@ -30,9 +33,10 @@ const addSRFHandler = async (req, res, next) => {
     error.path = path;
     return errorHandler(error, req, res, next);
   }
+
   //SRF Validation
   const validsrf = srfSchema(req.body.srf);
-  //console.log(req.body.srf);
+
   if (!validsrf) {
     isError = true;
     code = 400;
@@ -42,8 +46,10 @@ const addSRFHandler = async (req, res, next) => {
     error.path = path;
     return errorHandler(error, req, res, next);
   }
+
   //SRF Items Validation
   const validitems = itemsSchema(req.body.items);
+
   if (!validitems) {
     isError = true;
     code = 400;
@@ -53,11 +59,14 @@ const addSRFHandler = async (req, res, next) => {
     error.path = path;
     return errorHandler(error, req, res, next);
   }
+
   //Creating SRF
   let srfno;
   const srfdate = req.body.srf.date;
   const year = new Date(srfdate).getFullYear();
+
   try {
+
     srfno = await SRF.findOne({
       where: {
         labId: req.body.labId,
@@ -65,6 +74,7 @@ const addSRFHandler = async (req, res, next) => {
         sno: req.body.srf.srfno,
       },
     });
+
     if (srfno) {
       isError = true;
       code = 500;
@@ -82,35 +92,14 @@ const addSRFHandler = async (req, res, next) => {
     currentSRF.year = year;
     currentSRF.rstatus = 1;
     currentSRF.labId = req.body.labId;
-    /*let labid;
-    if (req.body.labId > 0 && req.body.labId < 10) {
-      labid = "000" + req.body.labId;
-    } else if (req.body.labId > 9 && req.body.labId < 100) {
-      labid = "00" + req.body.labId;
-    } else if (req.body.labId > 99 && req.body.labId < 1000) {
-      labid = "0" + req.body.labId;
-    } else if (req.body.labId > 999 && req.body.labId < 10000) {
-      labid = req.body.labId.toString();
-    }
-    let srfendno;
-    if (srfsuffix > 0 && srfsuffix < 10) {
-      srfendno = "0000" + srfsuffix;
-    } else if (srfsuffix > 9 && srfsuffix < 100) {
-      srfendno = "000" + srfsuffix;
-    } else if (srfsuffix > 99 && srfsuffix < 1000) {
-      srfendno = "00" + srfsuffix;
-    } else if (srfsuffix > 999 && srfsuffix < 10000) {
-      srfendno = "0" + srfsuffix;
-    } else if (srfsuffix > 9999 && srfsuffix < 100000) {
-      srfendno = "" + srfsuffix;
-    }
-    srfno = new Date(srfdate).getFullYear().toString() + labid + srfendno;*/
 
     currentSRF.sno = srfsuffix;
     const createdSRF = new SRF(currentSRF);
     const newSRF = await createdSRF.save();
-    //console.log(newSRF);
+    return res.json({ newSRF });
+
     srfno = parseInt(newSRF.dataValues.id);
+
   } catch (err) {
     isError = true;
     code = 500;
@@ -120,7 +109,8 @@ const addSRFHandler = async (req, res, next) => {
     error.path = path;
     return errorHandler(error, req, res, next);
   }
-  //console.log(newSRF);
+
+
   let insertedItems;
   try {
     const items = req.body.items.map((v, i) => ({
@@ -132,6 +122,7 @@ const addSRFHandler = async (req, res, next) => {
       rstatus: 1,
     }));
     insertedItems = await Item.bulkCreate(items, { returning: true });
+
   } catch (err) {
     isError = true;
     code = 500;
@@ -141,9 +132,11 @@ const addSRFHandler = async (req, res, next) => {
     error.path = path;
     return errorHandler(error, req, res, next);
   }
+
   //console.log(insertedItems);
   let fileName = "srf.xlsx";
   let lab, srf, items;
+
   //console.log(req.body);
   //logger.info(message);
   try {
@@ -185,6 +178,7 @@ const addSRFHandler = async (req, res, next) => {
     error.path = path;
     return errorHandler(error, req, res, next);
   }
+
   try {
     items = await Item.findAll({
       where: {
@@ -214,6 +208,7 @@ const addSRFHandler = async (req, res, next) => {
     error.path = path;
     return errorHandler(error, req, res, next);
   }
+
   //console.log(items[0]);
   //console.log(srf.Company.companyname);
   let modifiedsno;
@@ -240,6 +235,7 @@ const addSRFHandler = async (req, res, next) => {
     srf.type +
     modifiedsno;
   lab = srf.lab;
+
   if (req.body.srf.sendsrf) {
     const workbook = new ExcelJS.Workbook();
     //const workbook = createAndFillWorkbook();
@@ -1300,6 +1296,7 @@ const addSRFHandler = async (req, res, next) => {
       }
     }
   }
+
   //Returning 200 Response
   if (isError == false) {
     let message = `${ip} ${userId} ${sessionId} ${code} ${path} - ${action}`;
@@ -2175,6 +2172,7 @@ const updateInvoiceInfo = async (req, res, next) => {
     });
   }
 };
+
 const updatePaymentInfo = async (req, res, next) => {
   const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
   let code = 200;
@@ -2276,6 +2274,7 @@ const updatePaymentInfo = async (req, res, next) => {
     });
   }
 };
+
 const getfilteredSRFItems = async (req, res, next) => {
   const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
   let code = 200;

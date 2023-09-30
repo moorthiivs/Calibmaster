@@ -130,6 +130,7 @@ module.exports = (sequelize, DataTypes) => {
       as: "lab",
       constrains: true,
       onDelete: "CASCADE",
+      foreignKey: "labId"
     });
     SRFItem.belongsTo(models.Masterlist, {
       as: "masterlist",

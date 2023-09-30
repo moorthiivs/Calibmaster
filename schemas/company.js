@@ -24,7 +24,13 @@ const schema = {
       type: "number",
     },
   },
-  required: ["companyname", "email", "address1", "address2", "address3"],
+  required: [
+    "companyname",
+    "email",
+    "address1",
+    "address2",
+    "address3"
+  ],
   additionalProperties: false,
 };
 

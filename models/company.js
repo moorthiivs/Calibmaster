@@ -39,6 +39,7 @@ module.exports = (sequelize, DataTypes) => {
       as: "lab",
       constrains: true,
       onDelete: "CASCADE",
+      foreignKey: "labId"
     });
     Company.hasMany(models.SRFs);
   };

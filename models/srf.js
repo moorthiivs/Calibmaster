@@ -1,30 +1,28 @@
 "use strict";
 module.exports = (sequelize, DataTypes) => {
   const SRFs = sequelize.define("SRFs", {
-    // Model attributes are defined here
-    id: {
+
+    srf_id: {
       type: DataTypes.BIGINT,
       autoIncrement: true,
       allowNull: false,
       primaryKey: true,
     },
-    type: {
+
+    srf_type: {
       type: DataTypes.STRING,
       allowNull: false,
     },
-    year: {
-      type: DataTypes.INTEGER,
+    srf_date: {
+      type: DataTypes.DATEONLY,
       allowNull: false,
       primaryKey: true,
     },
-    sno: {
+    srf_number: {
       type: DataTypes.INTEGER,
       allowNull: false,
     },
-    date: {
-      type: DataTypes.DATEONLY,
-      allowNull: false,
-    },
+
     contact_name: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -37,10 +35,12 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: false,
     },
+
     department: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
     },
+
     customer_dc: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -49,18 +49,25 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.DATEONLY,
       allowNull: false,
     },
-    agreed_date: {
+
+    send_srf_via_email: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+
+    agreed_completion_date: {
       type: DataTypes.DATEONLY,
-      allowNull: false,
+      allowNull: true,
     },
     next_cal_due_require_flag: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
     },
-    frequency: {
+    reminder_frequency: {
       type: DataTypes.STRING,
       allowNull: true,
     },
+
     statement_of_confirmity_flag: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
@@ -100,6 +107,7 @@ module.exports = (sequelize, DataTypes) => {
       constrains: true,
       onDelete: "CASCADE",
       primaryKey: true,
+      foreignKey: "labId"
     });
     SRFs.belongsTo(models.Company, {
       as: "Company",
