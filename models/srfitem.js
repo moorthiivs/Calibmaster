@@ -125,23 +125,23 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
     },
   });
-  SRFItem.associate = function (models) {
-    SRFItem.belongsTo(models.Lab, {
-      as: "lab",
-      constrains: true,
-      onDelete: "CASCADE",
-      foreignKey: "labId"
-    });
-    SRFItem.belongsTo(models.Masterlist, {
-      as: "masterlist",
-      constrains: true,
-    });
-    SRFItem.belongsTo(models.SRFs, {
-      as: "srf",
-      constrains: true,
-      onDelete: "CASCADE",
-    });
-  };
+  // SRFItem.associate = function (models) {
+  //   SRFItem.belongsTo(models.Lab, {
+  //     as: "lab",
+  //     constrains: true,
+  //     onDelete: "CASCADE",
+  //     foreignKey: "labId"
+  //   });
+  //   SRFItem.belongsTo(models.Masterlist, {
+  //     as: "masterlist",
+  //     constrains: true,
+  //   });
+  //   SRFItem.belongsTo(models.SRFs, {
+  //     as: "srf",
+  //     constrains: true,
+  //     onDelete: "CASCADE",
+  //   });
+  // };
 
   return SRFItem;
 };

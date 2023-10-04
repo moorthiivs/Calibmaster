@@ -2,8 +2,9 @@ const logger = require("../utils/logger");
 const { errorHandler } = require("../helpers/error-handler");
 const srfSchema = require("../schemas/srf");
 const itemsSchema = require("../schemas/items");
-const SRF = require("../models").SRFs;
+const SRF = require("../models").srf;
 const Item = require("../models").SRFItem;
+const User = require("../models").User;
 const Company = require("../models").Company;
 const itemSchema = require("../schemas/item");
 const Lab = require("../models").Lab;
@@ -22,7 +23,6 @@ const addSRFHandler = async (req, res, next) => {
   let userId = req.userId;
   const sessionId = req.sessionId;
   let isError = false;
-  //console.log(req.body);
 
   if (!req.body || !req.body.srf || !req.body.items || !req.body.labId) {
     isError = true;
@@ -34,8 +34,38 @@ const addSRFHandler = async (req, res, next) => {
     return errorHandler(error, req, res, next);
   }
 
+  const currentSRF = {};
+  currentSRF.srf_type = req.body.srf.type;
+  currentSRF.srf_date = req.body.srf.date;
+  currentSRF.srf_number = req.body.srf.srfno;
+
+  currentSRF.contact_name = req.body.srf.contact_name;
+  currentSRF.contact_number = req.body.srf.contact_number;
+  currentSRF.contact_email = req.body.srf.contact_email;
+
+  currentSRF.customer_dc_date = req.body.srf.customer_dc_date;
+  currentSRF.next_cal_due_require_flag = (req.body.srf.next_cal_due_require_flag) ? "YES" : "NO";
+  currentSRF.statement_of_confirmity_flag = (req.body.srf.statement_of_confirmity_flag) ? "YES" : "NO";
+  currentSRF.uncertainity_consider_flag = (req.body.srf.uncertainity_consider_flag) ? "YES" : "NO";
+  currentSRF.customer_id = req.body.srf.CompanyId;
+
+  currentSRF.department = req.body.srf.department;
+  currentSRF.customer_dc = req.body.srf.customer_dc;
+  currentSRF.send_srf_via_email = (req.body.srf.sendsrf) ? "YES" : "NO";
+
+  currentSRF.agreed_completion_date = req.body.srf.agreed_date;
+  currentSRF.reminder_frequency = req.body.srf.frequency;
+  currentSRF.statement_of_confirmity = req.body.srf.statement_of_confirmity;
+
+  currentSRF.issue_no = req.body.srf.issue_no;
+  currentSRF.issue_date = req.body.srf.issue_date;
+
+  currentSRF.amend_no = req.body.srf.amend_no;
+  currentSRF.amend_date = req.body.srf.amend_date;
+
+
   //SRF Validation
-  const validsrf = srfSchema(req.body.srf);
+  const validsrf = srfSchema(currentSRF);
 
   if (!validsrf) {
     isError = true;
@@ -47,32 +77,29 @@ const addSRFHandler = async (req, res, next) => {
     return errorHandler(error, req, res, next);
   }
 
-  //SRF Items Validation
-  const validitems = itemsSchema(req.body.items);
+  // ! SRF Items Validation
+  // const validitems = itemsSchema(req.body.items);
 
-  if (!validitems) {
-    isError = true;
-    code = 400;
-    action = "Invalid SRF Items!!";
-    const error = new Error(action);
-    error.code = code;
-    error.path = path;
-    return errorHandler(error, req, res, next);
-  }
+  // if (!validitems) {
+  //   isError = true;
+  //   code = 400;
+  //   action = "Invalid SRF Items!!";
+  //   const error = new Error(action);
+  //   error.code = code;
+  //   error.path = path;
+  //   return errorHandler(error, req, res, next);
+  // }
 
-  //Creating SRF
-  let srfno;
-  const srfdate = req.body.srf.date;
-  const year = new Date(srfdate).getFullYear();
-
+  // *** Creating SRF ***
   try {
+    let srfno;
 
+    // Checking if same SRF number already exists
     srfno = await SRF.findOne({
       where: {
-        labId: req.body.labId,
-        year: year,
-        sno: req.body.srf.srfno,
-      },
+        lab_id: req.body.labId,
+        srf_number: currentSRF.srf_number
+      }
     });
 
     if (srfno) {
@@ -85,22 +112,30 @@ const addSRFHandler = async (req, res, next) => {
       return errorHandler(error, req, res, next);
     }
 
-    const srfsuffix = req.body.srf.srfno;
+    // Fetch user on database
+    const fetchCreater = await User.findOne({
+      where: { id: req.userId }
+    });
 
-    const currentSRF = req.body.srf;
-
-    currentSRF.year = year;
     currentSRF.rstatus = 1;
-    currentSRF.labId = req.body.labId;
+    currentSRF.lab_id = req.body.labId;
 
-    currentSRF.sno = srfsuffix;
+    currentSRF.created_timestamp = Date.now();
+    currentSRF.created_by_login_name = fetchCreater.name;
+    currentSRF.created_by_user_id = req.userId;
+
+    currentSRF.updated_timestamp = Date.now();
+    currentSRF.updated_by_login_name = fetchCreater.name;
+    currentSRF.updated_by_user_id = req.userId;
+
     const createdSRF = new SRF(currentSRF);
     const newSRF = await createdSRF.save();
-    return res.json({ newSRF });
+    return res.json({ msg: newSRF });
 
     srfno = parseInt(newSRF.dataValues.id);
 
   } catch (err) {
+    console.log(err);
     isError = true;
     code = 500;
     action = "Internal Server Error!!" + err;

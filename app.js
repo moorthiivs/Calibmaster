@@ -61,11 +61,11 @@ app.use("/api/instrument-groups", instrumentGroupsRoutes);
 app.use("/api/instrument", instrument);
 app.use("/api/instrument-types", instrumentTypes);
 
-app.use("/api/download", Authorization, srfdownloadRoute);
+// app.use("/api/download", Authorization, srfdownloadRoute);
 app.use("/api/company", Authorization, companyRoutes);
 app.use("/api/srf", Authorization, srfRoutes);
-app.use("/api/masterlist", Authorization, masterlistRoutes);
-app.use("/api/certificate", certificateRoutes);
+// app.use("/api/masterlist", Authorization, masterlistRoutes);
+// app.use("/api/certificate", certificateRoutes);
 
 app.use("/api/test", testRoutes);
 app.get("/*", (req, res) => {

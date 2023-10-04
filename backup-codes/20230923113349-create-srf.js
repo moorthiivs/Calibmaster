@@ -55,6 +55,7 @@ module.exports = {
       send_srf_via_email: {
         type: Sequelize.STRING,
         allowNull: true,
+        defaultValue: 'No'
       },
 
       agreed_completion_date: {
@@ -62,7 +63,7 @@ module.exports = {
         allowNull: true,
       },
       next_cal_due_require_flag: {
-        type: Sequelize.BOOLEAN,
+        type: Sequelize.STRING,
         allowNull: false,
         defaultValue: 'No'
       },
@@ -72,7 +73,7 @@ module.exports = {
       },
 
       statement_of_confirmity_flag: {
-        type: Sequelize.BOOLEAN,
+        type: Sequelize.STRING(2500),
         allowNull: false,
         defaultValue: 'No'
       },
@@ -82,12 +83,13 @@ module.exports = {
       },
 
       uncertainity_consider_flag: {
-        type: Sequelize.BOOLEAN,
+        type: Sequelize.STRING(100),
         allowNull: false,
+        defaultValue: 'No'
       },
 
       issue_no: {
-        type: Sequelize.STRING,
+        type: Sequelize.STRING(100),
         allowNull: true,
       },
       issue_date: {
@@ -96,7 +98,7 @@ module.exports = {
       },
 
       amend_no: {
-        type: Sequelize.STRING,
+        type: Sequelize.STRING(100),
         allowNull: true,
       },
       amend_date: {
@@ -106,7 +108,7 @@ module.exports = {
 
       rstatus: {
         type: Sequelize.INTEGER,
-        allowNull: false,
+        allowNull: true,
       },
 
       lab_id: {

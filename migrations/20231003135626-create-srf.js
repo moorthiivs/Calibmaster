@@ -1,32 +1,30 @@
-"use strict";
+'use strict';
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable("SRFs", {
-      id: {
+    await queryInterface.createTable('srves', {
+
+      srf_id: {
         type: Sequelize.BIGINT,
         autoIncrement: true,
         allowNull: false,
         primaryKey: true,
         unique: true,
       },
-      year: {
-        type: Sequelize.INTEGER,
-        allowNull: false,
-        primaryKey: true,
-      },
-      sno: {
-        type: Sequelize.INTEGER,
-        allowNull: false,
-      },
-      type: {
+
+      srf_type: {
         type: Sequelize.STRING,
         allowNull: false,
       },
-      date: {
+      srf_date: {
         type: Sequelize.DATEONLY,
         allowNull: false,
       },
+      srf_number: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+      },
+
       contact_name: {
         type: Sequelize.STRING,
         allowNull: false,
@@ -39,73 +37,126 @@ module.exports = {
         type: Sequelize.STRING,
         allowNull: false,
       },
+
       department: {
         type: Sequelize.STRING,
-        allowNull: false,
+        allowNull: true,
       },
+
       customer_dc: {
         type: Sequelize.STRING,
-        allowNull: false,
+        allowNull: true,
       },
       customer_dc_date: {
         type: Sequelize.DATEONLY,
         allowNull: false,
       },
-      agreed_date: {
+
+      send_srf_via_email: {
+        type: Sequelize.STRING,
+        allowNull: true,
+        defaultValue: 'No'
+      },
+
+      agreed_completion_date: {
         type: Sequelize.DATEONLY,
-        allowNull: false,
+        allowNull: true,
       },
       next_cal_due_require_flag: {
-        type: Sequelize.BOOLEAN,
+        type: Sequelize.STRING,
         allowNull: false,
+        defaultValue: 'No'
       },
-      frequency: {
+      reminder_frequency: {
         type: Sequelize.STRING,
         allowNull: true,
       },
+
       statement_of_confirmity_flag: {
-        type: Sequelize.BOOLEAN,
+        type: Sequelize.STRING(2500),
         allowNull: false,
+        defaultValue: 'No'
       },
       statement_of_confirmity: {
         type: Sequelize.STRING,
         allowNull: true,
       },
+
       uncertainity_consider_flag: {
-        type: Sequelize.BOOLEAN,
+        type: Sequelize.STRING(100),
         allowNull: false,
+        defaultValue: 'No'
       },
+
       issue_no: {
-        type: Sequelize.STRING,
+        type: Sequelize.STRING(100),
         allowNull: true,
       },
       issue_date: {
         type: Sequelize.DATEONLY,
         allowNull: true,
       },
+
       amend_no: {
-        type: Sequelize.STRING,
+        type: Sequelize.STRING(100),
         allowNull: true,
       },
       amend_date: {
         type: Sequelize.DATEONLY,
         allowNull: true,
       },
+
       rstatus: {
         type: Sequelize.INTEGER,
-        allowNull: false,
+        allowNull: true,
       },
-      createdAt: {
-        allowNull: false,
+
+      lab_id: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+        references: {
+          model: "Labs",
+          key: "lab_id"
+        }
+      },
+      customer_id: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+        references: {
+          model: "Companies",
+          key: "id"
+        }
+      },
+
+      created_timestamp: {
         type: Sequelize.DATE,
+        allowNull: false
       },
-      updatedAt: {
-        allowNull: false,
+      created_by_login_name: {
+        type: Sequelize.STRING,
+        allowNull: false
+      },
+      created_by_user_id: {
+        type: Sequelize.INTEGER,
+        allowNull: false
+      },
+
+      updated_timestamp: {
         type: Sequelize.DATE,
+        allowNull: false
       },
+      updated_by_login_name: {
+        type: Sequelize.STRING,
+        allowNull: false
+      },
+      updated_by_user_id: {
+        type: Sequelize.STRING,
+        allowNull: false
+      }
+
     });
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable("SRFs");
-  },
+    await queryInterface.dropTable('srves');
+  }
 };

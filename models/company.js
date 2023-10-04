@@ -33,16 +33,17 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
     },
   });
-  Company.associate = function (models) {
-    // define association here
-    Company.belongsTo(models.Lab, {
-      as: "lab",
-      constrains: true,
-      onDelete: "CASCADE",
-      foreignKey: "labId"
-    });
-    Company.hasMany(models.SRFs);
-  };
+
+  // Company.associate = function (models) {
+  //   // define association here
+  //   Company.belongsTo(models.Lab, {
+  //     as: "lab",
+  //     constrains: true,
+  //     onDelete: "CASCADE",
+  //     foreignKey: "labId"
+  //   });
+  //   Company.hasMany(models.SRFs);
+  // };
 
   return Company;
 };
