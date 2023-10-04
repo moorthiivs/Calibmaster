@@ -107,7 +107,7 @@ module.exports = (sequelize, DataTypes) => {
 
       rstatus: {
         type: DataTypes.INTEGER,
-        allowNull: true,
+        allowNull: false,
       },
 
       certificate_date: {

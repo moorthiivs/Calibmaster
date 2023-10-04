@@ -34,7 +34,7 @@ const addSRFHandler = async (req, res, next) => {
     return errorHandler(error, req, res, next);
   }
 
-  const currentSRF = {};
+  let currentSRF = {};
   currentSRF.srf_type = req.body.srf.type;
   currentSRF.srf_date = req.body.srf.date;
   currentSRF.srf_number = req.body.srf.srfno;
@@ -63,9 +63,9 @@ const addSRFHandler = async (req, res, next) => {
   currentSRF.amend_no = req.body.srf.amend_no;
   currentSRF.amend_date = req.body.srf.amend_date;
 
-
-  //SRF Validation
+  // ! SRF Parent Table Validation
   const validsrf = srfSchema(currentSRF);
+  // return res.json({ validsrf })
 
   if (!validsrf) {
     isError = true;
@@ -78,17 +78,25 @@ const addSRFHandler = async (req, res, next) => {
   }
 
   // ! SRF Items Validation
-  // const validitems = itemsSchema(req.body.items);
+  const validitems = itemsSchema(req.body.items);
+  // return res.json({ validitems })
 
-  // if (!validitems) {
-  //   isError = true;
-  //   code = 400;
-  //   action = "Invalid SRF Items!!";
-  //   const error = new Error(action);
-  //   error.code = code;
-  //   error.path = path;
-  //   return errorHandler(error, req, res, next);
-  // }
+  if (!validitems) {
+    isError = true;
+    code = 400;
+    action = "Invalid SRF Items!!";
+    const error = new Error(action);
+    error.code = code;
+    error.path = path;
+    return errorHandler(error, req, res, next);
+  }
+
+  // Fetch user on database
+  const fetchCreater = await User.findOne({
+    where: { id: req.userId }
+  });
+
+  let newSRF;
 
   // *** Creating SRF ***
   try {
@@ -112,11 +120,6 @@ const addSRFHandler = async (req, res, next) => {
       return errorHandler(error, req, res, next);
     }
 
-    // Fetch user on database
-    const fetchCreater = await User.findOne({
-      where: { id: req.userId }
-    });
-
     currentSRF.rstatus = 1;
     currentSRF.lab_id = req.body.labId;
 
@@ -129,12 +132,13 @@ const addSRFHandler = async (req, res, next) => {
     currentSRF.updated_by_user_id = req.userId;
 
     const createdSRF = new SRF(currentSRF);
-    const newSRF = await createdSRF.save();
-    return res.json({ msg: newSRF });
+    newSRF = await createdSRF.save();
 
-    srfno = parseInt(newSRF.dataValues.id);
+    // return res.json({ newSRF });
+    // srfno = parseInt(newSRF.dataValues.id);
 
   } catch (err) {
+    console.log("Exception here");
     console.log(err);
     isError = true;
     code = 500;
@@ -145,19 +149,39 @@ const addSRFHandler = async (req, res, next) => {
     return errorHandler(error, req, res, next);
   }
 
-
   // *** Creating SRF-Items ***
   let insertedItems;
   try {
     const items = req.body.items.map((v, i) => ({
-      ...v,
-      sno: i + 1,
+
+      srf_id: newSRF.srf_id,
+      srf_item_no: i + 1,
+
+      make: v.make,
+      model: v.model,
+      serial_no: v.serialno,
+
+      remarks: v.remarks,
       status: "Not Calibrated",
-      srfId: srfno,
-      labId: req.body.labId,
+
       rstatus: 1,
+      lab_id: req.body.labId,
+      intrument_type_id: v.masterlistId,
+
+      created_timestamp: Date.now(),
+      created_by_login_name: fetchCreater.name,
+      created_by_user_id: req.userId,
+
+      updated_timestamp: Date.now(),
+      updated_by_login_name: fetchCreater.name,
+      updated_by_user_id: req.userId
+
     }));
+
+    // return res.json({ items });
+
     insertedItems = await Item.bulkCreate(items, { returning: true });
+    return res.json({ insertedItems });
 
   } catch (err) {
     isError = true;

@@ -103,7 +103,7 @@ module.exports = {
 
       rstatus: {
         type: Sequelize.INTEGER,
-        allowNull: true,
+        allowNull: false,
       },
 
       lab_id: {
