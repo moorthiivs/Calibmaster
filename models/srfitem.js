@@ -1,6 +1,9 @@
-"use strict";
-const { Model } = require("sequelize");
+'use strict';
+
+const { Model } = require('sequelize');
+
 module.exports = (sequelize, DataTypes) => {
+
   class srfitem extends Model {
     /**
      * Helper method for defining associations.
@@ -9,139 +12,181 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
-      /* this.belongsTo(models.Lab, {
-        as: "lab",
-        constrains: true,
-        onDelete: "CASCADE",
-      });
-      this.belongsTo(models.masterlist, {
-        as: "masterlist",
-        constrains: true,
-      });
-      this.belongsTo(models.srf, {
-        constrains: true,
-        onDelete: "CASCADE",
-      });*/
     }
   }
-  const SRFItem = sequelize.define("SRFItem", {
-    // Model attributes are defined here
-    id: {
-      type: DataTypes.INTEGER,
-      autoIncrement: true,
-      allowNull: false,
-      primaryKey: true,
-    },
-    sno: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-    },
-    make: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    model: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    range_min: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-    },
-    range_max: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-    },
-    range_unit: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    serialno: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    idno: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    remarks: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    status: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    ulrno: {
-      type: DataTypes.STRING,
-      allowNull: true,
-    },
-    calibration_done_date: {
-      type: DataTypes.DATEONLY,
-      allowNull: true,
-    },
-    calibration_done_name: {
-      type: DataTypes.STRING,
-      allowNull: true,
-    },
-    report_done_date: {
-      type: DataTypes.DATEONLY,
-      allowNull: true,
-    },
-    report_done_name: {
-      type: DataTypes.STRING,
-      allowNull: true,
-    },
-    dispatch_date: {
-      type: DataTypes.DATEONLY,
-      allowNull: true,
-    },
-    dispatch_dc: {
-      type: DataTypes.STRING,
-      allowNull: true,
-    },
-    dispatch_mode: {
-      type: DataTypes.STRING,
-      allowNull: true,
-    },
-    invoice_no: {
-      type: DataTypes.STRING,
-      allowNull: true,
-    },
-    report_dispatch_date: {
-      type: DataTypes.DATEONLY,
-      allowNull: true,
-    },
-    report_dispatch_mode: {
-      type: DataTypes.STRING,
-      allowNull: true,
-    },
-    calibration_reminder_date: {
-      type: DataTypes.DATEONLY,
-      allowNull: true,
-    },
-    rstatus: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-  });
-  // SRFItem.associate = function (models) {
-  //   SRFItem.belongsTo(models.Lab, {
-  //     as: "lab",
-  //     constrains: true,
-  //     onDelete: "CASCADE",
-  //     foreignKey: "labId"
-  //   });
-  //   SRFItem.belongsTo(models.Masterlist, {
-  //     as: "masterlist",
-  //     constrains: true,
-  //   });
-  //   SRFItem.belongsTo(models.SRFs, {
-  //     as: "srf",
-  //     constrains: true,
-  //     onDelete: "CASCADE",
-  //   });
-  // };
 
-  return SRFItem;
+  srfitem.init(
+    {
+
+      srf_item_id: {
+        type: DataTypes.BIGINT,
+        autoIncrement: true,
+        allowNull: false,
+        primaryKey: true,
+      },
+
+      srf_item_no: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+      },
+
+      make: {
+        type: DataTypes.STRING(200),
+        allowNull: true,
+      },
+      model: {
+        type: DataTypes.STRING(200),
+        allowNull: true,
+      },
+      serial_no: {
+        type: DataTypes.STRING(200),
+        allowNull: false,
+      },
+
+      identification_details: {
+        type: DataTypes.STRING(200),
+        allowNull: true,
+      },
+      remarks: {
+        type: DataTypes.STRING(500),
+        allowNull: false,
+      },
+      status: {
+        type: DataTypes.STRING(200),
+        allowNull: false,
+      },
+
+      calibration_done_date: {
+        type: DataTypes.DATEONLY,
+        allowNull: true,
+      },
+      calibration_done_by_empname: {
+        type: DataTypes.STRING(200),
+        allowNull: true,
+      },
+
+      dispatch_date: {
+        type: DataTypes.DATEONLY,
+        allowNull: true,
+      },
+      dispatch_dc: {
+        type: DataTypes.STRING(100),
+        allowNull: true,
+      },
+      dispatch_mode: {
+        type: DataTypes.STRING(20),
+        allowNull: true,
+      },
+
+      report_done_date: {
+        type: DataTypes.DATEONLY,
+        allowNull: true,
+      },
+      report_done_by_empname: {
+        type: DataTypes.STRING(200),
+        allowNull: true,
+      },
+      report_dispatch_date: {
+        type: DataTypes.DATEONLY,
+        allowNull: true,
+      },
+      report_dispatch_mode: {
+        type: DataTypes.STRING(20),
+        allowNull: true,
+      },
+
+      invoice_no: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+      },
+
+      calibration_remainder_date: {
+        type: DataTypes.DATEONLY,
+        allowNull: true,
+      },
+
+      rstatus: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+      },
+
+      certificate_date: {
+        type: DataTypes.DATEONLY,
+        allowNull: true,
+      },
+      certificate_no: {
+        type: DataTypes.STRING(100),
+        allowNull: true,
+      },
+
+      condition_of_item: {
+        type: DataTypes.STRING(500),
+        allowNull: true,
+      },
+
+      url_number: {
+        type: DataTypes.STRING(20),
+        allowNull: true,
+      },
+
+      created_timestamp: {
+        type: DataTypes.DATE,
+        allowNull: false
+      },
+      created_by_login_name: {
+        type: DataTypes.STRING,
+        allowNull: false
+      },
+      created_by_user_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false
+      },
+
+      updated_timestamp: {
+        type: DataTypes.DATE,
+        allowNull: false
+      },
+      updated_by_login_name: {
+        type: DataTypes.STRING,
+        allowNull: true
+      },
+      updated_by_user_id: {
+        type: DataTypes.STRING,
+        allowNull: true
+      },
+    },
+    {
+      sequelize,
+      modelName: 'srfitem',
+      timestamps: false
+    }
+  );
+
+
+  srfitem.associate = function (models) {
+
+    srfitem.belongsTo(models.srf, {
+      as: "srf",
+      constrains: true,
+      onDelete: "CASCADE",
+      foreignKey: "srf_id"
+    });
+
+    srfitem.belongsTo(models.Lab, {
+      as: "lab",
+      constrains: true,
+      onDelete: "CASCADE",
+      foreignKey: "lab_id"
+    });
+
+    srfitem.belongsTo(models.instrument_type, {
+      as: "intrument_type",
+      constrains: true,
+      onDelete: "CASCADE",
+      foreignKey: "intrument_type_id"
+    });
+
+  };
+
+  return srfitem;
 };

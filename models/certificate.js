@@ -19,11 +19,11 @@ module.exports = (sequelize, DataTypes) => {
     },
   });
   Certificate.associate = function (models) {
-    Certificate.belongsTo(models.SRFItem, {
+    Certificate.belongsTo(models.srfitem, {
       as: "srfitem",
       constrains: true,
       onDelete: "CASCADE",
-      foreignKey: "srfitemId",
+      foreignKey: "srf_item_id",
     });
   };
 

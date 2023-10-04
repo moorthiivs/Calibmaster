@@ -3,7 +3,7 @@ const { errorHandler } = require("../helpers/error-handler");
 const srfSchema = require("../schemas/srf");
 const itemsSchema = require("../schemas/items");
 const SRF = require("../models").srf;
-const Item = require("../models").SRFItem;
+const Item = require("../models").srfitem;
 const User = require("../models").User;
 const Company = require("../models").Company;
 const itemSchema = require("../schemas/item");
@@ -70,7 +70,7 @@ const addSRFHandler = async (req, res, next) => {
   if (!validsrf) {
     isError = true;
     code = 400;
-    action = "Invalid SRF Params!!";
+    action = "Please fill the required fields !!";
     const error = new Error(action);
     error.code = code;
     error.path = path;
@@ -146,6 +146,7 @@ const addSRFHandler = async (req, res, next) => {
   }
 
 
+  // *** Creating SRF-Items ***
   let insertedItems;
   try {
     const items = req.body.items.map((v, i) => ({

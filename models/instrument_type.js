@@ -125,7 +125,5 @@ module.exports = (sequelize, DataTypes) => {
 
   }
 
-
-
   return instrument_type;
 };
