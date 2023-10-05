@@ -25,35 +25,35 @@ const schema = {
     },
 
     department: {
-      type: "string",
+      type: ["string", "null"],
     },
 
     customer_dc: {
-      type: "string",
+      type: ["string", "null"],
     },
     customer_dc_date: {
       type: "string",
     },
 
     send_srf_via_email: {
-      type: "string",
+      type: ["string", "null"],
     },
 
     agreed_completion_date: {
-      type: "string",
+      type: ["string", "null"],
     },
     next_cal_due_require_flag: {
       type: "string",
     },
     reminder_frequency: {
-      type: "string",
+      type: ["string", "null"],
     },
 
     statement_of_confirmity_flag: {
       type: "string",
     },
     statement_of_confirmity: {
-      type: "string",
+      type: ["string", "null"],
     },
 
     uncertainity_consider_flag: {
@@ -62,17 +62,17 @@ const schema = {
 
 
     issue_no: {
-      type: "string",
+      type: ["string", "null"],
     },
     issue_date: {
-      type: "string",
+      type: ["string", "null"],
     },
 
     amend_no: {
-      type: "string",
+      type: ["string", "null"],
     },
     amend_date: {
-      type: "string",
+      type: ["string", "null"],
     },
 
     customer_id: {

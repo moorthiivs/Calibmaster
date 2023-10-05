@@ -26,4 +26,6 @@ router.post("/updatepayment", srfController.updatePaymentInfo);
 
 router.post("/getfilteredsrfitems", srfController.getfilteredSRFItems);
 
+router.post("/getSrfItems", srfController.getSrfItems);
+
 module.exports = router;
