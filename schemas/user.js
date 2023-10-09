@@ -8,9 +8,7 @@ const schema = {
       format: "email",
     },
     password: {
-      type: "string",
-      minLength: 8,
-      maxLength: 15,
+      type: "string"
     },
   },
   required: ["email", "password"],

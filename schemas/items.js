@@ -24,15 +24,15 @@ const innerschema = {
     ulrno: {
       type: "string",
     },
+    masterlistId: {
+      type: "number",
+    },
   },
   required: [
     "description",
-    "make",
-    "model",
     "serialno",
-    "idno",
     "remarks",
-    "ulrno",
+    "masterlistId"
   ],
   additionalProperties: true,
 };

@@ -304,6 +304,7 @@ const adduser = async (req, res, next) => {
 };
 
 const getAllUsers = async (req, res, next) => {
+
   const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
   let code = 200;
   const path = "/api/users/getall";
@@ -313,6 +314,7 @@ const getAllUsers = async (req, res, next) => {
   let isError = false;
   let users;
   const { labId } = req.body;
+
   if (!labId) {
     isError = true;
     code = 400;
@@ -322,8 +324,10 @@ const getAllUsers = async (req, res, next) => {
     error.path = path;
     return errorHandler(error, req, res, next);
   }
+
   //Checking Admin User If not return Error Response
   const isadmin = req.department == "admin";
+
   if (!isadmin) {
     isError = true;
     code = 401;
