@@ -29,6 +29,14 @@ module.exports = {
         type: Sequelize.INTEGER,
         allowNull: false,
       },
+      labId: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        references: {
+          model: "Lab",
+          key: "lab_id"
+        }
+      },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE,
