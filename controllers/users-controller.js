@@ -183,8 +183,10 @@ const adduser = async (req, res, next) => {
   const userId = req.userId;
   const valid = newUserSchema(req.body);
   let isError = false;
+
   //Checking Admin User If not return Error Response
   const isadmin = req.department == "admin";
+
   if (!isadmin) {
     isError = true;
     code = 401;
@@ -204,11 +206,14 @@ const adduser = async (req, res, next) => {
     error.path = path;
     return errorHandler(error, req, res, next);
   }
+
   const { name, email, password, department, labId } = req.body;
+
   let companyId;
   if (department === "Client") {
     companyId = req.body.companyId;
   }
+
   //Checking user in Database
   let existingUser;
   try {
@@ -676,9 +681,64 @@ const deleteuser = async (req, res, next) => {
   }
 };
 
+const resetPassword = async (req, res, next) => {
+
+  const { password, confirmPassword, userId } = req.body;
+
+  if (!password || !confirmPassword || !userId) {
+    let action = "All fields are required";
+    const error = new Error(action);
+    error.code = 500;
+    return errorHandler(error, req, res, next);
+  }
+
+  if (password.length < 8) {
+    let action = "Password must be at least 8 characters";
+    const error = new Error(action);
+    error.code = 500;
+    return errorHandler(error, req, res, next);
+  }
+
+  if (password !== confirmPassword) {
+    let action = "Password and confirm password must be same";
+    const error = new Error(action);
+    error.code = 500;
+    return errorHandler(error, req, res, next);
+  }
+
+  try {
+    const findUser = await User.findOne({
+      where: { id: userId }
+    });
+
+    // Check if user exist on database
+    if (!findUser) {
+      const error = new Error("User not found");
+      error.code = 500;
+      return errorHandler(error, req, res, next);
+    }
+
+    //Encrypting the password
+    let hashedPassword = await bcrypt.hash(password, 12);
+
+    let response = await User.update({ password: hashedPassword }, { where: { id: userId } });
+
+    return res.status(200).json({
+      msg: response, message: "Record updated successfully!!!"
+    });
+
+  } catch (err) {
+    let action = "Something went wrong, please try again";
+    const error = new Error(action);
+    error.code = 500;
+    return errorHandler(error, req, res, next);
+  }
+}
+
 exports.deleteuser = deleteuser;
 exports.updateuser = updateuser;
 exports.getuserbyid = getuserbyid;
 exports.getAllUsers = getAllUsers;
 exports.adduser = adduser;
 exports.login = login;
+exports.resetPassword = resetPassword;

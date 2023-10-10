@@ -18,4 +18,6 @@ router.post("/updateuser", Authorization, usersController.updateuser);
 
 router.post("/deleteuser", Authorization, usersController.deleteuser);
 
+router.post("/reset-password", Authorization, usersController.resetPassword);
+
 module.exports = router;

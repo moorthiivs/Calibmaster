@@ -3,7 +3,7 @@
 module.exports = {
   async up(queryInterface, Sequelize) {
 
-    // await queryInterface.sequelize.query("CREATE SEQUENCE uom_id_seq start 1 increment 1");
+    await queryInterface.sequelize.query("CREATE SEQUENCE uom_id_seq start 1 increment 1");
 
     await queryInterface.createTable('UOMs',
       {
@@ -67,5 +67,6 @@ module.exports = {
   },
   async down(queryInterface, Sequelize) {
     await queryInterface.dropTable('UOMs');
+    await queryInterface.sequelize.query("DROP SEQUENCE uom_id_seq");
   }
 };
