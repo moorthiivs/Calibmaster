@@ -1,10 +1,10 @@
 'use strict';
-const {
-  Model
-} = require('sequelize');
+
+const { Model } = require('sequelize');
+
 module.exports = (sequelize, DataTypes) => {
 
-  class srf extends Model {
+  class srf_list extends Model {
     /**
      * Helper method for defining associations.
      * This method is not a part of Sequelize lifecycle.
@@ -15,7 +15,7 @@ module.exports = (sequelize, DataTypes) => {
     }
   }
 
-  srf.init(
+  srf_list.init(
     {
 
       srf_id: {
@@ -151,19 +151,19 @@ module.exports = (sequelize, DataTypes) => {
     },
     {
       sequelize,
-      modelName: 'srf',
+      modelName: 'srf_list',
       timestamps: false
     }
   );
 
-  srf.associate = function (models) {
-    srf.belongsTo(models.Lab, {
+  srf_list.associate = function (models) {
+    srf_list.belongsTo(models.Lab, {
       as: "lab",
       constrains: true,
       onDelete: "CASCADE",
       foreignKey: "lab_id"
     });
-    srf.belongsTo(models.Company, {
+    srf_list.belongsTo(models.Company, {
       as: "Company",
       constrains: true,
       onDelete: "CASCADE",
@@ -171,5 +171,5 @@ module.exports = (sequelize, DataTypes) => {
     });
   };
 
-  return srf;
+  return srf_list;
 };

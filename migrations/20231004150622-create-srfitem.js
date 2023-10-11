@@ -16,7 +16,7 @@ module.exports = {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
-          model: "srves",
+          model: "srf_lists",
           key: "srf_id"
         }
       },

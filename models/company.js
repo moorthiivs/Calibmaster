@@ -34,16 +34,15 @@ module.exports = (sequelize, DataTypes) => {
     },
   });
 
-  // Company.associate = function (models) {
-  //   // define association here
-  //   Company.belongsTo(models.Lab, {
-  //     as: "lab",
-  //     constrains: true,
-  //     onDelete: "CASCADE",
-  //     foreignKey: "labId"
-  //   });
-  //   Company.hasMany(models.SRFs);
-  // };
+  Company.associate = function (models) {
+
+    Company.belongsTo(models.Lab, {
+      as: "lab",
+      constrains: true,
+      onDelete: "CASCADE",
+      foreignKey: "labId"
+    });
+  };
 
   return Company;
 };

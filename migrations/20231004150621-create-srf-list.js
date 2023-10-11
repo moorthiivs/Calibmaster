@@ -2,7 +2,8 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('srves', {
+
+    await queryInterface.createTable('srf_lists', {
 
       srf_id: {
         type: Sequelize.BIGINT,
@@ -113,7 +114,7 @@ module.exports = {
 
       lab_id: {
         type: Sequelize.INTEGER,
-        allowNull: true,
+        allowNull: false,
         references: {
           model: "Labs",
           key: "lab_id"
@@ -121,7 +122,7 @@ module.exports = {
       },
       customer_id: {
         type: Sequelize.INTEGER,
-        allowNull: true,
+        allowNull: false,
         references: {
           model: "Companies",
           key: "id"
@@ -157,6 +158,6 @@ module.exports = {
     });
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('srves');
+    await queryInterface.dropTable('srf_lists');
   }
 };

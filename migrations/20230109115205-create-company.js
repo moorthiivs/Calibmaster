@@ -30,6 +30,14 @@ module.exports = {
         type: Sequelize.STRING,
         allowNull: false,
       },
+      labId: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+        references: {
+          model: "Labs",
+          key: "lab_id"
+        }
+      },
       rstatus: {
         type: Sequelize.INTEGER,
         allowNull: false,

@@ -165,7 +165,7 @@ module.exports = (sequelize, DataTypes) => {
 
   srfitem.associate = function (models) {
 
-    srfitem.belongsTo(models.srf, {
+    srfitem.belongsTo(models.srf_list, {
       as: "srf",
       constrains: true,
       onDelete: "CASCADE",
