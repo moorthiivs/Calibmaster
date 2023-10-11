@@ -7,6 +7,7 @@ module.exports = (req, res, next) => {
     //console.log(req.headers.authorization);
     const token = req.headers.authorization.split(" ")[1];
     const sessionId = token.split(".")[2];
+
     if (!token) {
       code = 401;
       action = "Unauthoried - Token not Found!!";
@@ -15,8 +16,8 @@ module.exports = (req, res, next) => {
       error.path = "Authorization";
       errorHandler(error, req, res, next);
     }
+
     const decodedToken = jwt.verify(token, config.TOKEN_SECRET);
-    //console.log(decodedToken);
     req.userId = decodedToken.userId;
     req.sessionId = sessionId;
     req.department = decodedToken.department;
