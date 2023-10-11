@@ -5,10 +5,10 @@ module.exports = {
     await queryInterface.createTable('customers',
       {
         customer_id: {
-          allowNull: false,
+          type: Sequelize.INTEGER,
           autoIncrement: true,
+          allowNull: false,
           primaryKey: true,
-          type: Sequelize.INTEGER
         },
         customer_name: {
           type: Sequelize.STRING,
@@ -55,7 +55,7 @@ module.exports = {
           allowNull: true,
         },
 
-        labId: {
+        lab_id: {
           type: Sequelize.INTEGER,
           allowNull: false,
           references: {

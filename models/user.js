@@ -30,6 +30,7 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
     },
   });
+
   User.associate = function (models) {
     User.belongsTo(models.Lab, {
       as: "lab",
@@ -38,5 +39,6 @@ module.exports = (sequelize, DataTypes) => {
       foreignKey: "labId",
     });
   };
+
   return User;
 };
