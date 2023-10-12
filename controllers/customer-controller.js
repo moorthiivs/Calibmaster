@@ -94,5 +94,43 @@ const listCustomer = async (req, res, next) => {
     }
 }
 
+const fetchCustomer = async (req, res, next) => {
+
+    const customer_id = req.params.id;
+
+    if (!customer_id) {
+        let action = "Customer id is required";
+        const error = new Error(action);
+        error.code = 500;
+        return errorHandler(error, req, res, next);
+    }
+
+    try {
+
+        let result = await customer.findOne({
+            where: { customer_id }
+        })
+
+        if (!result) {
+            let action = "Failed to fetch customer";
+            const error = new Error(action);
+            error.code = 500;
+            return errorHandler(error, req, res, next);
+        } else {
+
+            return res.status(200).json({
+                msg: true, response: "Customer fetched successfully!!!", result
+            });
+        }
+
+    } catch (err) {
+        let action = "Something went wrong, please try again";
+        const error = new Error(action);
+        error.code = 500;
+        return errorHandler(error, req, res, next);
+    }
+}
+
 exports.createCustomer = createCustomer;
 exports.listCustomer = listCustomer;
+exports.fetchCustomer = fetchCustomer;
