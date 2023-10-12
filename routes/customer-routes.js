@@ -12,4 +12,6 @@ router.post("/list", Authorization, customerController.listCustomer);
 
 router.get("/fetch-customer/:id", Authorization, customerController.fetchCustomer);
 
+router.post("/edit-customer", Authorization, customerController.editCustomer);
+
 module.exports = router;

@@ -23,6 +23,17 @@ const createCustomer = async (req, res, next) => {
 
     try {
 
+        const findCompany = await customer.findOne({
+            where: { customer_name: companyname }
+        });
+
+        if (findCompany) {
+            let action = "Customer Already exist";
+            const error = new Error(action);
+            error.code = 500;
+            return errorHandler(error, req, res, next);
+        }
+
         const fetchCreater = await User.findOne({
             where: { id: req.userId }
         });
@@ -131,6 +142,36 @@ const fetchCustomer = async (req, res, next) => {
     }
 }
 
+const editCustomer = async (req, res, next) => {
+
+    const {
+        customer_id,
+        companyname,
+        email,
+        address1,
+        address2,
+        address3,
+        labId
+    } = req.body;
+
+    if (!customer_id || !companyname || !email || !address1 || !address2 || !address3 || !labId) {
+        let action = "All fields are required";
+        const error = new Error(action);
+        error.code = 500;
+        return errorHandler(error, req, res, next);
+    }
+
+    try {
+
+    } catch (err) {
+        let action = "Something went wrong, please try again";
+        const error = new Error(action);
+        error.code = 500;
+        return errorHandler(error, req, res, next);
+    }
+}
+
 exports.createCustomer = createCustomer;
 exports.listCustomer = listCustomer;
 exports.fetchCustomer = fetchCustomer;
+exports.editCustomer = editCustomer;
