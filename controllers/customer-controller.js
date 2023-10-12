@@ -41,7 +41,6 @@ const createCustomer = async (req, res, next) => {
         const newCustomer = new customer({
 
             customer_name: companyname,
-            customer_code: new Date().getTime() * Math.floor(Math.random() * (9999 - 1111 + 1) + 1111),
 
             address1,
             address2,
@@ -150,11 +149,10 @@ const editCustomer = async (req, res, next) => {
         email,
         address1,
         address2,
-        address3,
-        labId
+        address3
     } = req.body;
 
-    if (!customer_id || !companyname || !email || !address1 || !address2 || !address3 || !labId) {
+    if (!customer_id || !companyname || !email || !address1 || !address2 || !address3) {
         let action = "All fields are required";
         const error = new Error(action);
         error.code = 500;
@@ -162,6 +160,41 @@ const editCustomer = async (req, res, next) => {
     }
 
     try {
+
+        // Find the admin 
+        const fetchCreater = await User.findOne({
+            where: { id: req.userId }
+        });
+
+        // Find the customer if it exists
+        let findCustomer = await customer.findOne({
+            where: { customer_id }
+        });
+
+        if (findCustomer) {
+            await customer.update(
+                {
+                    customer_name: companyname,
+
+                    address1,
+                    address2,
+                    address3,
+
+                    updated_timestamp: Date.now(),
+                    updated_by_login_name: fetchCreater.name,
+                    updated_by_user_id: req.userId
+                },
+                { where: { customer_id } }
+            )
+            return res.status(200).json({
+                msg: true, response: "Record updated successfully!!!"
+            });
+        } else {
+            let action = "This is not a valid customer";
+            const error = new Error(action);
+            error.code = 500;
+            return errorHandler(error, req, res, next);
+        }
 
     } catch (err) {
         let action = "Something went wrong, please try again";
