@@ -6,6 +6,7 @@ const SRF = require("../models").srf_list;
 const Item = require("../models").srfitem;
 const User = require("../models").User;
 const Company = require("../models").Company;
+const customer = require("../models").customer;
 const itemSchema = require("../schemas/item");
 const Lab = require("../models").Lab;
 const Masterlist = require("../models").Masterlist;
@@ -1428,15 +1429,14 @@ const getSRFs = async (req, res, next) => {
           },
         },
         {
-          model: Company,
-          as: "Company",
-          attributes: {
-            exclude: ["createdAt", "updatedAt", "address", "email", "id"],
-          },
+          model: customer,
+          as: "customer",
+          attributes: ["customer_name"]
         }
       ]
     });
   } catch (err) {
+    console.log(err);
     isError = true;
     code = 500;
     action = "Internal Server Error!!" + err;

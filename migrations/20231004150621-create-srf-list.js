@@ -124,8 +124,8 @@ module.exports = {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
-          model: "Companies",
-          key: "id"
+          model: "customers",
+          key: "customer_id"
         }
       },
 

@@ -157,14 +157,16 @@ module.exports = (sequelize, DataTypes) => {
   );
 
   srf_list.associate = function (models) {
+
     srf_list.belongsTo(models.Lab, {
       as: "lab",
       constrains: true,
       onDelete: "CASCADE",
       foreignKey: "lab_id"
     });
-    srf_list.belongsTo(models.Company, {
-      as: "Company",
+
+    srf_list.belongsTo(models.customer, {
+      as: "customer",
       constrains: true,
       onDelete: "CASCADE",
       foreignKey: "customer_id",

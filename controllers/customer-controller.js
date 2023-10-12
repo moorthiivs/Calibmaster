@@ -60,6 +60,39 @@ const createCustomer = async (req, res, next) => {
     }
 };
 
+const listCustomer = async (req, res, next) => {
 
+    const { labId } = req.body;
+
+    if (!labId) {
+        let action = "labId is required";
+        const error = new Error(action);
+        error.code = 500;
+        return errorHandler(error, req, res, next);
+    }
+
+    try {
+        let customerList = await customer.findAll({
+            where: { 'lab_id': labId },
+            order: [
+                ['customer_id', 'DESC'],
+            ]
+        });
+
+        return res.status(200).json({
+            status: "SUCCESS",
+            code: 200,
+            message: "Company List Fetched Successfully!!",
+            data: customerList
+        });
+    } catch (err) {
+        console.log(err);
+        let action = "Something went wrong";
+        const error = new Error(action);
+        error.code = 500;
+        return errorHandler(error, req, res, next);
+    }
+}
 
 exports.createCustomer = createCustomer;
+exports.listCustomer = listCustomer;
