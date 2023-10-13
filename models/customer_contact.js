@@ -4,70 +4,50 @@ const { Model } = require('sequelize');
 
 module.exports = (sequelize, DataTypes) => {
 
-  class customer extends Model {
+  class customer_contact extends Model {
     /**
-    * Helper method for defining associations.
-    * This method is not a part of Sequelize lifecycle.
-    * The `models/index` file will call this method automatically.
-    */
+     * Helper method for defining associations.
+     * This method is not a part of DataTypes lifecycle.
+     * The `models/index` file will call this method automatically.
+     */
     static associate(models) {
       // define association here
     }
   }
 
-  customer.init(
+  customer_contact.init(
     {
-      customer_id: {
+      customer_contact_id: {
         type: DataTypes.INTEGER,
         autoIncrement: true,
         allowNull: false,
         primaryKey: true,
       },
-      customer_name: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-      customer_code: {
-        type: DataTypes.STRING,
-        allowNull: true,
-      },
 
-      address1: {
-        type: DataTypes.STRING,
+      contact_title: {
+        type: DataTypes.STRING(50),
         allowNull: false,
       },
-      address2: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-      address3: {
-        type: DataTypes.STRING,
+      contact_fullname: {
+        type: DataTypes.STRING(500),
         allowNull: false,
       },
 
-      city: {
-        type: DataTypes.STRING,
-        allowNull: true,
+      contact_email: {
+        type: DataTypes.STRING(100),
+        allowNull: false,
       },
-      state: {
-        type: DataTypes.STRING,
-        allowNull: true,
+      contact_phone_1: {
+        type: DataTypes.STRING(15),
+        allowNull: false,
       },
-      country: {
-        type: DataTypes.STRING,
-        allowNull: true,
-      },
-      pincode: {
-        type: DataTypes.STRING,
-        allowNull: true,
+      contact_phone_2: {
+        type: DataTypes.STRING(15),
+        allowNull: false,
       },
 
       rstatus: {
         type: DataTypes.INTEGER,
-        allowNull: true,
-      },
-      gst_number: {
-        type: DataTypes.STRING,
         allowNull: true,
       },
 
@@ -90,28 +70,28 @@ module.exports = (sequelize, DataTypes) => {
       },
       updated_by_login_name: {
         type: DataTypes.STRING,
-        allowNull: false
+        allowNull: true
       },
       updated_by_user_id: {
         type: DataTypes.STRING,
-        allowNull: false
-      },
+        allowNull: true
+      }
     },
     {
       sequelize,
-      modelName: 'customer',
+      modelName: 'customer_contact',
       timestamps: false,
     }
   );
 
-  customer.associate = function (models) {
-    customer.belongsTo(models.Lab, {
-      as: "lab",
+  customer_contact.associate = function (models) {
+    customer_contact.belongsTo(models.customer, {
+      as: "customer",
       constrains: true,
       onDelete: "CASCADE",
-      foreignKey: "lab_id",
+      foreignKey: "customer_id",
     });
   };
 
-  return customer;
+  return customer_contact;
 };

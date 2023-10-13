@@ -1,31 +1,62 @@
 const { errorHandler } = require("../helpers/error-handler");
 const User = require("../models").User;
 const customer = require("../models").customer;
+const customer_contact = require("../models").customer_contact;
 const { Op } = require("sequelize");
+const customerSchema = require("../schemas/customer");
+const customerContactSchema = require("../schemas/customer-contact");
 
 const createCustomer = async (req, res, next) => {
 
-    const {
-        companyname,
-        email,
-        address1,
-        address2,
-        address3,
-        labId
-    } = req.body;
-
-    if (!companyname || !email || !address1 || !address2 || !address3 || !labId) {
+    if (!req.body || !req.body.customer || !req.body.customer_contact) {
         let action = "All fields are required";
         const error = new Error(action);
         error.code = 500;
         return errorHandler(error, req, res, next);
     }
 
+    let customerObj = {};
+
+    customerObj.customer_name = req.body.customer.customer_name;
+    customerObj.customer_code = req.body.customer.customer_code;
+    customerObj.address1 = req.body.customer.address1;
+    customerObj.address2 = req.body.customer.address2;
+    customerObj.address3 = req.body.customer.address3;
+    customerObj.city = req.body.customer.city;
+    customerObj.state = req.body.customer.state;
+    customerObj.country = req.body.customer.country;
+    customerObj.pincode = req.body.customer.pincode;
+
+    // *** Customer Parent Data Validation
+    const validCustomer = customerSchema(customerObj);
+    // return res.json({ validCustomer });
+
+    if (!validCustomer) {
+        let action = "Please fill the required customer fields !!!";
+        const error = new Error(action);
+        error.code = 500;
+        return errorHandler(error, req, res, next);
+    }
+
+    let customerContactObj = {};
+
+    customerContactObj.contact_title = req.body.customer_contact.contact_title;
+    customerContactObj.contact_fullname = req.body.customer_contact.contact_fullname;
+    customerContactObj.contact_email = req.body.customer_contact.contact_email;
+    customerContactObj.contact_phone_1 = req.body.customer_contact.contact_phone_1;
+    customerContactObj.contact_phone_2 = req.body.customer_contact.contact_phone_2;
+
+    // *** Customer Contact Data Validation
+    const validCustomerContact = customerContactSchema(customerContactObj);
+    return res.json({ validCustomerContact });
+
     try {
 
         const findCompany = await customer.findOne({
-            where: { customer_name: companyname }
+            where: { customer_name: customerObj.customer_name }
         });
+
+        return res.json({ findCompany });
 
         if (findCompany) {
             let action = "Customer Already exist";
@@ -40,7 +71,7 @@ const createCustomer = async (req, res, next) => {
 
         const newCustomer = new customer({
 
-            customer_name: companyname,
+            customer_name,
 
             address1,
             address2,
