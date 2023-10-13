@@ -15,6 +15,7 @@ const createCustomer = async (req, res, next) => {
         return errorHandler(error, req, res, next);
     }
 
+    // create customer object for validation and store in database
     let customerObj = {};
 
     customerObj.customer_name = req.body.customer.customer_name;
@@ -26,6 +27,7 @@ const createCustomer = async (req, res, next) => {
     customerObj.state = req.body.customer.state;
     customerObj.country = req.body.customer.country;
     customerObj.pincode = req.body.customer.pincode;
+    customerObj.gst_number = req.body.customer.gst_number;
 
     // *** Customer Parent Data Validation
     const validCustomer = customerSchema(customerObj);
@@ -38,6 +40,7 @@ const createCustomer = async (req, res, next) => {
         return errorHandler(error, req, res, next);
     }
 
+    // create customer-contact object for validation and store in database
     let customerContactObj = {};
 
     customerContactObj.contact_title = req.body.customer_contact.contact_title;
@@ -48,15 +51,28 @@ const createCustomer = async (req, res, next) => {
 
     // *** Customer Contact Data Validation
     const validCustomerContact = customerContactSchema(customerContactObj);
-    return res.json({ validCustomerContact });
+    // return res.json({ validCustomerContact });
 
+    if (!validCustomerContact) {
+        let action = "Please fill the required customer contact fields !!!";
+        const error = new Error(action);
+        error.code = 500;
+        return errorHandler(error, req, res, next);
+    }
+
+    let customer_id;
+    let customerResult;
+    let customerContactResult;
+    // Fetch the loggedin admin
+    const fetchCreater = await User.findOne({
+        where: { id: req.userId }
+    });
+
+    // Create Customer
     try {
-
         const findCompany = await customer.findOne({
             where: { customer_name: customerObj.customer_name }
         });
-
-        return res.json({ findCompany });
 
         if (findCompany) {
             let action = "Customer Already exist";
@@ -65,40 +81,60 @@ const createCustomer = async (req, res, next) => {
             return errorHandler(error, req, res, next);
         }
 
-        const fetchCreater = await User.findOne({
-            where: { id: req.userId }
-        });
+        customerObj.created_timestamp = Date.now();
+        customerObj.created_by_login_name = fetchCreater.name;
+        customerObj.created_by_user_id = req.userId;
 
-        const newCustomer = new customer({
+        customerObj.updated_timestamp = Date.now();
+        customerObj.updated_by_login_name = fetchCreater.name;
+        customerObj.updated_by_user_id = req.userId
 
-            customer_name,
+        customerObj.lab_id = req.body.labId;
+        customerObj.rstatus = 1;
 
-            address1,
-            address2,
-            address3,
+        const newCustomer = new customer(customerObj)
 
-            lab_id: labId,
+        customerResult = await newCustomer.save();
+        customer_id = customerResult.customer_id;
 
-            created_timestamp: Date.now(),
-            created_by_login_name: fetchCreater.name,
-            created_by_user_id: req.userId,
-
-            updated_timestamp: Date.now(),
-            updated_by_login_name: fetchCreater.name,
-            updated_by_user_id: req.userId
-        })
-
-        const result = await newCustomer.save();
-        res.status(200).json({ msg: true, result });
     } catch (err) {
-
         console.log(err);
-        let action = "Something went wrong";
+        let action = "Something went wrong while saving the customer";
         const error = new Error(action);
         error.code = 500;
         error.path = "/api/uom/create";
         return errorHandler(error, req, res, next);
     }
+
+    // *** Create Customer Contact
+    try {
+        customerContactObj.customer_id = customer_id;
+
+        customerContactObj.created_timestamp = Date.now();
+        customerContactObj.created_by_login_name = fetchCreater.name;
+        customerContactObj.created_by_user_id = req.userId;
+
+        customerContactObj.updated_timestamp = Date.now();
+        customerContactObj.updated_by_login_name = fetchCreater.name;
+        customerContactObj.updated_by_user_id = req.userId
+
+        const newCustomerContact = new customer_contact(customerContactObj)
+
+        customerContactResult = await newCustomerContact.save();
+
+    } catch (err) {
+        console.log(err);
+        let action = "Something went wrong while saving the customer contact";
+        const error = new Error(action);
+        error.code = 500;
+        error.path = "/api/uom/create";
+        return errorHandler(error, req, res, next);
+    }
+
+    return res.status(201).json({
+        msg: "Customer Created Successfully",
+        customerResult, customerContactResult
+    });
 };
 
 const listCustomer = async (req, res, next) => {
@@ -115,6 +151,16 @@ const listCustomer = async (req, res, next) => {
     try {
         let customerList = await customer.findAll({
             where: { 'lab_id': labId },
+            include: [{
+                model: customer_contact,
+                as: "customer_contact",
+                attributes: {
+                    exclude: [
+                        "created_timestamp", "created_by_login_name", "created_by_user_id",
+                        "updated_timestamp", "updated_by_login_name", "updated_by_user_id"
+                    ]
+                }
+            }],
             order: [
                 ['customer_id', 'DESC'],
             ]

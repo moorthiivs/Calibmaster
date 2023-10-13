@@ -31,12 +31,17 @@ const schema = {
         },
         pincode: {
             type: "string",
+        },
+
+        gst_number: {
+            type: "string",
         }
     },
     required: [
-        "customer_name", "customer_code",
-        "address1", "address2", "address3",
-        "city", "state", "country", "pincode"
+        "customer_name",
+        "address1",
+        "city", "state", "country", "pincode",
+        "gst_number"
     ]
 };
 

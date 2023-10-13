@@ -105,11 +105,19 @@ module.exports = (sequelize, DataTypes) => {
   );
 
   customer.associate = function (models) {
+
     customer.belongsTo(models.Lab, {
       as: "lab",
       constrains: true,
       onDelete: "CASCADE",
       foreignKey: "lab_id",
+    });
+
+    customer.hasOne(models.customer_contact, {
+      as: "customer_contact",
+      constrains: true,
+      onDelete: "CASCADE",
+      foreignKey: "customer_id",
     });
   };
 
