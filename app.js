@@ -21,6 +21,9 @@ const Authorization = require("./middleware/check-auth");
 const path = require("path");
 var cors = require("cors");
 const logger = require("./utils/logger");
+const dotenv = require('dotenv');
+
+dotenv.config();
 
 const app = express();
 
