@@ -126,14 +126,15 @@ const createCustomer = async (req, res, next) => {
         console.log(err);
         let action = "Something went wrong while saving the customer contact";
         const error = new Error(action);
-        error.code = 500;
+        error.code = 400;
         error.path = "/api/uom/create";
         return errorHandler(error, req, res, next);
     }
 
     return res.status(201).json({
         msg: "Customer Created Successfully",
-        customerResult, customerContactResult
+        customerResult, customerContactResult,
+        code: 201
     });
 };
 
@@ -195,8 +196,18 @@ const fetchCustomer = async (req, res, next) => {
     try {
 
         let result = await customer.findOne({
-            where: { customer_id }
-        })
+            where: { customer_id },
+            include: [{
+                model: customer_contact,
+                as: "customer_contact",
+                attributes: {
+                    exclude: [
+                        "created_timestamp", "created_by_login_name", "created_by_user_id",
+                        "updated_timestamp", "updated_by_login_name", "updated_by_user_id"
+                    ]
+                }
+            }]
+        });
 
         if (!result) {
             let action = "Failed to fetch customer";
@@ -220,65 +231,126 @@ const fetchCustomer = async (req, res, next) => {
 
 const editCustomer = async (req, res, next) => {
 
-    const {
-        customer_id,
-        companyname,
-        email,
-        address1,
-        address2,
-        address3
-    } = req.body;
-
-    if (!customer_id || !companyname || !email || !address1 || !address2 || !address3) {
+    if (!req.body || !req.body.customer || !req.body.customer_contact || !req.body.customer_id) {
         let action = "All fields are required";
         const error = new Error(action);
         error.code = 500;
         return errorHandler(error, req, res, next);
     }
 
+    // create customer object for validation and store in database
+    let customerObj = {};
+
+    customerObj.customer_name = req.body.customer.customer_name;
+    customerObj.customer_code = req.body.customer.customer_code;
+    customerObj.address1 = req.body.customer.address1;
+    customerObj.address2 = req.body.customer.address2;
+    customerObj.address3 = req.body.customer.address3;
+    customerObj.city = req.body.customer.city;
+    customerObj.state = req.body.customer.state;
+    customerObj.country = req.body.customer.country;
+    customerObj.pincode = req.body.customer.pincode;
+    customerObj.gst_number = req.body.customer.gst_number;
+
+    // *** Customer Parent Data Validation
+    const validCustomer = customerSchema(customerObj);
+    // return res.json({ validCustomer });
+
+    if (!validCustomer) {
+        let action = "Please fill the required customer fields !!!";
+        const error = new Error(action);
+        error.code = 500;
+        return errorHandler(error, req, res, next);
+    }
+
+    // create customer-contact object for validation and store in database
+    let customerContactObj = {};
+
+    customerContactObj.contact_title = req.body.customer_contact.contact_title;
+    customerContactObj.contact_fullname = req.body.customer_contact.contact_fullname;
+    customerContactObj.contact_email = req.body.customer_contact.contact_email;
+    customerContactObj.contact_phone_1 = req.body.customer_contact.contact_phone_1;
+    customerContactObj.contact_phone_2 = req.body.customer_contact.contact_phone_2;
+
+    // *** Customer Contact Data Validation
+    const validCustomerContact = customerContactSchema(customerContactObj);
+    // return res.json({ validCustomerContact });
+
+    if (!validCustomerContact) {
+        let action = "Please fill the required customer contact fields !!!";
+        const error = new Error(action);
+        error.code = 500;
+        return errorHandler(error, req, res, next);
+    }
+
+    let customer_id;
+    let customerResult;
+    let customerContactResult;
+
+    // Fetch the loggedin admin
+    const fetchCreater = await User.findOne({
+        where: { id: req.userId }
+    });
+
+    // Update the customer
     try {
 
-        // Find the admin 
-        const fetchCreater = await User.findOne({
-            where: { id: req.userId }
-        });
-
-        // Find the customer if it exists
         let findCustomer = await customer.findOne({
-            where: { customer_id }
+            where: { customer_id: req.body.customer_id }
         });
 
         if (findCustomer) {
-            await customer.update(
-                {
-                    customer_name: companyname,
 
-                    address1,
-                    address2,
-                    address3,
+            customerObj.updated_timestamp = Date.now();
+            customerObj.updated_by_login_name = fetchCreater.name;
+            customerObj.updated_by_user_id = req.userId
+            customerObj.lab_id = req.body.labId;
 
-                    updated_timestamp: Date.now(),
-                    updated_by_login_name: fetchCreater.name,
-                    updated_by_user_id: req.userId
-                },
-                { where: { customer_id } }
+            customerResult = await customer.update(
+                customerObj,
+                { where: { customer_id: req.body.customer_id } }
             )
-            return res.status(200).json({
-                msg: true, response: "Record updated successfully!!!"
-            });
+
         } else {
             let action = "This is not a valid customer";
             const error = new Error(action);
             error.code = 500;
             return errorHandler(error, req, res, next);
         }
-
     } catch (err) {
-        let action = "Something went wrong, please try again";
+        let action = "Failed to update customer, please try again";
         const error = new Error(action);
         error.code = 500;
         return errorHandler(error, req, res, next);
     }
+
+    // Update the customer_contact
+    try {
+
+        customerContactObj.customer_id = customer_id;
+
+        customerContactObj.updated_timestamp = Date.now();
+        customerContactObj.updated_by_login_name = fetchCreater.name;
+        customerContactObj.updated_by_user_id = req.userId
+
+        customerContactResult = await customer_contact.update(
+            customerContactObj,
+            { where: { customer_id: req.body.customer_id } }
+        )
+
+    } catch (err) {
+        let action = "Failed to update customer, please try again";
+        const error = new Error(action);
+        error.code = 500;
+        return errorHandler(error, req, res, next);
+    }
+
+    return res.status(201).json({
+        msg: "Customer updated Successfully",
+        customerResult,
+        customerContactResult,
+        code: 201
+    });
 }
 
 exports.createCustomer = createCustomer;
