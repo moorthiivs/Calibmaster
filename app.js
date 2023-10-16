@@ -23,8 +23,6 @@ var cors = require("cors");
 const logger = require("./utils/logger");
 const dotenv = require('dotenv');
 
-dotenv.config();
-
 const app = express();
 
 const whitelist = ["http://localhost:5173"];
@@ -48,6 +46,8 @@ app.use(cors());
 app.use(express.static("public"));
 app.use(express.json({ limit: "20mb", extended: true }))
 app.use(express.urlencoded({ limit: "20mb", extended: true, parameterLimit: 50000 }))
+
+dotenv.config();
 
 //app.use("/uploads/images", express.static(path.join("uploads", "images")));
 
