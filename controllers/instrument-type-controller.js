@@ -177,7 +177,7 @@ const searchByName = async (req, res, next) => {
             "instrument_groups" as "groupsTable"
             ON "groupsTable"."instrument_group_id" = "instrumentsMain"."instrument_group_id"
         
-        WHERE "instrument_types"."instrument_full_name" LIKE :search_name
+        WHERE LOWER("instrument_types"."instrument_full_name") LIKE LOWER(:search_name)
 
         ORDER BY
 	        "instrument_types"."instrument_type_id" DESC
