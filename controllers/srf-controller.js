@@ -10,6 +10,7 @@ const customer = require("../models").customer;
 const itemSchema = require("../schemas/item");
 const Lab = require("../models").Lab;
 const Masterlist = require("../models").Masterlist;
+const instrument_type = require("../models").instrument_type;
 const nodeMailer = require("nodemailer");
 const ExcelJS = require("exceljs");
 
@@ -1483,7 +1484,7 @@ const getsrfbyId = async (req, res, next) => {
 
   try {
     srf = await SRF.findOne({
-      where: { srf_item_id: req.body.srfId, rstatus: 1 },
+      where: { srf_id: req.body.srfId, rstatus: 1 },
       include: [
         {
           model: Lab,
@@ -1501,10 +1502,10 @@ const getsrfbyId = async (req, res, next) => {
               "address2",
               "address3",
 
-              "contact_email",
               "lab_id",
               "lab_name",
 
+              "contact_email",
               "contact_number1",
               "contact_number2",
 
@@ -1525,15 +1526,20 @@ const getsrfbyId = async (req, res, next) => {
           }
         },
         {
-          model: Company,
-          as: "Company",
+          model: customer,
+          as: "customer",
           attributes: {
-            exclude: ["createdAt", "updatedAt", "id"],
+            exclude: [
+              "created_timestamp", "created_by_login_name", "created_by_user_id",
+              "updated_timestamp", "updated_by_login_name", "updated_by_user_id",
+            ],
           },
         }
       ]
     });
+
   } catch (err) {
+    console.log(err);
     isError = true;
     code = 500;
     action = "Internal Server Error!!";
@@ -1557,20 +1563,21 @@ const getsrfbyId = async (req, res, next) => {
   let items;
   try {
     items = await Item.findAll({
-      where: { srfId: req.body.srfId, rstatus: 1 },
-      include: [
-        {
-          model: Masterlist,
-          as: "masterlist",
-          attributes: {
-            exclude: ["createdAt", "updatedAt", "id", "rstatus", "labId"],
-          },
-        },
-      ],
-      attributes: {
-        exclude: ["createdAt", "updatedAt"],
-      },
-      order: [["sno", "ASC"]],
+      where: { srf_id: req.body.srfId, rstatus: 1 },
+      include: ["intrument_type"],
+      // include: [
+      //   {
+      //     model: Masterlist,
+      //     as: "masterlist",
+      //     attributes: {
+      //       exclude: ["createdAt", "updatedAt", "id", "rstatus", "labId"],
+      //     },
+      //   },
+      // ],
+      // attributes: {
+      //   exclude: ["createdAt", "updatedAt"],
+      // },
+      // order: [["sno", "ASC"]],
     });
   } catch (err) {
     isError = true;
@@ -1581,10 +1588,13 @@ const getsrfbyId = async (req, res, next) => {
     error.path = path;
     return errorHandler(error, req, res, next);
   }
+
   //Returning 200 Response
   if (isError == false) {
+
     let message = `${ip} ${userId} ${sessionId} ${code} ${path} - ${action}`;
     logger.info(message);
+
     res.status(code).json({
       status: "SUCCESS",
       code: code,
