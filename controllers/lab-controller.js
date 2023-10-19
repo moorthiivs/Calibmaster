@@ -341,8 +341,10 @@ const testmailhandler = async (req, res, next) => {
 
   const { email, password, host, port, remail } = req.body.emailconfig;
   const html = `
-<h1>CalibMaster</h1>
-<p>This is a Test mail sent by ${email}</p>`;
+    <h1>CalibMaster</h1>
+    <p>This is a Test mail sent by ${email}</p>
+  `;
+
   const transporter = nodeMailer.createTransport({
     name: "CalibMaster",
     host: host,

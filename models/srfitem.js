@@ -154,6 +154,17 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         allowNull: true
       },
+
+      calibration_due_date: {
+        type: DataTypes.DATE,
+        allowNull: true
+      },
+
+      calibration_reaminder_date: {
+        type: DataTypes.DATE,
+        allowNull: true
+      },
+
     },
     {
       sequelize,

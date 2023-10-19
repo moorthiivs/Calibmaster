@@ -15,6 +15,7 @@ const instrumentGroupsRoutes = require("./routes/instrument-groups-routes");
 const instrument = require("./routes/instrument-routes");
 const instrumentTypes = require("./routes/instrument-types-routes")
 const customersRoutes = require("./routes/customer-routes");
+const calibrationDateRoutes = require("./routes/calibation-routes");
 
 const testRoutes = require("./routes/test-route");
 const Authorization = require("./middleware/check-auth");
@@ -66,9 +67,12 @@ app.use("/api/instrument", instrument);
 app.use("/api/instrument-types", instrumentTypes);
 
 app.use("/api/company", Authorization, companyRoutes);
-app.use("/api/srf", Authorization, srfRoutes);
-
 app.use("/api/customers", customersRoutes);
+
+app.use("/api/srf", Authorization, srfRoutes);
+app.use("/api/calibration-date", Authorization, calibrationDateRoutes);
+
+
 // app.use("/api/download", Authorization, srfdownloadRoute);
 // app.use("/api/masterlist", Authorization, masterlistRoutes);
 // app.use("/api/certificate", certificateRoutes);
