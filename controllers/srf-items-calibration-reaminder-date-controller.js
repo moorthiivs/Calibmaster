@@ -90,5 +90,77 @@ const calculateCalibrationReminderDate = async (req, res) => {
     })
 }
 
+const updateCalibrationReminderDate = async (req, res) => {
+
+    const {
+        srf_id,
+        srf_item_id,
+        calibration_due_date
+    } = req.body;
+
+    if (!srf_id || !srf_item_id || !calibration_due_date) {
+        let action = "There is a missing in payload";
+        const error = new Error(action);
+        error.code = 500;
+        return errorHandler(error, req, res, next);
+    }
+
+    // *** SET Calibration Due Date ***
+    try {
+        let dueDate = new Date(calibration_due_date);
+        dueDate.setDate(dueDate.getDate() - 1);
+
+        let response = await SrfItem.update(
+            {
+                calibration_due_date: dueDate,
+            },
+            { where: { srf_item_id } }
+        );
+
+    } catch (err) {
+        let action = "Failed to update calibration due date";
+        const error = new Error(action);
+        error.code = 500;
+        return errorHandler(error, req, res, next);
+    }
+
+    // *** SET Calibration Reaminder Date ***
+    try {
+        let srfResult = await Srf.findOne({
+            attributes: ['reminder_frequency'],
+            where: { srf_id }
+        });
+
+        let { reminder_frequency } = srfResult;
+
+        // *** add due_date + 1 day
+        let due_date = new Date(calibration_due_date);
+
+        // *** Calculation Calibration Reaminder Date ***
+        let diffDateInMS = due_date.setDate(due_date.getDate() - reminder_frequency - 1);
+        let calibration_reaminder_date = new Date(diffDateInMS);
+
+        await SrfItem.update(
+            {
+                calibration_reaminder_date
+            },
+            { where: { srf_item_id } }
+        );
+
+        return res.json({
+            reminder_frequency,
+            calibration_due_date,
+            calibration_reaminder_date
+        })
+
+    } catch (err) {
+        let action = "Failed to update calibration reaminder date";
+        const error = new Error(action);
+        error.code = 500;
+        return errorHandler(error, req, res, next);
+    }
+}
+
 exports.editCalibrationDueDate = editCalibrationDueDate;
 exports.calculateCalibrationReminderDate = calculateCalibrationReminderDate;
+exports.updateCalibrationReminderDate = updateCalibrationReminderDate;

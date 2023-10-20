@@ -17,14 +17,20 @@ const instrumentTypes = require("./routes/instrument-types-routes")
 const customersRoutes = require("./routes/customer-routes");
 const calibrationDateRoutes = require("./routes/calibation-routes");
 
+const mailRoutes = require("./routes/mail-routes");
+
 const testRoutes = require("./routes/test-route");
 const Authorization = require("./middleware/check-auth");
+
 const path = require("path");
 var cors = require("cors");
 const logger = require("./utils/logger");
 const dotenv = require('dotenv');
+const customCron = require('./cron');
 
 const app = express();
+
+customCron.sendNotificationMail();
 
 const whitelist = ["http://localhost:5173"];
 
@@ -50,8 +56,6 @@ app.use(express.urlencoded({ limit: "20mb", extended: true, parameterLimit: 5000
 
 dotenv.config();
 
-//app.use("/uploads/images", express.static(path.join("uploads", "images")));
-
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
@@ -70,7 +74,10 @@ app.use("/api/company", Authorization, companyRoutes);
 app.use("/api/customers", customersRoutes);
 
 app.use("/api/srf", Authorization, srfRoutes);
+
 app.use("/api/calibration-date", Authorization, calibrationDateRoutes);
+
+app.use("/api/mail", Authorization, mailRoutes);
 
 
 // app.use("/api/download", Authorization, srfdownloadRoute);
@@ -84,7 +91,6 @@ app.get("/*", (req, res) => {
 
 //Default Error Handler
 app.use((error, req, res, next) => {
-  //console.log("error occured", error);
   const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
   const userId = req.userId;
   const sessionId = req.sessionId;
@@ -93,6 +99,7 @@ app.use((error, req, res, next) => {
   const action = error.message;
   let message = `${ip} ${userId} ${sessionId} ${code} ${path} - ${action}`;
   logger.error(message);
+
   res.status(error.code).json({
     status: "FAILURE",
     message: error.message,
