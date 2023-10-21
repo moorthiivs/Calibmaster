@@ -2211,13 +2211,8 @@ const updateInvoiceInfo = async (req, res, next) => {
   const sessionId = req.sessionId;
   let isError = false;
   const department = req.department;
-  ////console.log(req.body);
-  if (
-    !req.body ||
-    !req.body.items ||
-    !req.body.srfId ||
-    !req.body.invoiceinfo
-  ) {
+
+  if (!req.body || !req.body.items || !req.body.srfId || !req.body.invoiceinfo) {
     isError = true;
     code = 400;
     action = "Invalid Request Params!!";
@@ -2238,12 +2233,12 @@ const updateInvoiceInfo = async (req, res, next) => {
     error.path = path;
     return errorHandler(error, req, res, next);
   }
-  ////console.log(req.body);
+
   let ids = [];
   req.body.items.map((v, i) => {
     ids.push(v.id);
   });
-  //console.log(ids);
+
   try {
     await Item.update(req.body.invoiceinfo, {
       where: {
@@ -2289,6 +2284,7 @@ const updateInvoiceInfo = async (req, res, next) => {
     error.path = path;
     return errorHandler(error, req, res, next);
   }
+
   //Returning 200 Response
   if (isError == false) {
     let message = `${ip} ${userId} ${sessionId} ${code} ${path} - ${action}`;
@@ -2298,8 +2294,8 @@ const updateInvoiceInfo = async (req, res, next) => {
       code: code,
       message: "SRF Items Invoice information Updated Successfully",
       data: {
-        items,
-      },
+        items
+      }
     });
   }
 };
@@ -2468,6 +2464,35 @@ const getfilteredSRFItems = async (req, res, next) => {
   }
 };
 
+const fetchSrfItem = async (req, res, next) => {
+
+  if (!req.body || !req.body.srf_item_id) {
+    let action = "Invalid Request Params!!";
+    const error = new Error(action);
+    error.code = 400;
+    return errorHandler(error, req, res, next);
+  }
+
+  const { srf_item_id } = req.body;
+
+  //Getting SRF Items
+  try {
+    let items = await Item.findOne({
+      where: { srf_item_id },
+      include: ["intrument_type", "srf"]
+    });
+
+    return res.status(200).json({
+      data: items, response: "SRF Item Fetched successfully!!!"
+    });
+  } catch (err) {
+    let action = "Internal Server Error!!" + err;
+    const error = new Error(action);
+    error.code = 500;
+    return errorHandler(error, req, res, next);
+  }
+}
+
 exports.getfilteredSRFItems = getfilteredSRFItems;
 exports.updatePaymentInfo = updatePaymentInfo;
 exports.updateInvoiceInfo = updateInvoiceInfo;
@@ -2480,3 +2505,4 @@ exports.getsrfbyId = getsrfbyId;
 exports.getSRFs = getSRFs;
 exports.addSRFHandler = addSRFHandler;
 exports.getSrfItems = getSrfItems;
+exports.fetchSrfItem = fetchSrfItem;

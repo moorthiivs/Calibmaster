@@ -28,4 +28,6 @@ router.post("/getfilteredsrfitems", srfController.getfilteredSRFItems);
 
 router.post("/getSrfItems", srfController.getSrfItems);
 
+router.post("/fetchSrfItem", srfController.fetchSrfItem);
+
 module.exports = router;
