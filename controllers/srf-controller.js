@@ -2203,6 +2203,7 @@ const deleteSRFItem = async (req, res, next) => {
 };
 
 const updateInvoiceInfo = async (req, res, next) => {
+
   const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
   let code = 200;
   const path = "/api/srf/updateinvoice";
@@ -2224,6 +2225,7 @@ const updateInvoiceInfo = async (req, res, next) => {
 
   //SRF Items Validation
   const validitem = itemsSchema(req.body.items);
+
   if (!validitem) {
     isError = true;
     code = 400;
@@ -2236,17 +2238,25 @@ const updateInvoiceInfo = async (req, res, next) => {
 
   let ids = [];
   req.body.items.map((v, i) => {
-    ids.push(v.id);
+    ids.push(v.srf_item_id);
   });
 
+  const { invoice_no, invoice_date, invoice_due_date, status } = req.body.invoiceinfo;
+
   try {
-    await Item.update(req.body.invoiceinfo, {
-      where: {
-        id: ids,
-        rstatus: 1,
+    await Item.update(
+      {
+        invoice_no, invoice_date, invoice_due_date, status
       },
-    });
+      {
+        where: {
+          srf_item_id: ids,
+          rstatus: 1,
+        },
+      }
+    );
   } catch (err) {
+    console.log(err);
     isError = true;
     code = 500;
     action = "Internal Server Error!!";
@@ -2256,46 +2266,47 @@ const updateInvoiceInfo = async (req, res, next) => {
     return errorHandler(error, req, res, next);
   }
 
-  //Getting SRF Items
-  let items;
-  try {
-    items = await Item.findAll({
-      where: { srfId: req.body.srfId, rstatus: 1 },
-      include: [
-        {
-          model: Masterlist,
-          as: "masterlist",
-          attributes: {
-            exclude: ["createdAt", "updatedAt", "id", "rstatus", "labId"],
-          },
-        },
-      ],
-      attributes: {
-        exclude: ["createdAt", "updatedAt"],
-      },
-      order: [["sno", "ASC"]],
-    });
-  } catch (err) {
-    isError = true;
-    code = 500;
-    action = "Internal Server Error!!!";
-    const error = new Error(action);
-    error.code = code;
-    error.path = path;
-    return errorHandler(error, req, res, next);
-  }
+  // !Getting SRF Items
+  // let items;
+  // try {
+  //   items = await Item.findAll({
+  //     where: { srfId: req.body.srfId, rstatus: 1 },
+  //     include: [
+  //       {
+  //         model: Masterlist,
+  //         as: "masterlist",
+  //         attributes: {
+  //           exclude: ["createdAt", "updatedAt", "id", "rstatus", "labId"],
+  //         },
+  //       },
+  //     ],
+  //     attributes: {
+  //       exclude: ["createdAt", "updatedAt"],
+  //     },
+  //     order: [["sno", "ASC"]],
+  //   });
+  // } catch (err) {
+  //   isError = true;
+  //   code = 500;
+  //   action = "Internal Server Error!!!";
+  //   const error = new Error(action);
+  //   error.code = code;
+  //   error.path = path;
+  //   return errorHandler(error, req, res, next);
+  // }
 
   //Returning 200 Response
   if (isError == false) {
     let message = `${ip} ${userId} ${sessionId} ${code} ${path} - ${action}`;
     logger.info(message);
-    res.status(code).json({
+
+    res.status(200).json({
       status: "SUCCESS",
-      code: code,
+      code: 200,
       message: "SRF Items Invoice information Updated Successfully",
-      data: {
-        items
-      }
+      // data: {
+      //   items
+      // }
     });
   }
 };
@@ -2491,7 +2502,7 @@ const fetchSrfItem = async (req, res, next) => {
     error.code = 500;
     return errorHandler(error, req, res, next);
   }
-}
+};
 
 exports.getfilteredSRFItems = getfilteredSRFItems;
 exports.updatePaymentInfo = updatePaymentInfo;
