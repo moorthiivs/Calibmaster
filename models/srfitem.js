@@ -155,25 +155,15 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: true
       },
 
-      calibration_due_date: {
-        type: DataTypes.DATE,
-        allowNull: true
-      },
+      // calibration_due_date: {
+      //   type: DataTypes.DATE,
+      //   allowNull: true
+      // },
 
-      calibration_reaminder_date: {
-        type: DataTypes.DATE,
-        allowNull: true
-      },
-
-      calibration_due_date: {
-        type: DataTypes.DATE,
-        allowNull: true
-      },
-
-      calibration_reaminder_date: {
-        type: DataTypes.DATE,
-        allowNull: true
-      },
+      // calibration_reaminder_date: {
+      //   type: DataTypes.DATE,
+      //   allowNull: true
+      // },
 
       invoice_date: {
         type: DataTypes.DATE,

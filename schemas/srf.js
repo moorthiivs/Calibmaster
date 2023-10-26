@@ -77,7 +77,11 @@ const schema = {
 
     customer_id: {
       type: "number",
-    }
+    },
+
+    frequency_days: {
+      type: ["string", "null"],
+    },
   },
   required: [
     "srf_type",

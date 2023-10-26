@@ -148,6 +148,11 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         allowNull: true
       },
+
+      frequency_days: {
+        type: DataTypes.STRING,
+        allowNull: true
+      }
     },
     {
       sequelize,

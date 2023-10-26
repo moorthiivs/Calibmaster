@@ -12,7 +12,7 @@ const innerschema = {
     model: {
       type: "string",
     },
-    serial_no: {
+    serialno: {
       type: "string",
     },
     remarks: {
@@ -21,15 +21,15 @@ const innerschema = {
     url_number: {
       type: ["string", "null"]
     },
-    intrument_type_id: {
+    masterlistId: {
       type: "number",
     },
   },
   required: [
     "description",
-    "serial_no",
+    "serialno",
     "remarks",
-    "intrument_type_id"
+    "masterlistId"
   ],
   additionalProperties: true,
 };

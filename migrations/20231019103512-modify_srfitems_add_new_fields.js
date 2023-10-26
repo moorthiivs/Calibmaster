@@ -14,7 +14,23 @@ module.exports = {
       type: Sequelize.DATE,
       allowNull: true
     });
-    await queryInterface.addColumn("srfitems", "calibration_reaminder_date", {
+    await queryInterface.addColumn("srfitems", "calibration_remainder_date_1", {
+      type: Sequelize.DATE,
+      allowNull: true
+    });
+    await queryInterface.addColumn("srfitems", "calibration_remainder_date_2", {
+      type: Sequelize.DATE,
+      allowNull: true
+    });
+    await queryInterface.addColumn("srfitems", "calibration_remainder_date_3", {
+      type: Sequelize.DATE,
+      allowNull: true
+    });
+    await queryInterface.addColumn("srfitems", "calibration_remainder_date_4", {
+      type: Sequelize.DATE,
+      allowNull: true
+    });
+    await queryInterface.addColumn("srfitems", "calibration_remainder_date_5", {
       type: Sequelize.DATE,
       allowNull: true
     });
@@ -29,6 +45,10 @@ module.exports = {
      */
 
     await queryInterface.removeColumn("srfitems", "calibration_due_date");
-    await queryInterface.removeColumn("calibration_reaminder_date", "calibration_due_date");
+    await queryInterface.removeColumn("srfitems", "calibration_remainder_date_1");
+    await queryInterface.removeColumn("srfitems", "calibration_remainder_date_2");
+    await queryInterface.removeColumn("srfitems", "calibration_remainder_date_3");
+    await queryInterface.removeColumn("srfitems", "calibration_remainder_date_4");
+    await queryInterface.removeColumn("srfitems", "calibration_remainder_date_5");
   }
 };

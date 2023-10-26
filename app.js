@@ -30,7 +30,7 @@ const customCron = require('./cron');
 
 const app = express();
 
-customCron.sendNotificationMail();
+// customCron.sendNotificationMail();
 
 const whitelist = ["http://localhost:5173"];
 

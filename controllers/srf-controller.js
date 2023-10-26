@@ -64,6 +64,7 @@ const addSRFHandler = async (req, res, next) => {
 
   currentSRF.amend_no = req.body.srf.amend_no;
   currentSRF.amend_date = (req.body.srf.amend_date) ? req.body.srf.amend_date : null;
+  currentSRF.frequency_days = (req.body.srf.frequency_days) ? req.body.srf.frequency_days : null;
 
   // ! SRF Parent Table Validation
   const validsrf = srfSchema(currentSRF);
@@ -1548,6 +1549,8 @@ const getsrfbyId = async (req, res, next) => {
     error.path = path;
     return errorHandler(error, req, res, next);
   }
+
+  // return res.json({ srf });
 
   if (!srf) {
     isError = true;
