@@ -1538,7 +1538,6 @@ const getsrfbyId = async (req, res, next) => {
         }
       ]
     });
-
   } catch (err) {
     console.log(err);
     isError = true;
@@ -1549,7 +1548,6 @@ const getsrfbyId = async (req, res, next) => {
     error.path = path;
     return errorHandler(error, req, res, next);
   }
-
   // return res.json({ srf });
 
   if (!srf) {
@@ -1971,6 +1969,7 @@ const updateDCInfo = async (req, res, next) => {
 };
 
 const updateCalInfo = async (req, res, next) => {
+
   const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
   let code = 200;
   const path = "/api/srf/updatecalinfo";
@@ -1979,10 +1978,9 @@ const updateCalInfo = async (req, res, next) => {
   const sessionId = req.sessionId;
   let isError = false;
   const department = req.department;
-  //console.log(req.body);
+
   const { mode, userName, id, srfId, date } = req.body;
-  //console.log(!mode);
-  //console.log(!userName);
+
   if (!mode || !userName) {
     isError = true;
     code = 400;
@@ -1992,23 +1990,25 @@ const updateCalInfo = async (req, res, next) => {
     error.path = path;
     return errorHandler(error, req, res, next);
   }
+
   if (mode == 1) {
     try {
       const item = await Item.findOne({
         where: {
-          id: id,
+          srf_item_id: id,
           rstatus: 1,
           status: "Not Calibrated",
         },
       });
-      ////console.log(item);
+
       if (item) {
         await item.update({
           calibration_done_date: date,
-          calibration_done_name: userName,
+          calibration_done_by_empname: userName,
           status: "Calibrated",
         });
       }
+
     } catch (err) {
       isError = true;
       code = 500;
@@ -2022,16 +2022,16 @@ const updateCalInfo = async (req, res, next) => {
     try {
       const item = await Item.findOne({
         where: {
-          id: id,
+          srf_item_id: id,
           rstatus: 1,
           status: "Calibrated",
         },
       });
-      ////console.log(item);
+
       if (item) {
         await item.update({
           report_done_date: date,
-          report_done_name: userName,
+          report_done_by_empname: userName,
           status: "Report Generated",
         });
       }
@@ -2048,18 +2048,18 @@ const updateCalInfo = async (req, res, next) => {
     try {
       const item = await Item.findOne({
         where: {
-          id: id,
+          srf_item_id: id,
           rstatus: 1,
           status: "Not Calibrated",
         },
       });
-      ////console.log(item);
+
       if (item) {
         await item.update({
           calibration_done_date: date,
-          calibration_done_name: userName,
+          calibration_done_by_empname: userName,
           report_done_date: date,
-          report_done_name: userName,
+          report_done_by_empname: userName,
           status: "Report Generated",
         });
       }
@@ -2074,24 +2074,82 @@ const updateCalInfo = async (req, res, next) => {
     }
   }
 
-  //Getting SRF Items
+  // TODO: calculate calibration_due_date = calibration_done_date + frequency_in_months [calculate in srf-items table]
+  try {
+    // *** frequency_in_months from srf_lists table ***
+    let srfResult = await SRF.findOne({
+      attributes: ['reminder_frequency'],
+      where: { srf_id: srfId }
+    });
+
+    let { reminder_frequency } = srfResult;
+
+    const calibration_done_date = new Date(date)
+    const calibration_due_date = new Date(calibration_done_date.setMonth(calibration_done_date.getMonth() + parseInt(reminder_frequency)));
+
+    await Item.update(
+      {
+        calibration_due_date
+      },
+      { where: { srf_item_id: id } }
+    )
+  } catch (err) {
+    const error = new Error("Failed to update calibration due date !!!");
+    error.code = 500;
+    return errorHandler(error, req, res, next);
+  }
+
+  // ! SET Calibration Reaminder Date 
+  // TODO: Formula calibration_remainder_date = calibration_due_date - frequency_days [calculate in srf-items table]
+
+  // *** Getting frequency_days from srf_lists table ***
+  let srfResult = await SRF.findOne({
+    attributes: ['frequency_days'],
+    where: { srf_id: srfId }
+  });
+  const { frequency_days } = srfResult;
+
+  // *** Getting calibration_due_date from srfitems table ***
+  let srfItemResult = await Item.findOne({
+    where: { srf_item_id: id },
+    attributes: ['srf_item_id', 'calibration_due_date']
+  });
+  const { calibration_due_date } = srfItemResult;
+
+  let createResponse = "";
+  let calibration_reaminder_date_1;
+  let calibration_reaminder_date_2;
+  if (frequency_days == 1) {
+
+    let due_date_1 = new Date(calibration_due_date);
+    let diffDateInMS_1 = due_date_1.setDate(due_date_1.getDate() - 15);
+    calibration_reaminder_date_1 = new Date(diffDateInMS_1);
+
+    createResponse = "1 remainder";
+  } else if (frequency_days == 2) {
+
+    let due_date_1 = new Date(calibration_due_date);
+    let diffDateInMS_1 = due_date_1.setDate(due_date_1.getDate() - 15);
+    calibration_reaminder_date_1 = new Date(diffDateInMS_1);
+
+    let due_date_2 = new Date(calibration_due_date);
+    let diffDateInMS_2 = due_date_2.setDate(due_date_2.getDate() - 7);
+    calibration_reaminder_date_2 = new Date(diffDateInMS_2);
+
+    createResponse = "2 remainder";
+  }
+
+  return res.json({
+    frequency_days, createResponse, calibration_due_date,
+    calibration_reaminder_date_1, calibration_reaminder_date_2
+  });
+
+  // *** Getting SRF Items from srfitems table ***
   let items;
   try {
     items = await Item.findAll({
-      where: { srfId: req.body.srfId, rstatus: 1 },
-      include: [
-        {
-          model: Masterlist,
-          as: "masterlist",
-          attributes: {
-            exclude: ["createdAt", "updatedAt", "id", "rstatus", "labId"],
-          },
-        },
-      ],
-      attributes: {
-        exclude: ["createdAt", "updatedAt"],
-      },
-      order: [["sno", "ASC"]],
+      where: { srf_id: srfId, rstatus: 1 },
+      include: ["intrument_type"],
     });
   } catch (err) {
     isError = true;
@@ -2102,6 +2160,7 @@ const updateCalInfo = async (req, res, next) => {
     error.path = path;
     return errorHandler(error, req, res, next);
   }
+
   //Returning 200 Response
   if (isError == false) {
     let message = `${ip} ${userId} ${sessionId} ${code} ${path} - ${action}`;
