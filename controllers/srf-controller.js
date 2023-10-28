@@ -1979,7 +1979,7 @@ const updateCalInfo = async (req, res, next) => {
   let isError = false;
   const department = req.department;
 
-  const { mode, userName, id, srfId, date } = req.body;
+  const { mode, userName, id, srfId, date, reportGenerateDate } = req.body;
 
   if (!mode || !userName) {
     isError = true;
@@ -2030,7 +2030,7 @@ const updateCalInfo = async (req, res, next) => {
 
       if (item) {
         await item.update({
-          report_done_date: date,
+          report_done_date: reportGenerateDate,
           report_done_by_empname: userName,
           status: "Report Generated",
         });
@@ -2050,7 +2050,7 @@ const updateCalInfo = async (req, res, next) => {
         where: {
           srf_item_id: id,
           rstatus: 1,
-          status: "Not Calibrated",
+          // status: "Not Calibrated",
         },
       });
 
@@ -2058,7 +2058,7 @@ const updateCalInfo = async (req, res, next) => {
         await item.update({
           calibration_done_date: date,
           calibration_done_by_empname: userName,
-          report_done_date: date,
+          report_done_date: reportGenerateDate,
           report_done_by_empname: userName,
           status: "Report Generated",
         });
@@ -2084,6 +2084,10 @@ const updateCalInfo = async (req, res, next) => {
 
     let { reminder_frequency } = srfResult;
 
+    if (reminder_frequency == null) {
+      reminder_frequency = 0
+    }
+
     const calibration_done_date = new Date(date)
     const calibration_due_date = new Date(calibration_done_date.setMonth(calibration_done_date.getMonth() + parseInt(reminder_frequency)));
 
@@ -2094,12 +2098,13 @@ const updateCalInfo = async (req, res, next) => {
       { where: { srf_item_id: id } }
     )
   } catch (err) {
+    console.log(err);
     const error = new Error("Failed to update calibration due date !!!");
     error.code = 500;
     return errorHandler(error, req, res, next);
   }
 
-  // ! SET Calibration Reaminder Date 
+  // ! SET Calibration Reaminder Dates
   // TODO: Formula calibration_remainder_date = calibration_due_date - frequency_days [calculate in srf-items table]
 
   // *** Getting frequency_days from srf_lists table ***
@@ -2117,32 +2122,42 @@ const updateCalInfo = async (req, res, next) => {
   const { calibration_due_date } = srfItemResult;
 
   let createResponse = "";
-  let calibration_reaminder_date_1;
-  let calibration_reaminder_date_2;
+  let calibration_remainder_date_1;
+  let calibration_remainder_date_2;
   if (frequency_days == 1) {
 
     let due_date_1 = new Date(calibration_due_date);
-    let diffDateInMS_1 = due_date_1.setDate(due_date_1.getDate() - 15);
-    calibration_reaminder_date_1 = new Date(diffDateInMS_1);
+    let diffDateInMS_1 = due_date_1.setDate(due_date_1.getDate() - 7);
+    calibration_remainder_date_1 = new Date(diffDateInMS_1);
+
+    await srfItemResult.update({
+      calibration_remainder_date_1
+    });
 
     createResponse = "1 remainder";
+
   } else if (frequency_days == 2) {
 
     let due_date_1 = new Date(calibration_due_date);
     let diffDateInMS_1 = due_date_1.setDate(due_date_1.getDate() - 15);
-    calibration_reaminder_date_1 = new Date(diffDateInMS_1);
+    calibration_remainder_date_1 = new Date(diffDateInMS_1);
 
     let due_date_2 = new Date(calibration_due_date);
     let diffDateInMS_2 = due_date_2.setDate(due_date_2.getDate() - 7);
-    calibration_reaminder_date_2 = new Date(diffDateInMS_2);
+    calibration_remainder_date_2 = new Date(diffDateInMS_2);
+
+    await srfItemResult.update({
+      calibration_remainder_date_1,
+      calibration_remainder_date_2
+    });
 
     createResponse = "2 remainder";
   }
 
-  return res.json({
-    frequency_days, createResponse, calibration_due_date,
-    calibration_reaminder_date_1, calibration_reaminder_date_2
-  });
+  // return res.json({
+  //   frequency_days, createResponse, calibration_due_date,
+  //   calibration_remainder_date_1, calibration_remainder_date_2
+  // });
 
   // *** Getting SRF Items from srfitems table ***
   let items;
