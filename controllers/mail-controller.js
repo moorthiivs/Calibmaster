@@ -87,7 +87,7 @@ const sendMail = async (eachData) => {
             <p>Calibration due date: ${calibration_due_date} </p>
             <p>ULR number: ${url_number} </p>
             <p>Certificate date: ${certificate_date} </p>
-            <p>Contact us for next calibration</p>
+            <p>Contact us for next calibration.</p>
         `;
 
         const info = await transporter.sendMail({
@@ -110,7 +110,7 @@ const srfItems = async (req, res) => {
             attributes: [
                 "serial_no", "identification_details", "calibration_done_date",
                 "url_number", "certificate_date",
-                "calibration_due_date", "calibration_reaminder_date",
+                "calibration_due_date", "calibration_remainder_date_1",
             ],
             include: [
                 {
@@ -142,10 +142,10 @@ const srfItems = async (req, res) => {
 
         srfItems.map(async (eachRow) => {
 
-            if (eachRow?.calibration_reaminder_date) {
+            if (eachRow?.calibration_remainder_date_1) {
 
                 // *** Reaminder Date in yyyy--mm-dd format ***
-                rDate = new Date(eachRow?.calibration_reaminder_date);
+                rDate = new Date(eachRow?.calibration_remainder_date_1);
                 let rDay = rDate.getDate();
                 let rMonth = rDate.getMonth() + 1;
                 let rYear = rDate.getFullYear();

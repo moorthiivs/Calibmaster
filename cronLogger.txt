@@ -1,34 +1,8 @@
-Cron Job Loop running
-Cron Job Loop running
-Cron Job Loop running
-Cron Job Loop running
-Cron Job Loop running
-Cron Job Loop running
-Cron Job Loop running
-Cron Job Loop running
-Cron Job Loop running
-Cron Job Loop running
-Cron Job Loop running
-Cron Job Loop running
-Cron Job Loop running
-Cron Job Loop running
-Cron Job Loop running
-Cron Job Loop running
-Cron Job Loop running
-Cron Job Loop running
-Cron Job Loop running
-Cron Job Loop running
-Cron Job Loop running
-Cron Job Loop running
-Cron Job Loop running
-Cron Job Loop running
-Cron Job Loop running
-Cron Job Loop running
-Cron Job Loop running
-Cron Job Loop running
-Cron Job Loop running
-Cron Job Loop running
-Cron Job Loop running
-Cron Job Loop running
-Cron Job Loop running
-Cron Job Loop running
+Cron Job attempt on calibration_remainder_date_1 Mon Oct 30 2023 18:09:00 GMT+0530 (India Standard Time) 
+Cron Job attempt on calibration_remainder_date_2 at Mon Oct 30 2023 18:09:00 GMT+0530 (India Standard Time) 
+Cron Job attempt on calibration_remainder_date_1 Mon Oct 30 2023 18:10:05 GMT+0530 (India Standard Time) 
+Cron Job attempt on calibration_remainder_date_2 at Mon Oct 30 2023 18:10:05 GMT+0530 (India Standard Time) 
+Cron Job attempt on calibration_remainder_date_1 Mon Oct 30 2023 18:22:00 GMT+0530 (India Standard Time) 
+Cron Job attempt on calibration_remainder_date_2 at Mon Oct 30 2023 18:22:00 GMT+0530 (India Standard Time) 
+Cron Job attempt on calibration_remainder_date_1 Mon Oct 30 2023 18:23:00 GMT+0530 (India Standard Time) 
+Cron Job attempt on calibration_remainder_date_2 at Mon Oct 30 2023 18:23:00 GMT+0530 (India Standard Time) 
