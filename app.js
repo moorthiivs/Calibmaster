@@ -84,7 +84,7 @@ app.use("/api/mail", Authorization, mailRoutes);
 
 // app.use("/api/download", Authorization, srfdownloadRoute);
 // app.use("/api/masterlist", Authorization, masterlistRoutes);
-// app.use("/api/certificate", certificateRoutes);
+app.use("/api/certificate", certificateRoutes);
 
 app.use("/api/test", testRoutes);
 app.get("/*", (req, res) => {

@@ -16,6 +16,14 @@ module.exports = {
         type: Sequelize.INTEGER,
         allowNull: false,
       },
+      srfitemId: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        references: {
+          model: "srfitems",
+          key: "srf_item_id"
+        }
+      },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE,

@@ -3,6 +3,7 @@ const multer = require("multer");
 const certificateController = require("../controllers/certificate-controller");
 
 const router = express.Router();
+
 const storage = multer.diskStorage({
   destination: (req, file, callBack) => {
     callBack(null, "certificates");
@@ -12,6 +13,7 @@ const storage = multer.diskStorage({
   },
 });
 let upload = multer({ storage });
+
 router.post(
   "/upload",
   upload.single("file"),
