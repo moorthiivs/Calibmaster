@@ -3,16 +3,13 @@ const ajvInstance = require("../utils/ajv-instance");
 const innerschema = {
   type: "object",
   properties: {
-    description: {
-      type: "string",
-    },
     make: {
       type: "string",
     },
     model: {
       type: "string",
     },
-    serialno: {
+    serial_no: {
       type: "string",
     },
     remarks: {
@@ -21,15 +18,10 @@ const innerschema = {
     url_number: {
       type: ["string", "null"]
     },
-    masterlistId: {
-      type: "number",
-    },
   },
   required: [
-    "description",
-    "serialno",
+    "serial_no",
     "remarks",
-    "masterlistId"
   ],
   additionalProperties: true,
 };

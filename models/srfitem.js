@@ -192,6 +192,11 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: true
       },
 
+      invoice_file_name: {
+        type: DataTypes.STRING,
+        allowNull: true
+      },
+
     },
     {
       sequelize,

@@ -14,10 +14,6 @@ const storage = multer.diskStorage({
 });
 let upload = multer({ storage });
 
-router.post(
-  "/upload",
-  upload.single("file"),
-  certificateController.certificateUploadHandler
-);
+router.post("/upload", upload.single("file"), certificateController.certificateUploadHandler);
 
 module.exports = router;

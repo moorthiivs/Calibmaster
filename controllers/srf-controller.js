@@ -13,6 +13,7 @@ const Masterlist = require("../models").Masterlist;
 const instrument_type = require("../models").instrument_type;
 const nodeMailer = require("nodemailer");
 const ExcelJS = require("exceljs");
+const fs = require('fs');
 
 let err;
 
@@ -2300,8 +2301,24 @@ const updateInvoiceInfo = async (req, res, next) => {
     return errorHandler(error, req, res, next);
   }
 
+  function decodeBase64Image(dataString) {
+    var matches = dataString.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/),
+      response = {};
+
+    if (matches.length !== 3) {
+      return new Error('Invalid input string');
+    }
+
+    response.type = matches[1];
+    response.data = new Buffer(matches[2], 'base64');
+
+    return response;
+  }
+
   //SRF Items Validation
   const validitem = itemsSchema(req.body.items);
+
+  // return res.json({ validitem });
 
   if (!validitem) {
     isError = true;
@@ -2311,6 +2328,24 @@ const updateInvoiceInfo = async (req, res, next) => {
     error.code = code;
     error.path = path;
     return errorHandler(error, req, res, next);
+  }
+
+  const { file } = req.body
+
+  if (file) {
+    const mainLogoDecodeImg = decodeBase64Image(file);
+    const imageBuffer = mainLogoDecodeImg.data;
+    const fileExtension = mainLogoDecodeImg.type.slice(12);
+    mainLogoImgFileName = Math.floor(Math.random() * 9999999) + "." + fileExtension;
+
+    try {
+      fs.writeFileSync("public/invoices/" + mainLogoImgFileName, imageBuffer, 'utf8');
+    }
+    catch (err) {
+      const error = new Error("Failed to upload the certificate.");
+      error.code = code;
+      return errorHandler(error, req, res, next);
+    }
   }
 
   let ids = [];
@@ -2323,7 +2358,8 @@ const updateInvoiceInfo = async (req, res, next) => {
   try {
     await Item.update(
       {
-        invoice_no, invoice_date, invoice_due_date, status
+        invoice_no, invoice_date, invoice_due_date, status,
+        invoice_file_name: mainLogoImgFileName
       },
       {
         where: {
@@ -2580,6 +2616,7 @@ const fetchSrfItem = async (req, res, next) => {
     return errorHandler(error, req, res, next);
   }
 };
+
 
 exports.getfilteredSRFItems = getfilteredSRFItems;
 exports.updatePaymentInfo = updatePaymentInfo;

@@ -1,8 +1,19 @@
 const express = require("express");
+const multer = require("multer");
 
 const srfController = require("../controllers/srf-controller");
 
 const router = express.Router();
+
+const storage = multer.diskStorage({
+    destination: (req, file, callBack) => {
+        callBack(null, "invoices");
+    },
+    filename: (req, file, callBack) => {
+        callBack(null, `${file.originalname}`);
+    },
+});
+let upload = multer({ storage });
 
 router.post("/add", srfController.addSRFHandler);
 
@@ -20,6 +31,7 @@ router.post("/updatedcinfo", srfController.updateDCInfo);
 
 router.post("/updatecalinfo", srfController.updateCalInfo);
 
+// *** Update-Invoice
 router.post("/updateinvoice", srfController.updateInvoiceInfo);
 
 router.post("/updatepayment", srfController.updatePaymentInfo);

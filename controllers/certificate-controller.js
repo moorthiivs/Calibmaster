@@ -45,8 +45,11 @@ const sendMail = async (srfItemsQuery, filePath) => {
         { path: filePath }
       ]
     });
+
+    return { msg: "Certificate Mail Send Successfully", status: true }
   } catch (error) {
     console.log(error);
+    return { msg: "Failed to send Certificate Mail", status: true }
   }
 }
 
@@ -136,11 +139,11 @@ const certificateUploadHandler = async (req, res, next) => {
     });
 
     // return res.status(200).json({ srfItemsQuery });
-    await sendMail(srfItemsQuery, filePath);
+    const { msg, status } = await sendMail(srfItemsQuery, filePath);
 
     return res.status(200).json({
       status: "SUCCESS",
-      message: "File Uploaded Successfully!!",
+      message: `File Uploaded Successfully and ${msg}`,
       code: 200,
       result,
       filePath
@@ -153,7 +156,5 @@ const certificateUploadHandler = async (req, res, next) => {
     return errorHandler(error, req, res, next);
   }
 };
-
-
 
 exports.certificateUploadHandler = certificateUploadHandler;
