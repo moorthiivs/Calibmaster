@@ -14,6 +14,8 @@ const instrument_type = require("../models").instrument_type;
 const nodeMailer = require("nodemailer");
 const ExcelJS = require("exceljs");
 const fs = require('fs');
+const nodePath = require('path');
+const { sendMailHandler } = require("../helpers/mailSend");
 
 let err;
 
@@ -2290,6 +2292,7 @@ const updateInvoiceInfo = async (req, res, next) => {
   const sessionId = req.sessionId;
   let isError = false;
   const department = req.department;
+  let mainLogoImgFileName = "";
 
   if (!req.body || !req.body.items || !req.body.srfId || !req.body.invoiceinfo) {
     isError = true;
@@ -2356,18 +2359,62 @@ const updateInvoiceInfo = async (req, res, next) => {
   const { invoice_no, invoice_date, invoice_due_date, status } = req.body.invoiceinfo;
 
   try {
-    await Item.update(
+    const updateQuery = await Item.update(
       {
         invoice_no, invoice_date, invoice_due_date, status,
         invoice_file_name: mainLogoImgFileName
       },
-      {
-        where: {
-          srf_item_id: ids,
-          rstatus: 1,
-        },
-      }
+      { where: { srf_item_id: ids, rstatus: 1 } }
     );
+
+
+    // TODO: Fire the mail
+    let filePath = nodePath.join(__dirname, '../' + 'public/invoices' + '/' + mainLogoImgFileName);
+
+    let srfItemsQuery = await Item.findOne({
+      where: { srf_item_id: ids },
+      attributes: [
+        "serial_no", "identification_details", "calibration_done_date",
+        "url_number", "certificate_date",
+        "calibration_due_date", "calibration_remainder_date_1",
+      ],
+      include: [
+        {
+          model: Lab,
+          as: "lab",
+          attributes: [
+            "contact_email",
+            "email_smtp_server_host", "email_smtp_server_port", "sender_email", "sender_password"
+          ]
+        },
+        {
+          model: SRF,
+          as: "srf",
+          attributes: [
+            "srf_number", "contact_name", "contact_email"
+          ]
+        }
+      ]
+    });
+
+    const { msg, statusCode } = await sendMailHandler(srfItemsQuery, filePath);
+
+    let items = await Item.findAll({
+      where: { lab_id: 1, rstatus: 1 },
+      include: ["intrument_type"],
+      order: [["srf_item_id", "ASC"]]
+    });
+
+    // return res.json({ srfItemsQuery, msg, statusCode });
+
+    return res.status(statusCode).json({
+      status: "SUCCESS",
+      code: statusCode,
+      message: `SRF Items Invoice information Updated Successfully & ${msg}`,
+      filename: mainLogoImgFileName,
+      items: items
+    });
+
   } catch (err) {
     console.log(err);
     isError = true;
@@ -2379,7 +2426,7 @@ const updateInvoiceInfo = async (req, res, next) => {
     return errorHandler(error, req, res, next);
   }
 
-  // !Getting SRF Items
+  // ! Getting SRF Items
   // let items;
   // try {
   //   items = await Item.findAll({
@@ -2409,19 +2456,18 @@ const updateInvoiceInfo = async (req, res, next) => {
   // }
 
   //Returning 200 Response
-  if (isError == false) {
-    let message = `${ip} ${userId} ${sessionId} ${code} ${path} - ${action}`;
-    logger.info(message);
-
-    res.status(200).json({
-      status: "SUCCESS",
-      code: 200,
-      message: "SRF Items Invoice information Updated Successfully",
-      // data: {
-      //   items
-      // }
-    });
-  }
+  // if (isError == false) {
+  //   let message = `${ip} ${userId} ${sessionId} ${code} ${path} - ${action}`;
+  //   logger.info(message);
+  //   res.status(200).json({
+  //     status: "SUCCESS",
+  //     code: 200,
+  //     message: "SRF Items Invoice information Updated Successfully",
+  //     data: {
+  //       items
+  //     }
+  //   });
+  // }
 };
 
 const updatePaymentInfo = async (req, res, next) => {
