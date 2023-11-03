@@ -9,7 +9,7 @@ const innerschema = {
     model: {
       type: "string",
     },
-    serial_no: {
+    serialno: {
       type: "string",
     },
     remarks: {
@@ -20,7 +20,7 @@ const innerschema = {
     },
   },
   required: [
-    "serial_no",
+    "serialno",
     "remarks",
   ],
   additionalProperties: true,

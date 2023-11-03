@@ -128,7 +128,7 @@ const exportExcel = async (req, res, next) => {
         },
     ];
 
-    const worksheet = workbook.addWorksheet("SRF");
+    let worksheet = workbook.addWorksheet("SRF");
 
     worksheet.pageSetup.margins = {
         left: 0.25,
@@ -402,11 +402,9 @@ const exportExcel = async (req, res, next) => {
     worksheet.getCell("F19").border = {
         left: { style: "thin" },
     };
+
     worksheet.getCell("F19").font = { name: "Calibri", size: 12 };
-    worksheet.getCell("F19").value =
-        "3.2 " +
-        srf.name +
-        " is not responsible for the equipments which are not";
+    worksheet.getCell("F19").value = "3.2 " + srf?.contact_name + " is not responsible for the equipments which are not";
     worksheet.getCell("H19").border = {
         right: { style: "thin" },
     };
@@ -561,19 +559,11 @@ const exportExcel = async (req, res, next) => {
         if (lastrow < 48) {
             worksheet.getCell("A" + lastrow).value = i;
             worksheet.getCell("B" + lastrow).value = element?.intrument_type?.instrument_full_name;
-            worksheet.getCell("D" + lastrow).value = element.make;
-            worksheet.getCell("E" + lastrow).value =
-                element.model +
-                " / " +
-                element.range_min +
-                "-" +
-                element.range_max +
-                " " +
-                element.range_unit;
-
-            worksheet.getCell("F" + lastrow).value = element.serial_no + " / " + element.srf_item_id;
-            worksheet.getCell("G" + lastrow).value = element.status;
-            worksheet.getCell("H" + lastrow).value = element.remarks;
+            worksheet.getCell("D" + lastrow).value = element?.make;
+            worksheet.getCell("E" + lastrow).value = element?.model;
+            worksheet.getCell("F" + lastrow).value = element?.serial_no + " / " + element?.srf_item_id;
+            worksheet.getCell("G" + lastrow).value = element?.status;
+            worksheet.getCell("H" + lastrow).value = element?.remarks;
             //console.log(element);
             i = i + 1;
         }
@@ -700,6 +690,7 @@ const exportExcel = async (req, res, next) => {
         top: { style: "thin" },
         bottom: { style: "thin" },
     };
+
     let invno, issno, issdate; // ! check invoice_no
     if (srf?.invoice_no) {
         invno = srf?.invoice_no;
@@ -862,7 +853,7 @@ const exportExcel = async (req, res, next) => {
             bottom: { style: "thin" },
         };
         worksheet.getCell("E64").font = { name: "Calibri", size: 13, bold: true };
-        worksheet.getCell("E64").value = "Model / Range";
+        worksheet.getCell("E64").value = "Model";
         worksheet.getCell("F64").border = {
             left: { style: "thin" },
             bottom: { style: "thin" },
@@ -1057,6 +1048,7 @@ const exportExcel = async (req, res, next) => {
         error.code = 500;
         return errorHandler(error, req, res, next);
     }
+
     let existingLab;
     try {
         existingLab = await Lab.findOne({
@@ -1071,12 +1063,13 @@ const exportExcel = async (req, res, next) => {
         });
     } catch (err) {
         console.log(err);
-        action = "Internal Server Error!!" + err;
+        action = "Internal Server Error!!";
         const error = new Error("Failed to create buffer");
         error.code = 500;
         return errorHandler(error, req, res, next);
     }
 
+    let info;
     if (existingLab?.sender_email) {
 
         // return res.json({ existingLab });
@@ -1085,11 +1078,24 @@ const exportExcel = async (req, res, next) => {
             name: "CalibMaster",
             host: existingLab?.email_smtp_server_host,
             port: existingLab?.email_smtp_server_port,
+            secure: true,
             auth: {
                 user: existingLab?.sender_email,
                 pass: existingLab?.sender_password
             }
         });
+
+        // ! Production Testing Mode
+        // const transporter = nodeMailer.createTransport({
+        //     name: "CalibMaster",
+        //     host: "mail.iviewsense.com",
+        //     port: 465,
+        //     secure: true,
+        //     auth: {
+        //         user: "anirban@iviewsense.com",
+        //         pass: "IDJWMmPNt#h",
+        //     },
+        // });
 
         fileName = existingLab?.symbol + "-" + new Date().getTime() + "-";
 
@@ -1110,23 +1116,12 @@ const exportExcel = async (req, res, next) => {
         }
         fileName += addedzero + ".xlsx";
 
-        // let existingCompany;
-        // try {
-        //     existingCompany = await Company.findOne({
-        //         where: { id: req.body.srf.CompanyId, rstatus: 1 },
-        //     });
-        // } catch (err) {
-        //     console.log(err);
-        //     const error = new Error("Internal Server Error!!!");
-        //     error.code = 500;
-        //     return errorHandler(error, req, res, next);
-        // }
-
         try {
-            const info = await transporter.sendMail({
+            info = await transporter.sendMail({
                 from: existingLab.contact_email,
                 // to: req?.body?.srf?.contact_email,
-                to: "anirban@gmail.com",
+                // from: "anirban@iviewsense.com",
+                to: "pathaksangita930@gmail.com",
                 subject: "CalibMaster - New SRF Created " + fileName,
                 priority: "high",
                 attachments: [
@@ -1140,7 +1135,7 @@ const exportExcel = async (req, res, next) => {
             console.log(info);
         } catch (err) {
             console.log(err);
-            const error = new Error("Error when sending the mail");
+            const error = new Error("Failed to send mail to the customer");
             error.code = 500;
             return errorHandler(error, req, res, next);
         }
@@ -1149,6 +1144,7 @@ const exportExcel = async (req, res, next) => {
     // ! Sending JSON Response
     res.json({
         filePath,
+        info,
         modifiedsno, srfid,
         existingLab,
         srf, items
