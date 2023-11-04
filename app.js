@@ -19,8 +19,10 @@ const calibrationDateRoutes = require("./routes/calibation-routes");
 
 const mailRoutes = require("./routes/mail-routes");
 const excelRoutes = require("./routes/excel-routes");
+const challanRoute = require("./routes/challan-route");
 
 const testRoutes = require("./routes/test-route");
+
 const Authorization = require("./middleware/check-auth");
 
 const path = require("path");
@@ -62,6 +64,9 @@ dotenv.config();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+app.set('view engine', 'ejs');
+app.set('views', './views');
+
 //Routes of the APP
 app.use("/api/heartbeat", heartbeatRoute);
 app.use("/api/users", usersRoutes);
@@ -85,6 +90,8 @@ app.use("/api/certificate", certificateRoutes);
 app.use("/api/mail", Authorization, mailRoutes);
 
 app.use("/api/excel", excelRoutes);
+
+app.use("/api/generate", challanRoute);
 
 // app.use("/api/download", Authorization, srfdownloadRoute);
 // app.use("/api/masterlist", Authorization, masterlistRoutes);
