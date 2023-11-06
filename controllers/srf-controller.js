@@ -1239,8 +1239,8 @@ const addSRFHandler = async (req, res, next) => {
   }
 
   let existingLab;
-  let returnable_material = req.body.returnable_material;
-  let dc_remarks = req.body.dc_remarks;
+  let returnable_material = req.body.srf.returnable_material;
+  let dc_remarks = req.body.srf.dc_remarks;
 
   try {
     existingLab = await Lab.findOne({
@@ -1345,6 +1345,55 @@ const addSRFHandler = async (req, res, next) => {
               }
             ]
           });
+
+          //Returning 200 Response
+          if (isError == false) {
+            let message = `${ip} ${userId} ${sessionId} ${code} ${path} - ${action}`;
+            logger.info(message);
+            res.status(200).json({
+              status: "SUCCESS",
+              code: 200,
+              message: "SRF Added Successfully",
+            });
+          }
+          console.log(info);
+        } catch (err) {
+          console.log(err);
+          const error = new Error("Error when sending the mail");
+          error.code = 500;
+          return errorHandler(error, req, res, next);
+        }
+      });
+    } else {
+      pdf.create(ejsData, options).toFile(`./delivery-challan/${fileUniqueName}`, async (err, response) => {
+        if (err) throw err;
+
+        try {
+          const info = await transporter.sendMail({
+            from: existingLab?.contact_email,
+            to: req?.body?.srf?.contact_email,
+            subject: "CalibMaster - New SRF Created",
+            html: "<p><b>Please find delivery challan on attachment.</b></p>",
+            priority: "high",
+            attachments: [
+              {
+                path: response.filename,
+                filename: 'delivery-challan.pdf',
+                contentType: "application/pdf",
+              }
+            ]
+          });
+
+          //Returning 200 Response
+          if (isError == false) {
+            let message = `${ip} ${userId} ${sessionId} ${code} ${path} - ${action}`;
+            logger.info(message);
+            res.status(200).json({
+              status: "SUCCESS",
+              code: 200,
+              message: "SRF Added Successfully",
+            });
+          }
           console.log(info);
         } catch (err) {
           console.log(err);
@@ -1354,17 +1403,6 @@ const addSRFHandler = async (req, res, next) => {
         }
       });
     }
-  }
-
-  //Returning 200 Response
-  if (isError == false) {
-    let message = `${ip} ${userId} ${sessionId} ${code} ${path} - ${action}`;
-    logger.info(message);
-    res.status(200).json({
-      status: "SUCCESS",
-      code: 200,
-      message: "SRF Added Successfully",
-    });
   }
 };
 
