@@ -15,6 +15,8 @@ const nodeMailer = require("nodemailer");
 const ExcelJS = require("exceljs");
 const fs = require('fs');
 const nodePath = require('path');
+const ejs = require('ejs');
+const pdf = require('html-pdf');
 const { sendMailHandler } = require("../helpers/mailSend");
 
 let err;
@@ -1237,6 +1239,9 @@ const addSRFHandler = async (req, res, next) => {
   }
 
   let existingLab;
+  let returnable_material = req.body.returnable_material;
+  let dc_remarks = req.body.dc_remarks;
+
   try {
     existingLab = await Lab.findOne({
       where: { lab_id: req.body.labId, rstatus: 1 },
@@ -1255,9 +1260,38 @@ const addSRFHandler = async (req, res, next) => {
     return errorHandler(error, req, res, next);
   }
 
-  if (existingLab?.sender_email) {
+  const { BACKEND_SERVER } = process?.env;
 
-    // return res.json({ existingLab });
+  const filePathName = nodePath.resolve(__dirname, '../views/deliverychallan.ejs');
+
+  const htmlString = fs.readFileSync(filePathName).toString();
+
+  let options = {
+    "height": "10.5in",
+    "width": "9in",
+    "paginationOffset": 1,
+    "header": {
+      "height": "25mm",
+      "contents": '<div style="text-align: center;">DELIVERY CHALLAN</div>'
+    },
+    "footer": {
+      "height": "10mm",
+      "contents": {
+        first: '<div style="text-align: center;">{{page}}/{{pages}}</div>',
+        2: '<div style="text-align: center;">{{page}}/{{pages}}</div>',
+        default: `<div style="text-align: center;">
+                        <span style="color: #444;">{{page}}</span>/<span>{{pages}}</span>
+                    </div>`,
+        last: 'Last Page'
+      }
+    }
+  };
+
+  const ejsData = ejs.render(htmlString, { existingLab, BACKEND_SERVER, srf, items, returnable_material, dc_remarks })
+
+  const fileUniqueName = `${new Date().getTime()}.pdf`;
+
+  if (existingLab?.sender_email) {
 
     const transporter = nodeMailer.createTransport({
       name: "CalibMaster",
@@ -1289,28 +1323,36 @@ const addSRFHandler = async (req, res, next) => {
     fileName += addedzero + ".xlsx";
 
     if (sendsrf) {
-      try {
-        const info = await transporter.sendMail({
-          from: existingLab?.contact_email,
-          to: req?.body?.srf?.contact_email,
-          // to: "mailIdForChecking@gmail.com",
-          subject: "CalibMaster - New SRF Created " + fileName,
-          priority: "high",
-          attachments: [
-            {
-              filename: fileName,
-              content: buffer,
-              contentType: "application/pdf",
-            },
-          ],
-        });
-        console.log(info);
-      } catch (err) {
-        console.log(err);
-        const error = new Error("Error when sending the mail");
-        error.code = 500;
-        return errorHandler(error, req, res, next);
-      }
+      pdf.create(ejsData, options).toFile(`./delivery-challan/${fileUniqueName}`, async (err, response) => {
+        if (err) throw err;
+
+        try {
+          const info = await transporter.sendMail({
+            from: existingLab?.contact_email,
+            to: req?.body?.srf?.contact_email,
+            subject: "CalibMaster - New SRF Created " + fileName,
+            html: "<p><b>Please find delivery challan on attachment.</b></p>",
+            priority: "high",
+            attachments: [
+              {
+                filename: fileName,
+                content: buffer,
+              },
+              {
+                path: response.filename,
+                filename: 'delivery-challan.pdf',
+                contentType: "application/pdf",
+              }
+            ]
+          });
+          console.log(info);
+        } catch (err) {
+          console.log(err);
+          const error = new Error("Error when sending the mail");
+          error.code = 500;
+          return errorHandler(error, req, res, next);
+        }
+      });
     }
   }
 
@@ -2613,7 +2655,6 @@ const fetchSrfItem = async (req, res, next) => {
     return errorHandler(error, req, res, next);
   }
 };
-
 
 exports.getfilteredSRFItems = getfilteredSRFItems;
 exports.updatePaymentInfo = updatePaymentInfo;

@@ -39,14 +39,23 @@
 
         <div class="header" style="margin-bottom: 20px;">
             <div class="leftH" style="float: left;">
-                <p>#35, 1st Floor, S.K Tower</p>
-                <p>11th Cross, Malleswaram</p>
-                <p>Bengaluru-560 003</p>
-                <p>Telephone: 080- 41171984; e-mail: info@testcal.in</p>
-                <p><b>GST No.: 29AAIFT0881G1ZW</b></p>
+                <p>
+                    <%= existingLab.address1 %>
+                </p>
+                <p>
+                    <%= existingLab.address2 %>
+                </p>
+                <p>
+                    <%= existingLab.city %> - <%= existingLab.pincode %>
+                </p>
+                <p>
+                    Telephone: <%= existingLab.contact_number1 %>; e-mail: <%= existingLab.contact_email %>
+                </p>
+                <p><b>GST No.: <%= existingLab.gst_number %></b></p>
             </div>
             <div class="rightH" style="float: right; text-align: right;">
-                <img src="http://localhost:5000/logos/logo.svg" alt="Logo" />
+                <img src="<%= BACKEND_SERVER %>/images/<%= existingLab.brand_logo_filename %>"
+                    alt="<%= existingLab.brand_logo_filename %>" style="width: 100px;" />
             </div>
             <div class="spacer" style="clear: both;"></div>
         </div>
@@ -55,8 +64,12 @@
 
             <table style="width: 100%; border: 2px solid black;">
                 <tr>
-                    <th style="text-align: left; padding-top: 5px;">DC No. :TC/22/DC-100</th>
-                    <th style="text-align: right; padding-top: 5px;">DC Date : 24-11-2022</th>
+                    <th style="text-align: left; padding-top: 5px; padding-left: 10px;">
+                        DC No.:<%= srf?.customer_dc %>
+                    </th>
+                    <th style="text-align: right; padding-top: 5px; padding-right: 10px;">
+                        DC Date: <%= srf?.customer_dc_date %>
+                    </th>
                 </tr>
                 <tr>
                     <th style="text-align: center; padding-top: 10px;" colspan="2">DELIVERY CHALLAN</th>
@@ -70,16 +83,30 @@
                         style="text-align: left; width: 50%; border-collapse: collapse; 
                         border-right: 2px solid black; vertical-align: baseline; padding-left: 10px; padding-top: 10px;">
                         <p style="margin-bottom: 5px;">To,</p>
-                        <p>M/s.</p>
+                        <p>
+                            M/s. <%= srf?.contact_name %>
+                        </p>
                     </th>
                     <th style="text-align: left; width: 50%; border-collapse: collapse; padding-left: 10px; 
                         padding-top: 10px; padding-bottom: 10px;">
-                        <p style="margin-bottom: 7px;">SRF No.</p>
-                        <p style="margin-bottom: 7px;">SRF Date :</p>
-                        <p style="margin-bottom: 7px;">Customer DC No :</p>
-                        <p style="margin-bottom: 7px;">Customer DC Date:</p>
-                        <p style="margin-bottom: 7px;">Contact Person:</p>
-                        <p>Contact No :</p>
+                        <p style="margin-bottom: 7px;">
+                            SRF No. <%= srf?.srf_number %>
+                        </p>
+                        <p style="margin-bottom: 7px;">
+                            SRF Date: <%= srf?.srf_date %>
+                        </p>
+                        <p style="margin-bottom: 7px;">
+                            Customer DC No: <%= srf?.customer_dc %>
+                        </p>
+                        <p style="margin-bottom: 7px;">
+                            Customer DC Date: <%= srf?.customer_dc_date %>
+                        </p>
+                        <p style="margin-bottom: 7px;">
+                            Contact Person: <%= srf?.contact_name %>
+                        </p>
+                        <p>
+                            Contact No: <%= srf?.contact_number %>
+                        </p>
                     </th>
                 </tr>
             </table>
@@ -105,12 +132,12 @@
                     <th
                         style="text-align: center; width: auto; border-collapse: collapse; 
                         border-right: 2px solid black; vertical-align: middle; padding-bottom: 10px; padding-top: 10px;">
-                        <p>Model /Range</p>
+                        <p>Model</p>
                     </th>
                     <th
                         style="text-align: center; width: auto; border-collapse: collapse; 
                         border-right: 2px solid black; vertical-align: middle; padding-bottom: 10px; padding-top: 10px;">
-                        <p>Serial No / ID No</p>
+                        <p>Serial No.</p>
                     </th>
                     <th
                         style="text-align: left; width: auto; border-collapse: collapse; 
@@ -123,88 +150,69 @@
                         <p>Item Value</p>
                     </th>
                 </tr>
-                <tr>
-                    <th
-                        style="text-align: center; width: auto; border-collapse: collapse; 
-                        border-right: 2px solid black; vertical-align: middle; padding-bottom: 10px; padding-top: 10px;">
-                        <p>-</p>
-                    </th>
-                    <th
-                        style="text-align: center; width: auto; border-collapse: collapse; 
-                        border-right: 2px solid black; vertical-align: middle; padding-bottom: 10px; padding-top: 10px;">
-                        <p>-</p>
-                    </th>
-                    <th style="text-align: center; width: auto; border-collapse: collapse; 
-                        border-right: 2px solid black; vertical-align: middle; padding-bottom: 10px; padding-top: 10px;
-                        padding-left: 5px; padding-right: 5px;">
-                        <p>-</p>
-                    </th>
-                    <th
-                        style="text-align: center; width: auto; border-collapse: collapse; 
-                        border-right: 2px solid black; vertical-align: middle; padding-bottom: 10px; padding-top: 10px;">
-                        <p>-</p>
-                    </th>
-                    <th
-                        style="text-align: center; width: auto; border-collapse: collapse; 
-                        border-right: 2px solid black; vertical-align: middle; padding-bottom: 10px; padding-top: 10px;">
-                        <p>-</p>
-                    </th>
-                    <th
-                        style="text-align: left; width: auto; border-collapse: collapse; 
-                        border-right: 2px solid black; vertical-align: baseline; padding-left: 10px; padding-top: 10px;">
-                        <p>-</p>
-                    </th>
-                    <th
-                        style="text-align: left; width: auto; border-collapse: collapse; 
-                        border-right: 2px solid black; vertical-align: baseline; padding-left: 10px; padding-top: 10px;">
-                        <p>-</p>
-                    </th>
-                </tr>
-                <tr>
-                    <th
-                        style="text-align: center; width: auto; border-collapse: collapse; 
-                                        border-right: 2px solid black; vertical-align: middle; padding-bottom: 10px; padding-top: 10px;">
-                        <p>-</p>
-                    </th>
-                    <th
-                        style="text-align: center; width: auto; border-collapse: collapse; 
-                                        border-right: 2px solid black; vertical-align: middle; padding-bottom: 10px; padding-top: 10px;">
-                        <p>-</p>
-                    </th>
-                    <th style="text-align: center; width: auto; border-collapse: collapse; 
-                                        border-right: 2px solid black; vertical-align: middle; padding-bottom: 10px; padding-top: 10px;
-                                        padding-left: 5px; padding-right: 5px;">
-                        <p>-</p>
-                    </th>
-                    <th
-                        style="text-align: center; width: auto; border-collapse: collapse; 
-                                        border-right: 2px solid black; vertical-align: middle; padding-bottom: 10px; padding-top: 10px;">
-                        <p>-</p>
-                    </th>
-                    <th
-                        style="text-align: center; width: auto; border-collapse: collapse; 
-                                        border-right: 2px solid black; vertical-align: middle; padding-bottom: 10px; padding-top: 10px;">
-                        <p>-</p>
-                    </th>
-                    <th
-                        style="text-align: left; width: auto; border-collapse: collapse; 
-                                        border-right: 2px solid black; vertical-align: baseline; padding-left: 10px; padding-top: 10px;">
-                        <p>-</p>
-                    </th>
-                    <th
-                        style="text-align: left; width: auto; border-collapse: collapse; 
-                                        border-right: 2px solid black; vertical-align: baseline; padding-left: 10px; padding-top: 10px;">
-                        <p>-</p>
-                    </th>
-                </tr>
-                <tr style="border-top: 2px solid black; border-bottom: 2px solid black;">
-                    <th colspan="6" style="border-right: 2px solid black; text-align: right; padding-right: 5px;">
-                        Total
-                    </th>
-                    <th>
-                        7
-                    </th>
-                </tr>
+
+                <% var sl_no=1 ; %>
+                    <% for (let i=0; i < items.length; i++) {%>
+                        <tr>
+                            <th
+                                style="text-align: center; width: auto; border-collapse: collapse; 
+                            border-right: 2px solid black; vertical-align: middle; padding-bottom: 10px; padding-top: 10px;">
+                                <p>
+                                    <%= sl_no+i %>
+                                </p>
+                            </th>
+                            <th style="text-align: center; width: auto; border-collapse: collapse; width: 250px;
+                                border-right: 2px solid black; vertical-align: middle; padding-bottom: 10px; padding-top: 10px;
+                                padding-left: 5px; padding-right: 5px;">
+                                <p>
+                                    <%= items[i].intrument_type.instrument_full_name %>
+                                </p>
+                            </th>
+                            <th style="text-align: center; width: auto; border-collapse: collapse; 
+                                border-right: 2px solid black; vertical-align: middle; padding-bottom: 10px; padding-top: 10px;
+                                padding-left: 5px; padding-right: 5px;">
+                                <p>
+                                    <%= items[i].srf_item_no %>
+                                </p>
+                            </th>
+                            <th
+                                style="text-align: center; width: auto; border-collapse: collapse; 
+                                border-right: 2px solid black; vertical-align: middle; padding-bottom: 10px; padding-top: 10px;">
+                                <p>
+                                    <%= items[i].model %>
+                                </p>
+                            </th>
+                            <th
+                                style="text-align: center; width: auto; border-collapse: collapse; 
+                                border-right: 2px solid black; vertical-align: middle; padding-bottom: 10px; padding-top: 10px;">
+                                <p>
+                                    <%= items[i].serial_no %>
+                                </p>
+                            </th>
+                            <th
+                                style="text-align: center; width: auto; border-collapse: collapse; 
+                                border-right: 2px solid black; vertical-align: middle; padding-left: 10px; padding-top: 10px;">
+                                <p>
+                                    <%= items[i].remarks %>
+                                </p>
+                            </th>
+                            <th
+                                style="text-align: center; width: auto; border-collapse: collapse; 
+                                border-right: 2px solid black; vertical-align: middle; padding-left: 10px; padding-top: 10px;">
+                                <p>-</p>
+                            </th>
+                        </tr>
+                        <% } %>
+
+                            <tr style="border-top: 2px solid black; border-bottom: 2px solid black;">
+                                <th colspan="6"
+                                    style="border-right: 2px solid black; text-align: right; padding-right: 5px;">
+                                    Total
+                                </th>
+                                <th>
+
+                                </th>
+                            </tr>
             </table>
 
             <table style="width: 100%; border-bottom: 2px solid black; border-left: 2px solid black; 
@@ -222,14 +230,20 @@
                     <th
                         style="text-align: left; width: 50%; border-collapse: collapse; 
                         border-right: 2px solid black; vertical-align: baseline; padding-left: 10px; padding-top: 10px;">
-                        <p style="margin-bottom: 5px;">Returned after calibration</p>
-                        <p style="margin-bottom: 5px;">Sent for Repairs & Servicing</p>
-                        <p style="margin-bottom: 5px;">Not For Sale</p>
+                        <p style="margin-bottom: 5px;">
+                            <%= dc_remarks %>
+                        </p>
                     </th>
                     <th style="text-align: left; width: 50%; border-collapse: collapse; padding-left: 10px; 
                         padding-top: 10px; padding-bottom: 10px;">
-                        <p style="margin-bottom: 7px;"> <input type="checkbox" /> Sent for Calibration</p>
-                        <p style="margin-bottom: 7px;"> <input type="checkbox" /> Returnable Material</p>
+                        <p style="margin-bottom: 7px;">
+                            <% if (returnable_material) { %>
+                                <input type="checkbox" checked /> Returnable Material
+                                <% } else{%>
+                                    <input type="checkbox" /> Returnable Material
+                                    <%} %>
+
+                        </p>
                     </th>
                 </tr>
             </table>
@@ -244,11 +258,15 @@
                             <tr>
                                 <td style="border-right: 2px solid black; border-bottom: 2px solid black;
                                     padding-top: 5px; padding-left: 5xp; padding-bottom: 5px; padding-left: 5px;">
-                                    <p>Issue No.</p>
+                                    <p>
+                                        Issue No. <%= srf?.issue_no %>
+                                    </p>
                                 </td>
                                 <td style="border-right: 2px solid black; border-bottom: 2px solid black;
                                     padding-top: 5px; padding-left: 5xp; padding-bottom: 5px; padding-left: 5px;">
-                                    <p>Amend. No.:</p>
+                                    <p>
+                                        Amend. No.: <%= srf?.amend_no %>
+                                    </p>
                                 </td>
                                 <td style="border-right: 2px solid black; border-bottom: 2px solid black;
                                     padding-top: 5px; padding-left: 5xp; padding-bottom: 5px; padding-left: 5px;">
@@ -258,11 +276,15 @@
                             <tr>
                                 <td style="border-right: 2px solid black;
                                     padding-top: 5px; padding-left: 5xp; padding-bottom: 5px; padding-left: 5px;">
-                                    <p>Issue Date</p>
+                                    <p>
+                                        Issue Date: <%= srf?.issue_date %>
+                                    </p>
                                 </td>
                                 <td style="border-right: 2px solid black;
                                     padding-top: 5px; padding-left: 5xp; padding-bottom: 5px; padding-left: 5px;">
-                                    <p>Amend. Date</p>
+                                    <p>
+                                        Amend. Date: <%= srf?.amend_date %>
+                                    </p>
                                 </td>
                                 <td style="border-right: 2px solid black;
                                     padding-top: 5px; padding-left: 5xp; padding-bottom: 5px; padding-left: 5px;">
