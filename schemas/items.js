@@ -4,12 +4,12 @@ const innerschema = {
   type: "object",
   properties: {
     make: {
-      type: "string",
+      type: ["string", "null"]
     },
     model: {
-      type: "string",
+      type: ["string", "null"]
     },
-    serialno: {
+    serial_no: {
       type: "string",
     },
     remarks: {
@@ -20,7 +20,7 @@ const innerschema = {
     },
   },
   required: [
-    "serialno",
+    "serial_no",
     "remarks",
   ],
   additionalProperties: true,

@@ -34,8 +34,8 @@ const customCron = require('./cron');
 const app = express();
 
 // Cron Job Run
-// customCron.sendNotificationMail_1();
-// customCron.sendNotificationMail_2();
+customCron.sendNotificationMail_1();
+customCron.sendNotificationMail_2();
 
 const whitelist = ["http://localhost:5173"];
 

@@ -164,7 +164,7 @@ const addSRFHandler = async (req, res, next) => {
     const items = req.body.items.map((v, i) => ({
 
       srf_id: newSRF.srf_id,
-      srf_item_no: i + 1,
+      srf_item_no: v.srf_item_no,
 
       make: v.make,
       model: v.model,
@@ -1304,6 +1304,7 @@ const addSRFHandler = async (req, res, next) => {
     });
 
     fileName = existingLab?.symbol + "-" + new Date().getTime() + "-";
+    let addedzero;
 
     if (srf.srf_number > 0 && srf.srf_number < 10) {
       addedzero = "0000" + srf.srf_number;
@@ -2313,6 +2314,7 @@ const deleteSRFItem = async (req, res, next) => {
   }
 };
 
+// *** Update Invoice and Send Mail Controller
 const updateInvoiceInfo = async (req, res, next) => {
 
   const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;

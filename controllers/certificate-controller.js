@@ -17,16 +17,9 @@ const sendMail = async (srfItemsQuery, filePath) => {
 
     const { lab, srf } = srfItemsQuery;
 
-    console.log("srf-Items Query");
-
-    console.log("Lab result");
-    console.log(lab);
-
-    console.log("srf result");
-    console.log(srf);
-
     // Connecting to the STMP Server
     const transporter = nodemailer.createTransport({
+      name: "CalibMaster",
       host: lab?.email_smtp_server_host,
       port: lab?.email_smtp_server_port,
       auth: {
@@ -41,8 +34,13 @@ const sendMail = async (srfItemsQuery, filePath) => {
       subject: "Certificate Mail",
       text: "Please find the certificate on the attachment",
       html: "<b>Please find the certificate on the attachment</b>",
+      priority: "high",
       attachments: [
-        { path: filePath }
+        {
+          path: filePath,
+          filename: 'certificate.pdf',
+          contentType: "application/pdf",
+        }
       ]
     });
 

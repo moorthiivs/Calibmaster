@@ -126,3 +126,5 @@ dist
 
 
 ./backup
+./certificates
+./delivery-challan
