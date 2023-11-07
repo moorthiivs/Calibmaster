@@ -91,7 +91,7 @@ app.use("/api/mail", Authorization, mailRoutes);
 
 app.use("/api/excel", excelRoutes);
 
-app.use("/api/pdf", challanRoute);
+app.use("/api/pdf", Authorization, challanRoute);
 
 // app.use("/api/download", Authorization, srfdownloadRoute);
 // app.use("/api/masterlist", Authorization, masterlistRoutes);
