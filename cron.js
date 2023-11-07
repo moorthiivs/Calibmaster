@@ -61,7 +61,7 @@ const sendMail = async (eachData, calibration_remainder) => {
 
 const sendNotificationMail_1 = async (req, res) => {
     try {
-        cron.schedule('*/1 * * * *', async function () {
+        cron.schedule('0 10 * * *', async function () {
             try {
                 let srfItems = await Item.findAll({
                     attributes: [
@@ -149,11 +149,11 @@ const sendNotificationMail_1 = async (req, res) => {
     } catch (err) {
         console.log(err);
     }
-}
+};
 
 const sendNotificationMail_2 = async (req, res) => {
     try {
-        cron.schedule('*/1 * * * *', async function () {
+        cron.schedule('0 10 * * *', async function () {
             try {
                 let srfItems = await Item.findAll({
                     attributes: [
@@ -241,9 +241,9 @@ const sendNotificationMail_2 = async (req, res) => {
     } catch (err) {
         console.log(err);
     }
-}
+};
 
 module.exports = {
     sendNotificationMail_1,
     sendNotificationMail_2
-}
+};
