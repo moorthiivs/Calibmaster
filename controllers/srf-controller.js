@@ -89,7 +89,7 @@ const addSRFHandler = async (req, res, next) => {
 
   // ! SRF Items Validation
   const validitems = itemsSchema(req.body.items);
-  // return res.json({ validitems })
+  // return res.json({ validitems });
 
   if (!validitems) {
     isError = true;
@@ -1239,8 +1239,6 @@ const addSRFHandler = async (req, res, next) => {
   }
 
   let existingLab;
-  let returnable_material = req.body.srf.returnable_material;
-  let dc_remarks = req.body.srf.dc_remarks;
 
   try {
     existingLab = await Lab.findOne({
@@ -1260,37 +1258,6 @@ const addSRFHandler = async (req, res, next) => {
     return errorHandler(error, req, res, next);
   }
 
-  const { BACKEND_SERVER } = process?.env;
-
-  const filePathName = nodePath.resolve(__dirname, '../views/deliverychallan.ejs');
-
-  const htmlString = fs.readFileSync(filePathName).toString();
-
-  let options = {
-    "height": "10.5in",
-    "width": "9in",
-    "paginationOffset": 1,
-    "header": {
-      "height": "25mm",
-      "contents": '<div style="text-align: center;">DELIVERY CHALLAN</div>'
-    },
-    "footer": {
-      "height": "10mm",
-      "contents": {
-        first: '<div style="text-align: center;">{{page}}/{{pages}}</div>',
-        2: '<div style="text-align: center;">{{page}}/{{pages}}</div>',
-        default: `<div style="text-align: center;">
-                        <span style="color: #444;">{{page}}</span>/<span>{{pages}}</span>
-                    </div>`,
-        last: 'Last Page'
-      }
-    }
-  };
-
-  const ejsData = ejs.render(htmlString, { existingLab, BACKEND_SERVER, srf, items, returnable_material, dc_remarks })
-
-  const fileUniqueName = `${new Date().getTime()}.pdf`;
-
   if (existingLab?.sender_email) {
 
     const transporter = nodeMailer.createTransport({
@@ -1303,107 +1270,41 @@ const addSRFHandler = async (req, res, next) => {
       }
     });
 
-    fileName = existingLab?.symbol + "-" + new Date().getTime() + "-";
-    let addedzero;
-
-    if (srf.srf_number > 0 && srf.srf_number < 10) {
-      addedzero = "0000" + srf.srf_number;
-    }
-    if (srf.srf_number > 9 && srf.srf_number < 100) {
-      addedzero = "000" + srf.srf_number;
-    }
-    if (srf.srf_number > 99 && srf.srf_number < 1000) {
-      addedzero = "00" + srf.srf_number;
-    }
-    if (srf.srf_number > 999 && srf.srf_number < 10000) {
-      addedzero = "0" + srf.srf_number;
-    }
-    if (srf.srf_number > 9999 && srf.srf_number < 100000) {
-      addedzero = "" + srf.srf_number;
-    }
-    fileName += addedzero + ".xlsx";
+    fileName = existingLab?.symbol + "-" + new Date().getTime() + ".xlsx";
 
     if (sendsrf) {
-      pdf.create(ejsData, options).toFile(`./delivery-challan/${fileUniqueName}`, async (err, response) => {
-        if (err) throw err;
+      try {
+        const info = await transporter.sendMail({
+          from: existingLab?.contact_email,
+          to: req?.body?.srf?.contact_email,
+          subject: "CalibMaster - New SRF Created " + fileName,
+          html: "<p><b>Please find delivery challan on attachment.</b></p>",
+          priority: "high",
+          attachments: [
+            {
+              filename: fileName,
+              content: buffer,
+            }
+          ]
+        });
 
-        try {
-          const info = await transporter.sendMail({
-            from: existingLab?.contact_email,
-            to: req?.body?.srf?.contact_email,
-            subject: "CalibMaster - New SRF Created " + fileName,
-            html: "<p><b>Please find delivery challan on attachment.</b></p>",
-            priority: "high",
-            attachments: [
-              {
-                filename: fileName,
-                content: buffer,
-              },
-              {
-                path: response.filename,
-                filename: 'delivery-challan.pdf',
-                contentType: "application/pdf",
-              }
-            ]
-          });
-
-          //Returning 200 Response
-          if (isError == false) {
-            let message = `${ip} ${userId} ${sessionId} ${code} ${path} - ${action}`;
-            logger.info(message);
-            res.status(200).json({
-              status: "SUCCESS",
-              code: 200,
-              message: "SRF Added Successfully",
-            });
-          }
-          console.log(info);
-        } catch (err) {
-          console.log(err);
-          const error = new Error("Error when sending the mail");
-          error.code = 500;
-          return errorHandler(error, req, res, next);
-        }
-      });
-    } else {
-      pdf.create(ejsData, options).toFile(`./delivery-challan/${fileUniqueName}`, async (err, response) => {
-        if (err) throw err;
-
-        try {
-          const info = await transporter.sendMail({
-            from: existingLab?.contact_email,
-            to: req?.body?.srf?.contact_email,
-            subject: "CalibMaster - New SRF Created",
-            html: "<p><b>Please find delivery challan on attachment.</b></p>",
-            priority: "high",
-            attachments: [
-              {
-                path: response.filename,
-                filename: 'delivery-challan.pdf',
-                contentType: "application/pdf",
-              }
-            ]
-          });
-
-          //Returning 200 Response
-          if (isError == false) {
-            let message = `${ip} ${userId} ${sessionId} ${code} ${path} - ${action}`;
-            logger.info(message);
-            res.status(200).json({
-              status: "SUCCESS",
-              code: 200,
-              message: "SRF Added Successfully",
-            });
-          }
-          console.log(info);
-        } catch (err) {
-          console.log(err);
-          const error = new Error("Error when sending the mail");
-          error.code = 500;
-          return errorHandler(error, req, res, next);
-        }
-      });
+        console.log(info);
+      } catch (err) {
+        console.log(err);
+        const error = new Error("Error when sending the mail");
+        error.code = 500;
+        return errorHandler(error, req, res, next);
+      }
     }
+  }
+
+  //Returning 200 Response
+  if (isError == false) {
+    return res.status(200).json({
+      status: "SUCCESS",
+      code: 200,
+      message: "SRF Added Successfully",
+    });
   }
 };
 
