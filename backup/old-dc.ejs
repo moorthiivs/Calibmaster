@@ -30,12 +30,6 @@
             margin-bottom: 3px;
             font-size: 16px;
         }
-
-        @media print {
-            .breakDiv {
-                break-inside: avoid;
-            }
-        }
     </style>
 </head>
 
@@ -43,7 +37,7 @@
 
     <div class="container">
 
-        <div class="header" style="margin-bottom: 15px;">
+        <div class="header" style="margin-bottom: 20px;">
             <div class="leftH" style="float: left;">
                 <p>
                     <%= existingLab.address1 %>
@@ -57,22 +51,28 @@
                 <p>
                     Telephone: <%= existingLab.contact_number1 %>; e-mail: <%= existingLab.contact_email %>
                 </p>
+                <p><b>GST No.: <%= existingLab.gst_number %></b></p>
             </div>
             <div class="rightH" style="float: right; text-align: right;">
-                <img src="http://localhost:5000/images/339326.png" alt="Logo" style="width: 100px;" />
+                <img src="<%= BACKEND_SERVER %>/images/<%= existingLab.brand_logo_filename %>"
+                    alt="<%= existingLab.brand_logo_filename %>" style="width: 100px;" />
             </div>
             <div class="spacer" style="clear: both;"></div>
         </div>
-
-        <p><b>GST No.: <%= existingLab.gst_number %></b></p>
 
         <div class="mainSection" style="clear:both;">
 
             <table style="width: 100%; border: 2px solid black;">
                 <tr>
-                    <th style="text-align: center; padding-top: 10px;" colspan="2">
-                        <u>DELIVERY CHALLAN</u>
+                    <th style="text-align: left; padding-top: 5px; padding-left: 10px;">
+                        DC No.:<%= srf?.customer_dc %>
                     </th>
+                    <th style="text-align: right; padding-top: 5px; padding-right: 10px;">
+                        DC Date: <%= srf?.customer_dc_date %>
+                    </th>
+                </tr>
+                <tr>
+                    <th style="text-align: center; padding-top: 10px;" colspan="2">DELIVERY CHALLAN</th>
                 </tr>
             </table>
 
@@ -90,16 +90,16 @@
                     <th style="text-align: left; width: 50%; border-collapse: collapse; padding-left: 10px; 
                         padding-top: 10px; padding-bottom: 10px;">
                         <p style="margin-bottom: 7px;">
-                            DC No: <%= srf?.srf_number %>
-                        </p>
-                        <p style="margin-bottom: 7px;">
-                            DC Date: <%= srf?.customer_dc %>
-                        </p>
-                        <p style="margin-bottom: 7px;">
                             SRF No. <%= srf?.srf_number %>
                         </p>
                         <p style="margin-bottom: 7px;">
                             SRF Date: <%= srf?.srf_date %>
+                        </p>
+                        <p style="margin-bottom: 7px;">
+                            Customer DC No: <%= srf?.customer_dc %>
+                        </p>
+                        <p style="margin-bottom: 7px;">
+                            Customer DC Date: <%= srf?.customer_dc_date %>
                         </p>
                         <p style="margin-bottom: 7px;">
                             Contact Person: <%= srf?.contact_name %>
@@ -132,22 +132,22 @@
                     <th
                         style="text-align: center; width: auto; border-collapse: collapse; 
                         border-right: 2px solid black; vertical-align: middle; padding-bottom: 10px; padding-top: 10px;">
-                        <p>Make/Model</p>
+                        <p>Model</p>
                     </th>
                     <th
                         style="text-align: center; width: auto; border-collapse: collapse; 
                         border-right: 2px solid black; vertical-align: middle; padding-bottom: 10px; padding-top: 10px;">
-                        <p>Serial No</p>
-                    </th>
-                    <th
-                        style="text-align: left; width: auto; border-collapse: collapse; 
-                        border-right: 2px solid black; vertical-align: baseline; padding-left: 10px; padding-top: 10px;">
-                        <p>ID No.</p>
+                        <p>Serial No.</p>
                     </th>
                     <th
                         style="text-align: left; width: auto; border-collapse: collapse; 
                         border-right: 2px solid black; vertical-align: baseline; padding-left: 10px; padding-top: 10px;">
                         <p>Remarks</p>
+                    </th>
+                    <th
+                        style="text-align: left; width: auto; border-collapse: collapse; 
+                        border-right: 2px solid black; vertical-align: baseline; padding-left: 10px; padding-top: 10px;">
+                        <p>Item Value</p>
                     </th>
                 </tr>
 
@@ -156,7 +156,7 @@
                         <tr>
                             <th
                                 style="text-align: center; width: auto; border-collapse: collapse; 
-                                border-right: 2px solid black; vertical-align: middle; padding-bottom: 10px; padding-top: 10px;">
+                            border-right: 2px solid black; vertical-align: middle; padding-bottom: 10px; padding-top: 10px;">
                                 <p>
                                     <%= sl_no+i %>
                                 </p>
@@ -177,14 +177,14 @@
                             </th>
                             <th
                                 style="text-align: center; width: auto; border-collapse: collapse; 
-                                    border-right: 2px solid black; vertical-align: middle; padding-bottom: 10px; padding-top: 10px;">
+                                border-right: 2px solid black; vertical-align: middle; padding-bottom: 10px; padding-top: 10px;">
                                 <p>
-                                    <%= items[i].make %>/<%= items[i].model %>
+                                    <%= items[i].model %>
                                 </p>
                             </th>
                             <th
                                 style="text-align: center; width: auto; border-collapse: collapse; 
-                                    border-right: 2px solid black; vertical-align: middle; padding-bottom: 10px; padding-top: 10px;">
+                                border-right: 2px solid black; vertical-align: middle; padding-bottom: 10px; padding-top: 10px;">
                                 <p>
                                     <%= items[i].serial_no %>
                                 </p>
@@ -193,15 +193,13 @@
                                 style="text-align: center; width: auto; border-collapse: collapse; 
                                 border-right: 2px solid black; vertical-align: middle; padding-left: 10px; padding-top: 10px;">
                                 <p>
-                                    ---
+                                    <%= items[i].remarks %>
                                 </p>
                             </th>
                             <th
                                 style="text-align: center; width: auto; border-collapse: collapse; 
                                 border-right: 2px solid black; vertical-align: middle; padding-left: 10px; padding-top: 10px;">
-                                <p>
-                                    <%= items[i].remarks %>
-                                </p>
+                                <p>-</p>
                             </th>
                         </tr>
                         <% } %>
@@ -220,38 +218,9 @@
             <table style="width: 100%; border-bottom: 2px solid black; border-left: 2px solid black; 
                 border-right: 2px solid black; border-collapse: collapse;">
                 <tr>
-                    <td style="padding-left: 0; padding-top: 50px; border-right: 2px solid black; 
-                        text-align: center; width: 45%;">
+                    <td style="padding-left: 10px; padding-top: 10px; padding-bottom: 40px;">
                         Name & Signature of the CSD
                     </td>
-                    <td style="padding-left: 0; padding-top: 10px; padding-bottom: 0; width: 55%;">
-                        <table style="width: 100%;">
-                            <tr>
-                                <td style="text-align: center; padding-bottom: 50px;">
-                                    <p>RECEIVED THE ABOVE ITEMS IN GOOD CONDITION.</p>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td style="text-align: center;">
-                                    Name & Signature of the Customer
-                                </td>
-                            </tr>
-                        </table>
-                    </td>
-                </tr>
-            </table>
-
-            <table style="width: 100%; border-bottom: 2px solid black; border-left: 2px solid black; 
-                    border-right: 2px solid black; border-collapse: collapse;">
-                <tr>
-                    <th style="text-align: left; width: 50%; border-collapse: collapse; 
-                        border-right: 2px solid black; vertical-align: baseline; padding-left: 10px; 
-                        padding-top: 10px; padding-bottom: 10px;">
-                        <p style="text-align: left;">REMARK: If any discrepancy found ,vendor is to revert back within
-                            2 working days, else it would be deemed correct & further would not be entertained after 2
-                            working days.
-                        </p>
-                    </th>
                 </tr>
             </table>
 
@@ -261,43 +230,20 @@
                     <th
                         style="text-align: left; width: 50%; border-collapse: collapse; 
                         border-right: 2px solid black; vertical-align: baseline; padding-left: 10px; padding-top: 10px;">
-                        <p style="margin-bottom: 7px;">
-                            <% if (returnAfterCalibration) { %>
-                                <input type="checkbox" checked />Returned after calibration
-                                <% } else{%>
-                                    <input type="checkbox" /> Returned after calibration
-                                    <%} %>
+                        <p style="margin-bottom: 5px;">
+                            <%= dc_remarks %>
                         </p>
-                        <p style="margin-bottom: 7px;">
-                            <% if (sendForRepairs) { %>
-                                <input type="checkbox" checked /> Sent for Repairs & Servicing
-                                <% } else{%>
-                                    <input type="checkbox" /> Sent for Repairs & Servicing
-                                    <%} %>
-                        </p>
-                        <p style="margin-bottom: 7px;">
-                            <% if (notForSale) { %>
-                                <input type="checkbox" checked /> Not For Sale
-                                <% } else{%>
-                                    <input type="checkbox" /> Not For Sale
-                                    <%} %>
-                        </p>
+                        <p style="margin-bottom: 5px;">Not For Sale</p>
                     </th>
                     <th style="text-align: left; width: 50%; border-collapse: collapse; padding-left: 10px; 
                         padding-top: 10px; padding-bottom: 10px;">
                         <p style="margin-bottom: 7px;">
-                            <% if (sendForCalibration) { %>
-                                <input type="checkbox" checked /> Sent for Calibration
-                                <% } else{%>
-                                    <input type="checkbox" /> Sent for Calibration
-                                    <%} %>
-                        </p>
-                        <p style="margin-bottom: 7px;">
-                            <% if (returnableMaterial) { %>
+                            <% if (returnable_material) { %>
                                 <input type="checkbox" checked /> Returnable Material
                                 <% } else{%>
                                     <input type="checkbox" /> Returnable Material
                                     <%} %>
+
                         </p>
                     </th>
                 </tr>
@@ -343,14 +289,12 @@
                                 </td>
                                 <td style="border-right: 2px solid black;
                                     padding-top: 5px; padding-left: 5xp; padding-bottom: 5px; padding-left: 5px;">
-                                    <p>TC-FFC-002</p>
+                                    --
                                 </td>
                             </tr>
                         </table>
                     </td>
-                    <td style="text-align: center;">
-                        <p><b>TestCAL</b></p>
-                    </td>
+                    <td style="text-align: center;">------</td>
                 </tr>
             </table>
         </div>

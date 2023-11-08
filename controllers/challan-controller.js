@@ -18,8 +18,11 @@ const generate = async (req, res, next) => {
     try {
 
         let existingLab, srf, items;
-        let returnable_material = true;
-        let dc_remarks = "Sent for Calibration";
+        let returnAfterCalibration = false;
+        let sendForRepairs = false;
+        let notForSale = true;
+        let sendForCalibration = true;
+        let returnableMaterial = false;
 
         try {
             existingLab = await Lab.findOne({
@@ -120,10 +123,6 @@ const generate = async (req, res, next) => {
             "height": "10.5in",
             "width": "9in",
             "paginationOffset": 1,
-            "header": {
-                "height": "25mm",
-                "contents": '<div style="text-align: center;">DELIVERY CHALLAN</div>'
-            },
             "footer": {
                 "height": "10mm",
                 "contents": {
@@ -137,12 +136,17 @@ const generate = async (req, res, next) => {
             }
         };
 
-        const ejsData = ejs.render(htmlString, { existingLab, BACKEND_SERVER, srf, items, returnable_material, dc_remarks })
+        const ejsData = ejs.render(htmlString, {
+            existingLab, BACKEND_SERVER, srf, items,
+            returnAfterCalibration, sendForRepairs, notForSale, sendForCalibration, returnableMaterial
+        })
 
         const fileUniqueName = `${new Date().getTime()}.pdf`;
 
         pdf.create(ejsData, options).toFile(`./delivery-challan/${fileUniqueName}`, async (err, response) => {
             if (err) throw err;
+
+            return res.json({ response });
 
             const nodemailer = require("nodemailer");
 
@@ -165,8 +169,6 @@ const generate = async (req, res, next) => {
                     }
                 ]
             });
-
-            return res.json({ msg: info });
         });
     } catch (error) {
         console.log(error);
@@ -175,7 +177,10 @@ const generate = async (req, res, next) => {
 
 const sendDeliveryChallan = async (req, res, next) => {
 
-    const { srf_id, srf_item_id, lab_id } = req.body;
+    const {
+        srf_id, srf_item_id, lab_id,
+        returnAfterCalibration, sendForRepairs, notForSale, sendForCalibration, returnableMaterial
+    } = req.body;
 
     if (!srf_id || !srf_item_id || !lab_id) {
         let action = "All fields are required";
@@ -185,8 +190,6 @@ const sendDeliveryChallan = async (req, res, next) => {
     }
 
     let existingLab, srf, items;
-    let returnable_material = req?.body?.srf?.returnable_material;
-    let dc_remarks = req?.body?.srf?.dc_remarks;
 
     try {
         srf = await SRF.findOne({
@@ -286,10 +289,6 @@ const sendDeliveryChallan = async (req, res, next) => {
         "height": "10.5in",
         "width": "9in",
         "paginationOffset": 1,
-        "header": {
-            "height": "25mm",
-            "contents": '<div style="text-align: center;">DELIVERY CHALLAN</div>'
-        },
         "footer": {
             "height": "10mm",
             "contents": {
@@ -303,7 +302,10 @@ const sendDeliveryChallan = async (req, res, next) => {
         }
     };
 
-    const ejsData = ejs.render(htmlString, { existingLab, BACKEND_SERVER, srf, items, returnable_material, dc_remarks });
+    const ejsData = ejs.render(htmlString, {
+        existingLab, BACKEND_SERVER, srf, items,
+        returnAfterCalibration, sendForRepairs, notForSale, sendForCalibration, returnableMaterial
+    });
 
     const fileUniqueName = `${new Date().getTime()}.pdf`;
 
