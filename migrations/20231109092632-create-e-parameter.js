@@ -9,22 +9,25 @@ module.exports = {
         primaryKey: true,
         type: Sequelize.INTEGER
       },
+
       issue_no: {
         type: Sequelize.STRING,
         allowNull: false,
       },
       issue_date: {
-        type: Sequelize.STRING,
+        type: Sequelize.DATE,
         allowNull: false,
       },
+
       amend_no: {
         type: Sequelize.STRING,
         allowNull: false,
       },
       amend_date: {
-        type: Sequelize.STRING,
+        type: Sequelize.DATE,
         allowNull: false,
       },
+
       lab_id: {
         type: Sequelize.STRING,
         allowNull: false,

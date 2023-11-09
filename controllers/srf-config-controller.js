@@ -92,7 +92,7 @@ const editConfig = async (req, res, next) => {
         const { issue_no, issue_date, amend_no, amend_date, lab_id } = req.body;
 
         const fetchSRFConfig = await EParameter.findOne({
-            where: { lab_id }
+            where: { lab_id: `'${lab_id}'` }
         });
 
         if (fetchSRFConfig) {
@@ -110,7 +110,7 @@ const editConfig = async (req, res, next) => {
                     updated_by_login_name: fetchCreater.name,
                     updated_by_user_id: req.userId
                 },
-                { where: { lab_id } }
+                { where: { lab_id: `'${lab_id}'` } }
             )
             return res.status(200).json({
                 msg: true, response: "Record updated successfully!!!"
