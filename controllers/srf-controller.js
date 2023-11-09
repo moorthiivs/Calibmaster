@@ -1302,7 +1302,7 @@ const addSRFHandler = async (req, res, next) => {
   if (isError == false) {
     return res.status(200).json({
       status: "SUCCESS",
-      code: 200,
+      code: 201,
       message: "SRF Added Successfully",
     });
   }
@@ -2218,7 +2218,6 @@ const deleteSRFItem = async (req, res, next) => {
 // *** Update Invoice and Send Mail Controller
 const updateInvoiceInfo = async (req, res, next) => {
 
-  const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
   let code = 200;
   const path = "/api/srf/updateinvoice";
   let action = "Updating SRF Item Invoice Information!!";
@@ -2231,7 +2230,7 @@ const updateInvoiceInfo = async (req, res, next) => {
   if (!req.body || !req.body.items || !req.body.srfId || !req.body.invoiceinfo) {
     isError = true;
     code = 400;
-    action = "Invalid Request Params!!";
+    action = "All Fiels are required.";
     const error = new Error(action);
     error.code = code;
     error.path = path;
@@ -2250,21 +2249,6 @@ const updateInvoiceInfo = async (req, res, next) => {
     response.data = new Buffer(matches[2], 'base64');
 
     return response;
-  }
-
-  //SRF Items Validation
-  const validitem = itemsSchema(req.body.items);
-
-  // return res.json({ validitem });
-
-  if (!validitem) {
-    isError = true;
-    code = 400;
-    action = "Invalid SRF Item!!";
-    const error = new Error(action);
-    error.code = code;
-    error.path = path;
-    return errorHandler(error, req, res, next);
   }
 
   const { file } = req.body

@@ -3,6 +3,7 @@ const bodyParser = require("body-parser");
 const usersRoutes = require("./routes/users-routes");
 const heartbeatRoute = require("./routes/heartbeat-route");
 const companyRoutes = require("./routes/company-routes");
+const srfConfigRoutes = require("./routes/srf-config-routes");
 const srfRoutes = require("./routes/srf-routes");
 const labRoutes = require("./routes/lab-routes");
 const srfdownloadRoute = require("./routes/srfdownload-routes");
@@ -20,6 +21,8 @@ const calibrationDateRoutes = require("./routes/calibation-routes");
 const mailRoutes = require("./routes/mail-routes");
 const excelRoutes = require("./routes/excel-routes");
 const challanRoute = require("./routes/challan-route");
+
+const srfSearchRoutes = require("./routes/srf-search-routes");
 
 const testRoutes = require("./routes/test-route");
 
@@ -81,6 +84,7 @@ app.use("/api/instrument-types", instrumentTypes);
 app.use("/api/company", Authorization, companyRoutes);
 app.use("/api/customers", customersRoutes);
 
+app.use("/api/srf-config", Authorization, srfConfigRoutes);
 app.use("/api/srf", Authorization, srfRoutes);
 
 app.use("/api/calibration-date", Authorization, calibrationDateRoutes);
@@ -92,6 +96,8 @@ app.use("/api/mail", Authorization, mailRoutes);
 app.use("/api/excel", excelRoutes);
 
 app.use("/api/pdf", Authorization, challanRoute);
+
+app.use("/api/srf-search", Authorization, srfSearchRoutes);
 
 // app.use("/api/download", Authorization, srfdownloadRoute);
 // app.use("/api/masterlist", Authorization, masterlistRoutes);
