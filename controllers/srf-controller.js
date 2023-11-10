@@ -1958,9 +1958,9 @@ const updateCalInfo = async (req, res, next) => {
     try {
       const item = await Item.findOne({
         where: {
-          srf_item_id: id,
-          rstatus: 1,
-          status: "Calibrated",
+          srf_item_id: "129",
+          rstatus: "1",
+          // status: "Not Calibrated",
         },
       });
 
@@ -1972,6 +1972,7 @@ const updateCalInfo = async (req, res, next) => {
         });
       }
     } catch (err) {
+      console.log("error generating");
       isError = true;
       code = 500;
       action = "Internal Server Error!!";
@@ -2010,6 +2011,7 @@ const updateCalInfo = async (req, res, next) => {
     }
   }
 
+
   // TODO: calculate calibration_due_date = calibration_done_date + frequency_in_months [calculate in srf-items table]
   try {
     // *** frequency_in_months from srf_lists table ***
@@ -2024,8 +2026,12 @@ const updateCalInfo = async (req, res, next) => {
       reminder_frequency = 0
     }
 
-    const calibration_done_date = new Date(date)
-    const calibration_due_date = new Date(calibration_done_date.setMonth(calibration_done_date.getMonth() + parseInt(reminder_frequency)));
+    let calibration_due_date;
+
+    if (mode == 1 || mode == 3) {
+      const calibration_done_date = new Date(date)
+      calibration_due_date = new Date(calibration_done_date.setMonth(calibration_done_date.getMonth() + parseInt(reminder_frequency)));
+    }
 
     await Item.update(
       {
@@ -2274,7 +2280,7 @@ const updateInvoiceInfo = async (req, res, next) => {
     ids.push(v.srf_item_id);
   });
 
-  const { invoice_no, invoice_date, invoice_due_date, status } = req.body.invoiceinfo;
+  const { invoice_no, invoice_date, invoice_due_date, status, labId } = req.body.invoiceinfo;
 
   try {
     const updateQuery = await Item.update(
@@ -2284,7 +2290,6 @@ const updateInvoiceInfo = async (req, res, next) => {
       },
       { where: { srf_item_id: ids, rstatus: 1 } }
     );
-
 
     // TODO: Fire the mail
     let filePath = nodePath.join(__dirname, '../' + 'public/invoices' + '/' + mainLogoImgFileName);
@@ -2318,7 +2323,7 @@ const updateInvoiceInfo = async (req, res, next) => {
     const { msg, statusCode } = await sendMailHandler(srfItemsQuery, filePath);
 
     let items = await Item.findAll({
-      where: { lab_id: 1, rstatus: 1 },
+      where: { lab_id: labId, rstatus: 1 },
       include: ["intrument_type"],
       order: [["srf_item_id", "ASC"]]
     });
@@ -2343,49 +2348,6 @@ const updateInvoiceInfo = async (req, res, next) => {
     error.path = path;
     return errorHandler(error, req, res, next);
   }
-
-  // ! Getting SRF Items
-  // let items;
-  // try {
-  //   items = await Item.findAll({
-  //     where: { srfId: req.body.srfId, rstatus: 1 },
-  //     include: [
-  //       {
-  //         model: Masterlist,
-  //         as: "masterlist",
-  //         attributes: {
-  //           exclude: ["createdAt", "updatedAt", "id", "rstatus", "labId"],
-  //         },
-  //       },
-  //     ],
-  //     attributes: {
-  //       exclude: ["createdAt", "updatedAt"],
-  //     },
-  //     order: [["sno", "ASC"]],
-  //   });
-  // } catch (err) {
-  //   isError = true;
-  //   code = 500;
-  //   action = "Internal Server Error!!!";
-  //   const error = new Error(action);
-  //   error.code = code;
-  //   error.path = path;
-  //   return errorHandler(error, req, res, next);
-  // }
-
-  //Returning 200 Response
-  // if (isError == false) {
-  //   let message = `${ip} ${userId} ${sessionId} ${code} ${path} - ${action}`;
-  //   logger.info(message);
-  //   res.status(200).json({
-  //     status: "SUCCESS",
-  //     code: 200,
-  //     message: "SRF Items Invoice information Updated Successfully",
-  //     data: {
-  //       items
-  //     }
-  //   });
-  // }
 };
 
 const updatePaymentInfo = async (req, res, next) => {

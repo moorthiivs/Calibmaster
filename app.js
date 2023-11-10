@@ -23,6 +23,7 @@ const excelRoutes = require("./routes/excel-routes");
 const challanRoute = require("./routes/challan-route");
 
 const srfSearchRoutes = require("./routes/srf-search-routes");
+const srfStatushRoutes = require("./routes/srf-status-routes");
 
 const testRoutes = require("./routes/test-route");
 
@@ -98,6 +99,8 @@ app.use("/api/excel", excelRoutes);
 app.use("/api/pdf", Authorization, challanRoute);
 
 app.use("/api/srf-search", Authorization, srfSearchRoutes);
+
+app.use("/api/srf-status", Authorization, srfStatushRoutes);
 
 // app.use("/api/download", Authorization, srfdownloadRoute);
 // app.use("/api/masterlist", Authorization, masterlistRoutes);
