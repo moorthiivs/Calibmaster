@@ -1300,7 +1300,7 @@ const addSRFHandler = async (req, res, next) => {
 
   //Returning 200 Response
   if (isError == false) {
-    return res.status(200).json({
+    return res.status(201).json({
       status: "SUCCESS",
       code: 201,
       message: "SRF Added Successfully",
@@ -1501,20 +1501,7 @@ const getsrfbyId = async (req, res, next) => {
   try {
     items = await Item.findAll({
       where: { srf_id: req.body.srfId, rstatus: 1 },
-      include: ["intrument_type"],
-      // include: [
-      //   {
-      //     model: Masterlist,
-      //     as: "masterlist",
-      //     attributes: {
-      //       exclude: ["createdAt", "updatedAt", "id", "rstatus", "labId"],
-      //     },
-      //   },
-      // ],
-      // attributes: {
-      //   exclude: ["createdAt", "updatedAt"],
-      // },
-      // order: [["sno", "ASC"]],
+      include: ["intrument_type"]
     });
   } catch (err) {
     isError = true;
@@ -1580,114 +1567,93 @@ const getSrfItems = async (req, res, next) => {
 }
 
 const addItemtoSRF = async (req, res, next) => {
-  const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
-  let code = 200;
-  const path = "/api/srf/additemtosrf";
-  let action = "Adding Item to SRF!!";
-  let userId = req.userId;
-  const sessionId = req.sessionId;
-  let isError = false;
-  const department = req.department;
-  let srf;
-  //console.log(req.body);
+
   if (!req.body || !req.body.srfId || !req.body.item) {
-    isError = true;
-    code = 400;
-    action = "Invalid Request Params!!";
-    const error = new Error(action);
-    error.code = code;
-    error.path = path;
+    const error = new Error("Invalid Request Params!!");
+    error.code = 400;
     return errorHandler(error, req, res, next);
   }
+
+  let srf;
+  const { labId, srfId } = req.body;
+
   try {
     srf = await SRF.findOne({
-      where: { id: req.body.srfId, rstatus: 1 },
+      where: { srf_id: srfId, rstatus: 1 }
     });
   } catch (err) {
-    isError = true;
-    code = 500;
-    action = "Internal Server Error!!";
-    const error = new Error(action);
-    error.code = code;
-    error.path = path;
+    const error = new Error("Failed to fetch SRF");
+    error.code = 500;
     return errorHandler(error, req, res, next);
   }
+
   if (!srf) {
-    isError = true;
-    code = 500;
-    action = "SRF not Found!!!";
-    const error = new Error(action);
-    error.code = code;
-    error.path = path;
+    const error = new Error("SRF not Found!!!");
+    error.code = 500;
     return errorHandler(error, req, res, next);
   }
+
   //SRF Items Validation
-  const validitem = itemSchema(req.body.item);
-  if (!validitem) {
-    isError = true;
-    code = 400;
-    action = "Invalid SRF Item!!";
-    const error = new Error(action);
-    error.code = code;
-    error.path = path;
-    return errorHandler(error, req, res, next);
-  }
+  // const validitem = itemSchema(req.body.item);
+  // if (!validitem) {
+  //   const error = new Error("Invalid SRF Item!!");
+  //   error.code = 400;
+  //   return errorHandler(error, req, res, next);
+  // }
+
+  // Fetch user on database
+  const fetchCreater = await User.findOne({
+    where: { id: req.userId }
+  });
+
   try {
     const item = req.body.item;
+    item.srf_id = srfId;
     item.status = "Not Calibrated";
     item.rstatus = 1;
-    const newitem = new Item(item);
+    item.lab_id = labId;
+
+    item.created_timestamp = Date.now();
+    item.created_by_login_name = fetchCreater.name;
+    item.created_by_user_id = req.userId;
+
+    item.updated_timestamp = Date.now();
+    item.updated_by_login_name = fetchCreater.name;
+    item.updated_by_user_id = req.userId;
+
+    let newitem = new Item(item);
     await newitem.save();
+
   } catch (err) {
-    isError = true;
-    code = 500;
-    action = "Internal Server Error!!" + err;
-    const error = new Error(action);
-    error.code = code;
-    error.path = path;
+    console.log(err);
+    const error = new Error("Failed to create srf-item");
+    error.code = 500;
     return errorHandler(error, req, res, next);
   }
+
   //Getting SRF Items
   let items;
   try {
     items = await Item.findAll({
-      where: { srfId: req.body.srfId, rstatus: 1 },
-      include: [
-        {
-          model: Masterlist,
-          as: "masterlist",
-          attributes: {
-            exclude: ["createdAt", "updatedAt", "id", "rstatus", "labId"],
-          },
-        },
-      ],
-      attributes: {
-        exclude: ["createdAt", "updatedAt"],
-      },
-      order: [["sno", "ASC"]],
+      where: { lab_id: labId, rstatus: 1 },
+      include: ["intrument_type"],
+      order: [["srf_item_id", "ASC"]]
     });
   } catch (err) {
-    isError = true;
-    code = 500;
-    action = "Internal Server Error!!" + err;
-    const error = new Error(action);
-    error.code = code;
-    error.path = path;
+    const error = new Error("Failed to find srf-items");
+    error.code = 500;
     return errorHandler(error, req, res, next);
   }
+
   //Returning 200 Response
-  if (isError == false) {
-    let message = `${ip} ${userId} ${sessionId} ${code} ${path} - ${action}`;
-    logger.info(message);
-    res.status(code).json({
-      status: "SUCCESS",
-      code: code,
-      message: "SRF Items Fetched Successfully",
-      data: {
-        items,
-      },
-    });
-  }
+  return res.status(200).json({
+    status: "SUCCESS",
+    code: 200,
+    message: "SRF Items Fetched Successfully",
+    data: {
+      items,
+    },
+  });
 };
 
 const updateSRFItem = async (req, res, next) => {

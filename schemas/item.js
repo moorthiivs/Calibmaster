@@ -3,48 +3,36 @@ const ajvInstance = require("../utils/ajv-instance");
 const schema = {
   type: "object",
   properties: {
-    description: {
+    srf_item_no: {
       type: "string",
     },
     make: {
-      type: "string",
+      type: ["string", "null"]
     },
     model: {
+      type: ["string", "null"]
+    },
+    serial_no: {
       type: "string",
     },
-    range_min: {
-      type: "number",
-    },
-    range_max: {
-      type: "number",
-    },
-    range_unit: {
-      type: "string",
-    },
-    serialno: {
-      type: "string",
-    },
-    idno: {
-      type: "string",
+    identification_details: {
+      type: ["string", "null"]
     },
     remarks: {
       type: "string",
     },
-    ulrno: {
-      type: "string",
+    url_number: {
+      type: ["string", "null"]
     },
+    intrument_type_id: {
+      type: "string"
+    }
   },
   required: [
-    "description",
-    "make",
-    "model",
-    "range_min",
-    "range_max",
-    "range_unit",
-    "serialno",
-    "idno",
+    "srf_item_no",
+    "serial_no",
     "remarks",
-    "ulrno",
+    "intrument_type_id"
   ],
   additionalProperties: true,
 };
