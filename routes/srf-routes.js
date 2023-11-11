@@ -38,6 +38,7 @@ router.post("/updatepayment", srfController.updatePaymentInfo);
 
 router.post("/getfilteredsrfitems", srfController.getfilteredSRFItems);
 
+// *** Select SRF-Items Belongs to current Lab ***
 router.post("/getSrfItems", srfController.getSrfItems);
 
 router.post("/fetchSrfItem", srfController.fetchSrfItem);
