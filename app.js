@@ -94,7 +94,7 @@ app.use("/api/certificate", certificateRoutes);
 
 app.use("/api/mail", Authorization, mailRoutes);
 
-app.use("/api/excel", excelRoutes);
+app.use("/api/excel", Authorization, excelRoutes);
 
 app.use("/api/pdf", Authorization, challanRoute);
 

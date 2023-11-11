@@ -5,6 +5,6 @@ const { exportExcel, downloadExcel } = require("../controllers/excel-controller"
 
 router.get("/export-excel", exportExcel);
 
-router.get("/download-excel", downloadExcel);
+router.post("/download-excel", downloadExcel);
 
 module.exports = router;

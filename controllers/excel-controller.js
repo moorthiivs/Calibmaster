@@ -1153,13 +1153,21 @@ const exportExcel = async (req, res, next) => {
 
 const downloadExcel = async (req, res, next) => {
 
+    if (!req.body || !req.body.srf_id) {
+        const error = new Error("Invalid Request Params!!");
+        error.code = 500;
+        return errorHandler(error, req, res, next);
+    }
+
     let fileName = "srf.xlsx";
     let lab, srf, items;
+
+    const { srf_id } = req.body;
 
     try {
         srf = await SRF.findOne({
             where: {
-                srf_id: 3,
+                srf_id: srf_id,
                 rstatus: 1
             },
             include: [
@@ -1193,10 +1201,16 @@ const downloadExcel = async (req, res, next) => {
         return errorHandler(error, req, res, next);
     }
 
+    if (!srf) {
+        const error = new Error("SRF not Found!!!");
+        error.code = 500;
+        return errorHandler(error, req, res, next);
+    }
+
     try {
         items = await Item.findAll({
             where: {
-                srf_id: 3,
+                srf_id: srf?.srf_id,
                 rstatus: 1,
             },
             include: [
@@ -1222,6 +1236,12 @@ const downloadExcel = async (req, res, next) => {
     } catch (err) {
         console.log(err);
         const error = new Error("Error on getting parent srf");
+        error.code = 500;
+        return errorHandler(error, req, res, next);
+    }
+
+    if (!items) {
+        const error = new Error("SRF Items Not Found!!!");
         error.code = 500;
         return errorHandler(error, req, res, next);
     }
@@ -1718,7 +1738,11 @@ const downloadExcel = async (req, res, next) => {
         bottom: { style: "thin" },
         right: { style: "thin" },
     };
-    worksheet.getCell("A48").value = "5.0.   Agreed Date of Completion.: " + srf?.agreed_completion_date?.split("-").reverse().join("-");
+    if (srf?.agreed_completion_date) {
+        worksheet.getCell("A48").value = "5.0.   Agreed Date of Completion.: " + srf?.agreed_completion_date?.split("-").reverse().join("-");
+    } else {
+        worksheet.getCell("A48").value = "5.0.   Agreed Date of Completion.: ";
+    }
     worksheet.mergeCells("A49:H49");
     worksheet.getCell("A49").font = { name: "Calibri", size: 12, bold: true };
     worksheet.getCell("A49").border = {
@@ -2180,7 +2204,6 @@ const downloadExcel = async (req, res, next) => {
         worksheet.getCell("F117").font = { name: "Calibri", size: 12 };
     }
 
-
     res.setHeader(
         'Content-Type',
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -2192,5 +2215,6 @@ const downloadExcel = async (req, res, next) => {
         res.status(200).end();
     })
 }
+
 exports.exportExcel = exportExcel;
 exports.downloadExcel = downloadExcel;
