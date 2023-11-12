@@ -2099,48 +2099,32 @@ const updateCalInfo = async (req, res, next) => {
   }
 };
 
+// *** Delete SRF Item 
 const deleteSRFItem = async (req, res, next) => {
-  const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
-  let code = 200;
-  const path = "/api/srf/deleteitem";
-  let action = "Delete SRF Item!!";
-  let userId = req.userId;
-  const sessionId = req.sessionId;
-  let isError = false;
-  const department = req.department;
-  //console.log(req.body);
-  const { id, srfId } = req.body;
-  if (!id || !srfId) {
-    isError = true;
-    code = 400;
-    action = "Invalid Request Params!!";
-    const error = new Error(action);
-    error.code = code;
-    error.path = path;
+
+  if (!req.body || !req.body.srf_id || !req.body.srf_item_id || !req.body.lab_id) {
+    const error = new Error("Missing required fields");
+    error.code = 500;
     return errorHandler(error, req, res, next);
   }
+
+  const { srf_id, srf_item_id, lab_id } = req.body;
+
   try {
-    const item = await Item.findOne({
-      where: {
-        id: id,
-        rstatus: 1,
-        status: "Not Calibrated",
-        srfId,
-      },
+
+    const query = await Item.findOne({
+      where: { srf_item_id: srf_item_id }
     });
-    ////console.log(item);
-    if (item) {
-      await item.update({
+
+    if (query) {
+      await query.update({
         rstatus: 0,
       });
     }
   } catch (err) {
-    isError = true;
-    code = 500;
-    action = "Internal Server Error!!";
-    const error = new Error(action);
-    error.code = code;
-    error.path = path;
+    console.log(err);
+    const error = new Error("Failed to Delete SRF Item");
+    error.code = 500;
     return errorHandler(error, req, res, next);
   }
 
@@ -2148,43 +2132,24 @@ const deleteSRFItem = async (req, res, next) => {
   let items;
   try {
     items = await Item.findAll({
-      where: { srfId: req.body.srfId, rstatus: 1 },
-      include: [
-        {
-          model: Masterlist,
-          as: "masterlist",
-          attributes: {
-            exclude: ["createdAt", "updatedAt", "id", "rstatus", "labId"],
-          },
-        },
-      ],
-      attributes: {
-        exclude: ["createdAt", "updatedAt"],
-      },
-      order: [["sno", "ASC"]],
+      where: { lab_id: lab_id, rstatus: 1 },
+      include: ["intrument_type"],
+      order: [["srf_item_id", "ASC"]]
     });
   } catch (err) {
-    isError = true;
-    code = 500;
-    action = "Internal Server Error!!!";
-    const error = new Error(action);
-    error.code = code;
-    error.path = path;
+    const error = new Error("Failed to fetch SRF Items");
+    error.code = 500;
     return errorHandler(error, req, res, next);
   }
-  //Returning 200 Response
-  if (isError == false) {
-    let message = `${ip} ${userId} ${sessionId} ${code} ${path} - ${action}`;
-    logger.info(message);
-    res.status(code).json({
-      status: "SUCCESS",
-      code: code,
-      message: "SRF Item Deleted Successfully",
-      data: {
-        items,
-      },
-    });
-  }
+
+  return res.status(201).json({
+    status: "SUCCESS",
+    code: 201,
+    message: "SRF Item Deleted Successfully",
+    data: {
+      items
+    },
+  });
 };
 
 // *** Update Invoice and Send Mail Controller

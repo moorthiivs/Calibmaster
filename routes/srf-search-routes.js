@@ -10,6 +10,6 @@ router.post("/dispatch-number", srfSearchController.searchByDispatchNo);
 
 router.post("/identification-details", srfSearchController.searchByIdentificationDetails);
 
-router.post("/srf-number", srfSearchController.SearchBySRFNo);
+router.post("/srf-items", srfSearchController.SearchBySRFItems);
 
 module.exports = router;
