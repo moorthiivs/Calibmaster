@@ -59,7 +59,8 @@ const searchByDispatchNo = async (req, res, next) => {
                 dispatch_dc: {
                     [Op.iLike]: `${dispatch_number}%`
                 },
-                lab_id: labId, rstatus: 1
+                lab_id: labId,
+                rstatus: 1
             },
             include: ["intrument_type"],
             order: [["srf_item_id", "ASC"]]
@@ -126,9 +127,63 @@ const SearchBySRFItems = async (req, res, next) => {
 
     const { labId, srf_ids } = req.body;
 
-    let items;
+    let srfs, items;
 
     try {
+
+        srfs = await SRF.findAll({
+            where: {
+                lab_id: labId,
+                srf_id: srf_ids
+            },
+            include: [
+                {
+                    model: Lab,
+                    as: "lab",
+                    attributes: {
+                        exclude: [
+                            "created_timestamp",
+                            "created_by_login_name",
+                            "created_by_user_id",
+                            "updated_timestamp",
+                            "updated_by_login_name",
+                            "updated_by_user_id",
+
+                            "address1",
+                            "address2",
+                            "address3",
+
+                            "contact_email",
+                            "lab_id",
+                            "lab_name",
+
+                            "contact_number1",
+                            "contact_number2",
+
+                            "rstatus",
+
+                            "brand_logo_filename",
+                            "brand_logo_mime_type",
+                            "brand_logo",
+
+                            "other_logo1_image_filename",
+                            "other_logo1_image_mime_type",
+                            "other_logo1_image",
+
+                            "other_logo2_image_filename",
+                            "other_logo2_image_mime_type",
+                            "other_logo2_image"
+                        ],
+                    },
+                },
+                {
+                    model: customer,
+                    as: "customer",
+                    attributes: ["customer_name"]
+                }
+            ]
+        });
+
         items = await Item.findAll({
             where: {
                 lab_id: labId,
@@ -149,6 +204,7 @@ const SearchBySRFItems = async (req, res, next) => {
         status: "SUCCESS",
         code: 200,
         message: "SRF Items Fetched Successfully",
+        srfs,
         items
     });
 }
