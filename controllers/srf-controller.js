@@ -164,7 +164,7 @@ const addSRFHandler = async (req, res, next) => {
     const items = req.body.items.map((v, i) => ({
 
       srf_id: newSRF.srf_id,
-      srf_item_no: v.srf_item_no,
+      srf_item_no: i + 1,
 
       make: v.make,
       model: v.model,
@@ -1894,9 +1894,9 @@ const updateCalInfo = async (req, res, next) => {
     try {
       const item = await Item.findOne({
         where: {
-          srf_item_id: "129",
+          srf_item_id: id,
           rstatus: "1",
-          // status: "Not Calibrated",
+          status: "Not Calibrated",
         },
       });
 
