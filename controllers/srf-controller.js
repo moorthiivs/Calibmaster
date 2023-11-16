@@ -122,7 +122,7 @@ const addSRFHandler = async (req, res, next) => {
     if (srfno) {
       isError = true;
       code = 500;
-      action = "SRF Already Exists!!";
+      action = "SRF Number Already Exists!!";
       const error = new Error(action);
       error.code = code;
       error.path = path;
@@ -1264,6 +1264,7 @@ const addSRFHandler = async (req, res, next) => {
       name: "CalibMaster",
       host: existingLab?.email_smtp_server_host,
       port: existingLab?.email_smtp_server_port,
+      secure: true,
       auth: {
         user: existingLab?.sender_email,
         pass: existingLab?.sender_password
@@ -1275,7 +1276,7 @@ const addSRFHandler = async (req, res, next) => {
     if (sendsrf) {
       try {
         const info = await transporter.sendMail({
-          from: existingLab?.contact_email,
+          from: existingLab?.sender_email,
           to: req?.body?.srf?.contact_email,
           subject: "CalibMaster - New SRF Created " + fileName,
           html: "<p><b>Please find delivery challan on attachment.</b></p>",

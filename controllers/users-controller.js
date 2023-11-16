@@ -174,6 +174,7 @@ const login = async (req, res, next) => {
 };
 
 const adduser = async (req, res, next) => {
+
   //AJV Validation
   const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
   let code = 200;
@@ -213,6 +214,8 @@ const adduser = async (req, res, next) => {
   if (department === "Client") {
     companyId = req.body.companyId;
   }
+
+  // return res.json(req.body);
 
   //Checking user in Database
   let existingUser;
@@ -273,11 +276,11 @@ const adduser = async (req, res, next) => {
     error.path = path;
     return errorHandler(error, req, res, next);
   }
-  //Registering in Certifymaster if user is client user
 
+  //Registering in Certifymaster if user is client user
   if (department === "Client") {
     var clientServerOptions = {
-      uri: config.CERTIFICATE_SERVER + "/api/users/adduser",
+      uri: config.CUSTOMER_PORTAL_SERVER + "/api/users/adduser",
       body: JSON.stringify(req.body),
       method: "POST",
       headers: {
@@ -285,6 +288,8 @@ const adduser = async (req, res, next) => {
       },
     };
     request(clientServerOptions, function (error, response) {
+      console.log("Error: ", error);
+      console.log("Response:", response);
       if (error) {
         isError = true;
         code = 500;
@@ -296,6 +301,7 @@ const adduser = async (req, res, next) => {
       }
     });
   }
+
   //Retuning 200 response
   if (isError == false) {
     let message = `${ip} ${userId} ${sessionId} ${code} ${path} - ${action}`;
@@ -354,6 +360,17 @@ const getAllUsers = async (req, res, next) => {
       attributes: { exclude: ["password", "createdAt", "updatedAt"] },
       order: [["id", "ASC"]],
     });
+
+
+    let counter = 1;
+    for (let i = 0; i < users.length; i++) {
+      users[i].dataValues.slNo = counter++;
+      // console.log(counter++);
+    }
+
+    // users[0].dataValues.slNo = 100;
+    // console.log(users[0].dataValues);
+
   } catch (err) {
     isError = true;
     code = 500;

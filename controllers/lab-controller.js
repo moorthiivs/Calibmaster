@@ -190,6 +190,25 @@ const addlab = async (req, res, next) => {
       where: { id: req.userId }
     });
 
+    // *** Forwarding the request to Customer Portal ***
+    var clientServerOptions = {
+      uri: config.CUSTOMER_PORTAL_SERVER + "/api/lab/new",
+      body: JSON.stringify(req.body),
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    };
+
+    request(clientServerOptions, function (error, response) {
+      console.log("Res:", response);
+      if (error) {
+        const error = new Error("Error while adding Lab in Customer Portal");
+        error.code = 500;
+        return errorHandler(error, req, res, next);
+      }
+    });
+
     const newLab = new Lab({
       lab_name,
 
@@ -256,7 +275,12 @@ const addlab = async (req, res, next) => {
 
     await newUser.save();
 
-    return res.status(200).json(result);
+    return res.status(200).json({
+      code: 200,
+      status: true,
+      msg: "Lab created successfully",
+      result
+    });
 
   } catch (err) {
     console.log("while creating lab");

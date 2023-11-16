@@ -153,6 +153,7 @@ const generate = async (req, res, next) => {
             let transporter = nodemailer.createTransport({
                 host: "sandbox.smtp.mailtrap.io",
                 port: 2525,
+                secure: true,
                 auth: {
                     user: "631a07952c0a3a",
                     pass: "8bc03ff401deb1"

@@ -5,6 +5,8 @@ const customer_contact = require("../models").customer_contact;
 const { Op } = require("sequelize");
 const customerSchema = require("../schemas/customer");
 const customerContactSchema = require("../schemas/customer-contact");
+const config = require("../utils/config");
+var request = require("request");
 
 const createCustomer = async (req, res, next) => {
 
@@ -32,6 +34,24 @@ const createCustomer = async (req, res, next) => {
     // *** Customer Parent Data Validation
     const validCustomer = customerSchema(customerObj);
     // return res.json({ validCustomer });
+
+    var clientServerOptions = {
+        uri: config.CUSTOMER_PORTAL_SERVER + "/api/company/new",
+        body: JSON.stringify(req.body),
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+    };
+
+    request(clientServerOptions, function (error, response) {
+        if (error) {
+            const error = new Error("Error while adding company in Customer Portal");
+            error.code = 500;
+            return errorHandler(error, req, res, next);
+        }
+        console.log(response);
+    });
 
     if (!validCustomer) {
         let action = "Please fill the required customer fields !!!";

@@ -31,6 +31,7 @@ const mailSendFromLab = async (req, res) => {
         const transporter = nodemailer.createTransport({
             host: email_smtp_server_host,
             port: email_smtp_server_port,
+            secure: true,
             auth: {
                 user: sender_email,
                 pass: sender_password
@@ -61,6 +62,7 @@ const sendMail = async (eachData) => {
         const transporter = nodemailer.createTransport({
             host: lab?.email_smtp_server_host,
             port: lab?.email_smtp_server_port,
+            secure: true,
             auth: {
                 user: lab?.sender_email,
                 pass: lab?.sender_password

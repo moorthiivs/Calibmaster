@@ -36,6 +36,7 @@ if (existingLab?.sender_email) {
         name: "CalibMaster",
         host: existingLab?.email_smtp_server_host,
         port: existingLab?.email_smtp_server_port,
+        secure: true,
         auth: {
             user: existingLab?.sender_email,
             pass: existingLab?.sender_password

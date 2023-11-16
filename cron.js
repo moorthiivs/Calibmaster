@@ -16,6 +16,7 @@ const sendMail = async (eachData, calibration_remainder) => {
         const transporter = nodemailer.createTransport({
             host: lab?.email_smtp_server_host,
             port: lab?.email_smtp_server_port,
+            secure: true,
             auth: {
                 user: lab?.sender_email,
                 pass: lab?.sender_password

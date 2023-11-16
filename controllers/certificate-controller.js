@@ -22,14 +22,15 @@ const sendMail = async (srfItemsQuery, filePath) => {
       name: "CalibMaster",
       host: lab?.email_smtp_server_host,
       port: lab?.email_smtp_server_port,
+      secure: true,
       auth: {
         user: lab?.sender_email,
         pass: lab?.sender_password
       }
     });
 
-    await transporter.sendMail({
-      from: lab?.contact_email,
+    const info = await transporter.sendMail({
+      from: lab?.sender_email,
       to: srf?.contact_email,
       subject: "Certificate Mail",
       text: "Please find the certificate on the attachment",
@@ -44,6 +45,7 @@ const sendMail = async (srfItemsQuery, filePath) => {
       ]
     });
 
+    console.log(info);
     return { msg: "Certificate Mail Send Successfully", status: true }
   } catch (error) {
     console.log(error);
