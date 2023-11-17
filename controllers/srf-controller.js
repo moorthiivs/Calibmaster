@@ -1507,6 +1507,11 @@ const getsrfbyId = async (req, res, next) => {
         ['srf_item_no', 'ASC'],
       ]
     });
+
+    let counter = 1;
+    for (let i = 0; i < items.length; i++) {
+      items[i].dataValues.slNo = counter++;
+    }
   } catch (err) {
     isError = true;
     code = 500;
