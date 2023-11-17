@@ -1502,7 +1502,10 @@ const getsrfbyId = async (req, res, next) => {
   try {
     items = await Item.findAll({
       where: { srf_id: req.body.srfId, rstatus: 1 },
-      include: ["intrument_type"]
+      include: ["intrument_type"],
+      order: [
+        ['srf_item_no', 'ASC'],
+      ]
     });
   } catch (err) {
     isError = true;
@@ -1550,7 +1553,12 @@ const getSrfItems = async (req, res, next) => {
       order: [["srf_item_id", "ASC"]]
     });
 
-    res.status(200).json({
+    let counter = 1;
+    for (let i = 0; i < items.length; i++) {
+      items[i].dataValues.slNo = counter++;
+    }
+
+    return res.status(200).json({
       status: "SUCCESS",
       code: 200,
       message: "SRF Details Fetched Successfully",
