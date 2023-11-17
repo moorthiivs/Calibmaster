@@ -271,9 +271,11 @@ const pdfCreateNode = async (req, res, next) => {
 
         const { BACKEND_SERVER } = process?.env;
 
+        const fileUniqueName = `${new Date().getTime()}.pdf`;
+
         const filePathName = path.resolve(__dirname, '../views/deliverychallan.ejs');
 
-        let browser = await puppeteer.launch();
+        let browser = await puppeteer.launch({ headless: "new" });
         const [page] = await browser.pages();
 
         const html = await ejs.renderFile(filePathName, {
@@ -281,7 +283,16 @@ const pdfCreateNode = async (req, res, next) => {
             returnAfterCalibration, sendForRepairs, notForSale, sendForCalibration, returnableMaterial
         });
         await page.setContent(html);
-        const pdf = await page.pdf({ format: "A4" });
+        const pdf = await page.pdf({
+            path: `delivery-challan/${fileUniqueName}`,
+            format: "A4",
+            displayHeaderFooter: true,
+            footerTemplate: `<div style=\"text-align: right;width: 1000mm;font-size: 20px;\">
+                <span style=\"margin-right: 1cm\"><span class=\"pageNumber\"></span> 
+                of 
+                <span class=\"totalPages\"></span></span>
+            </div>`
+        });
 
         // res.contentType("application/pdf");
         // res.setHeader("Content-Disposition", "attachment; filename=invoice.pdf");
@@ -304,13 +315,13 @@ const pdfCreateNode = async (req, res, next) => {
             subject: "Test PDF Mail Send",
             attachments: [
                 {
-                    filename: 'test.pdf',
-                    content: new Buffer(pdf, 'utf-8')
+                    filename: fileUniqueName,
+                    content: Buffer.from(pdf, 'utf-8')
                 }
             ]
         });
 
-        return res.json({ info });
+        return res.json({ fileUniqueName, info });
 
     } catch (err) {
         console.log(err);
