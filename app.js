@@ -90,7 +90,7 @@ app.use("/api/srf", Authorization, srfRoutes);
 
 app.use("/api/calibration-date", Authorization, calibrationDateRoutes);
 
-app.use("/api/certificate", certificateRoutes);
+app.use("/api/certificate", Authorization, certificateRoutes);
 
 app.use("/api/mail", Authorization, mailRoutes);
 

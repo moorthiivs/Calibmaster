@@ -20,7 +20,7 @@ const sendMailHandler = async (srfItemsQuery, filePath) => {
         });
 
         const info = await transporter.sendMail({
-            from: lab?.contact_email,
+            from: lab?.sender_email,
             to: srf?.contact_email,
             subject: "Invoice Mail",
             text: "Please find the Invoice on the attachment",

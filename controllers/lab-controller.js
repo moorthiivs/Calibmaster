@@ -486,6 +486,11 @@ const getAllLabs = async (req, res, next) => {
       ]
     });
 
+    let counter = 1;
+    for (let i = 0; i < LabList.length; i++) {
+      LabList[i].dataValues.slNo = counter++;
+    }
+
   } catch (err) {
     // console.log(err);
     let action = "Internal Server Error!!";

@@ -146,8 +146,6 @@ const generate = async (req, res, next) => {
         pdf.create(ejsData, options).toFile(`./delivery-challan/${fileUniqueName}`, async (err, response) => {
             if (err) throw err;
 
-            return res.json({ response });
-
             const nodemailer = require("nodemailer");
 
             let transporter = nodemailer.createTransport({
@@ -170,6 +168,8 @@ const generate = async (req, res, next) => {
                     }
                 ]
             });
+
+            return res.json({ response, info });
         });
     } catch (error) {
         console.log(error);
@@ -314,6 +314,7 @@ const sendDeliveryChallan = async (req, res, next) => {
         name: "CalibMaster",
         host: existingLab?.email_smtp_server_host,
         port: existingLab?.email_smtp_server_port,
+        secure: true,
         auth: {
             user: existingLab?.sender_email,
             pass: existingLab?.sender_password
@@ -325,7 +326,7 @@ const sendDeliveryChallan = async (req, res, next) => {
 
         try {
             const info = await transporter.sendMail({
-                from: existingLab?.contact_email,
+                from: existingLab?.sender_email,
                 to: srf?.contact_email,
                 subject: "CalibMaster - Delivery Challan",
                 html: "<p><b>Please find delivery challan on attachment.</b></p>",

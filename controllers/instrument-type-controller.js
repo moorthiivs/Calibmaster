@@ -1,5 +1,7 @@
 const { errorHandler } = require("../helpers/error-handler");
 const User = require("../models").User;
+const instrument = require("../models").instrument;
+const UOM = require("../models").UOM;
 const db = require("../models");
 const instrumentTypeModel = require("../models").instrument_type;
 const { Sequelize, Op, QueryTypes } = require("sequelize");
@@ -213,11 +215,21 @@ const fetchById = async (req, res, next) => {
         error.code = 500;
         return errorHandler(error, req, res, next);
     }
-
     try {
 
         let result = await instrumentTypeModel.findOne({
-            where: { instrument_type_id }
+            where: { instrument_type_id },
+            include: [
+                {
+                    model: instrument,
+                    as: "instrument",
+                    attributes: ["instrument_name"]
+                },
+                "range_minimum_uom",
+                "range_maximum_uom",
+                "least_count_uom",
+                "size_spec_uom"
+            ]
         });
 
         if (!result) {
@@ -226,19 +238,17 @@ const fetchById = async (req, res, next) => {
             error.code = 500;
             return errorHandler(error, req, res, next);
         } else {
-
             return res.status(200).json({
                 msg: true, response: "Instrument Type fetch successfully!!!", result
             });
         }
-
     } catch (err) {
+        console.log(err);
         let action = "Something went wrong, please try again";
         const error = new Error(action);
         error.code = 500;
         return errorHandler(error, req, res, next);
     }
-
     res.json({ instrument_type_id });
 }
 

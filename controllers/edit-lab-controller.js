@@ -203,7 +203,6 @@ const editLab = async (req, res, next) => {
         where: { id: req.userId }
     });
 
-
     try {
         // update the rows
         let updatedLab = await Lab.update(
@@ -253,7 +252,7 @@ const editLab = async (req, res, next) => {
             { where: { lab_id: labId } }
         )
 
-        res.status(200).json({ msg: true, updatedLab });
+        return res.status(200).json({ msg: true, updatedLab });
     } catch (err) {
         let action = "Something went wrong";
         const error = new Error(action);

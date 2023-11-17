@@ -93,7 +93,7 @@ const sendMail = async (eachData) => {
         `;
 
         const info = await transporter.sendMail({
-            from: lab.contact_email,
+            from: lab.sender_email,
             to: srf.contact_email,
             subject: "Notification Mail",
             html: html
