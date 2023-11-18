@@ -166,7 +166,7 @@ const addlab = async (req, res, next) => {
     );
 
     if (existingLab) {
-      let action = "Lab Already Exists!!";
+      let action = "This Contact Email is Already Associate with another lab";
       const error = new Error(action);
       error.code = 401;
       error.path = "/api/lab/listing";
@@ -275,8 +275,8 @@ const addlab = async (req, res, next) => {
 
     await newUser.save();
 
-    return res.status(200).json({
-      code: 200,
+    return res.status(201).json({
+      code: 201,
       status: true,
       msg: "Lab created successfully",
       result
@@ -313,10 +313,9 @@ const fetchLab = async (req, res, next) => {
         where: { lab_id: labId },
         attributes: { exclude: ['brand_logo', 'other_logo1_image', 'other_logo2_image'] }
       }
-
     );
 
-    res.status(200).json({
+    return res.status(200).json({
       status: "SUCCESS",
       code: 200,
       message: "Lab Fetched Successfully!!",
@@ -324,7 +323,6 @@ const fetchLab = async (req, res, next) => {
     });
 
   } catch (err) {
-
     let action = "Failded to fetch Lab";
     const error = new Error(action);
     error.code = 500;
@@ -481,10 +479,8 @@ const emailconfigHandler = async (req, res, next) => {
 
 const getAllLabs = async (req, res, next) => {
 
-  let LabList;
-
   try {
-    LabList = await Lab.findAll({
+    let LabList = await Lab.findAll({
       order: [
         ['lab_id', 'DESC'],
       ]
@@ -495,22 +491,21 @@ const getAllLabs = async (req, res, next) => {
       LabList[i].dataValues.slNo = counter++;
     }
 
+    return res.status(200).json({
+      status: "SUCCESS",
+      code: 200,
+      message: "Labs Fetched Successfully!!",
+      data: LabList
+    });
+
   } catch (err) {
-    // console.log(err);
+    console.log(err);
     let action = "Internal Server Error!!";
     const error = new Error(action);
     error.code = 500;
     error.path = "/api/lab/listing";
-
     return errorHandler(error, req, res, next);
   }
-
-  res.status(200).json({
-    status: "SUCCESS",
-    code: 200,
-    message: "Labs Fetched Successfully!!",
-    data: LabList
-  });
 }
 
 exports.addlab = addlab;
