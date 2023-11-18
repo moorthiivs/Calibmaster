@@ -17,11 +17,11 @@ const createConfig = async (req, res, next) => {
             where: { lab_id }
         });
 
-        if (fetchSRFConfig == null) {
+        const fetchCreater = await User.findOne({
+            where: { id: req.userId }
+        });
 
-            const fetchCreater = await User.findOne({
-                where: { id: req.userId }
-            });
+        if (!fetchSRFConfig) {
 
             const newSRFConfig = new EParameter({
                 issue_no, issue_date,
@@ -37,11 +37,27 @@ const createConfig = async (req, res, next) => {
                 updated_by_user_id: req.userId
             });
             const result = await newSRFConfig.save();
-            res.status(201).send({ status: 201, result, msg: "SRF Configaration successfully created." });
-        } else {
-            res.status(200).send({ status: 200, msg: "SRF Configaration already created." });
-        }
+            return res
+                .status(201)
+                .send({ status: 201, result, msg: "SRF Configaration successfully created." });
 
+        } else {
+
+            const response = await fetchSRFConfig.update({
+                issue_no, issue_date,
+                amend_no, amend_date,
+                lab_id,
+
+                updated_timestamp: Date.now(),
+                updated_by_login_name: fetchCreater.name,
+                updated_by_user_id: req.userId
+            });
+
+            return res
+                .status(200)
+                .send({ status: 200, msg: "SRF Configaration successfully updated.", response });
+
+        }
     } catch (err) {
         console.log(err);
         const error = new Error("Something went wrong");

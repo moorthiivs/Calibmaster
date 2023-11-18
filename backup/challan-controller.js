@@ -4,13 +4,15 @@ const puppeteer = require("puppeteer");
 const fs = require('fs');
 const path = require('path');
 const { Buffer } = require('node:buffer');
-const nodeMailer = require("nodemailer");
 
 const SRF = require("../models").srf_list;
 const Item = require("../models").srfitem;
 const Lab = require("../models").Lab;
 const customer = require("../models").customer;
 const instrument_type = require("../models").instrument_type;
+
+
+const nodeMailer = require("nodemailer");
 
 const { errorHandler } = require("../helpers/error-handler");
 

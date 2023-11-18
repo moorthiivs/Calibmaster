@@ -296,7 +296,7 @@ const addlab = async (req, res, next) => {
 
 const fetchLab = async (req, res, next) => {
 
-  const labId = req.params.id;
+  const { labId } = req.body;
 
   if (!labId) {
     let action = "lab id is required";
@@ -309,7 +309,11 @@ const fetchLab = async (req, res, next) => {
   try {
 
     let lab = await Lab.findOne(
-      { where: { lab_id: labId } }
+      {
+        where: { lab_id: labId },
+        attributes: { exclude: ['brand_logo', 'other_logo1_image', 'other_logo2_image'] }
+      }
+
     );
 
     res.status(200).json({

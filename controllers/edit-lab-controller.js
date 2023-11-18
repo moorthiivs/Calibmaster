@@ -157,6 +157,7 @@ const editLab = async (req, res, next) => {
         brand_logo_mime_type = brand_logo_mime_type ? brand_logo_mime_type : existingLab.brand_logo_mime_type;
     }
 
+    // Check if 2nd logo is available or not in request
     let secondLogoImgFileName;
     let buff2 = "";
     if (secondLogo) {
@@ -178,6 +179,7 @@ const editLab = async (req, res, next) => {
         other_logo1_image_mime_type = other_logo1_image_mime_type ? other_logo1_image_mime_type : existingLab.other_logo1_image_mime_type;
     }
 
+    // Check if 3rd logo is available or not in request
     let thirdLogoImgFileName;
     let buff3 = "";
     if (thirdLogo) {
@@ -252,7 +254,7 @@ const editLab = async (req, res, next) => {
             { where: { lab_id: labId } }
         )
 
-        return res.status(200).json({ msg: true, updatedLab });
+        return res.status(200).json({ msg: true, code: 200, updatedLab });
     } catch (err) {
         let action = "Something went wrong";
         const error = new Error(action);
