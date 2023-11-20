@@ -498,7 +498,7 @@ const sendDeliveryChallan = async (req, res, next) => {
             return res.status(200).json({
                 status: "SUCCESS",
                 code: 205,
-                message: "Maile sent Successfully",
+                message: "Mail sent Successfully",
             });
 
         } catch (err) {
