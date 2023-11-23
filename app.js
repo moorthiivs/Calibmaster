@@ -25,6 +25,8 @@ const challanRoute = require("./routes/challan-route");
 const srfSearchRoutes = require("./routes/srf-search-routes");
 const srfStatushRoutes = require("./routes/srf-status-routes");
 
+const masterListEquipmentsRoutes = require("./routes/master-list-equipments-routes");
+
 const testRoutes = require("./routes/test-route");
 
 const Authorization = require("./middleware/check-auth");
@@ -101,6 +103,9 @@ app.use("/api/pdf", challanRoute);
 app.use("/api/srf-search", Authorization, srfSearchRoutes);
 
 app.use("/api/srf-status", Authorization, srfStatushRoutes);
+app.use("/api/srf-status", Authorization, srfStatushRoutes);
+
+app.use("/api/master-list-equipments", Authorization, masterListEquipmentsRoutes);
 
 // app.use("/api/download", Authorization, srfdownloadRoute);
 // app.use("/api/masterlist", Authorization, masterlistRoutes);
