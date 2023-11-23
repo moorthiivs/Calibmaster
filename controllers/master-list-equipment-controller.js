@@ -91,6 +91,11 @@ const list = async (req, res, next) => {
             ]
         });
 
+        let counter = 1;
+        for (let i = 0; i < list.length; i++) {
+            list[i].dataValues.id = counter++;
+        }
+
         return res.status(200).json({
             status: "SUCCESS",
             code: 200,
