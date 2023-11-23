@@ -6,4 +6,10 @@ const router = express.Router();
 
 router.post("/create", masterListEquipmentController.create);
 
+router.get("/list", masterListEquipmentController.list);
+
+router.post("/find", masterListEquipmentController.find);
+
+router.post("/update", masterListEquipmentController.update);
+
 module.exports = router;
