@@ -160,6 +160,9 @@ const addlab = async (req, res, next) => {
 
   try {
 
+    var calibmaster_lab_id = new Date().getTime();
+    req.body.calibmaster_lab_id = calibmaster_lab_id;
+
     //Checking lab in Database
     var existingLab = await Lab.findOne(
       { where: { contact_email, rstatus: 1 } }
@@ -190,6 +193,14 @@ const addlab = async (req, res, next) => {
       where: { id: req.userId }
     });
 
+    // Set Lab Create with body Request for Customer Portal
+    req.body.created_timestamp = Date.now();
+    req.body.created_by_login_name = fetchCreater.name;
+    req.body.created_by_user_id = req.userId;
+    req.body.updated_timestamp = Date.now();
+    req.body.effective_start_date = Date.now() + 1000 * 60 * 60 * 24 * 364 * 3000;
+    req.body.effective_end_date = Date.now() + 1000 * 60 * 60 * 24 * 364 * 3000;
+
     // *** Forwarding the request to Customer Portal ***
     var clientServerOptions = {
       uri: config.CUSTOMER_PORTAL_SERVER + "/api/lab/new",
@@ -201,16 +212,18 @@ const addlab = async (req, res, next) => {
     };
 
     request(clientServerOptions, function (error, response) {
-      console.log("Res:", response);
       if (error) {
+        console.log(error);
         const error = new Error("Error while adding Lab in Customer Portal");
         error.code = 500;
         return errorHandler(error, req, res, next);
       }
+      console.log(response);
     });
 
     const newLab = new Lab({
       lab_name,
+      calibmaster_lab_id,
 
       address1,
       address2,

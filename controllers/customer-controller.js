@@ -17,6 +17,9 @@ const createCustomer = async (req, res, next) => {
         return errorHandler(error, req, res, next);
     }
 
+    var calibmaster_customer_id = new Date().getTime();
+    req.body.calibmaster_customer_id = calibmaster_customer_id;
+
     // create customer object for validation and store in database
     let customerObj = {};
 
@@ -34,24 +37,6 @@ const createCustomer = async (req, res, next) => {
     // *** Customer Parent Data Validation
     const validCustomer = customerSchema(customerObj);
     // return res.json({ validCustomer });
-
-    var clientServerOptions = {
-        uri: config.CUSTOMER_PORTAL_SERVER + "/api/company/new",
-        body: JSON.stringify(req.body),
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-    };
-
-    request(clientServerOptions, function (error, response) {
-        if (error) {
-            const error = new Error("Error while adding company in Customer Portal");
-            error.code = 500;
-            return errorHandler(error, req, res, next);
-        }
-        console.log(response);
-    });
 
     if (!validCustomer) {
         let action = "Please fill the required customer fields !!!";
@@ -83,6 +68,7 @@ const createCustomer = async (req, res, next) => {
     let customer_id;
     let customerResult;
     let customerContactResult;
+
     // Fetch the loggedin admin
     const fetchCreater = await User.findOne({
         where: { id: req.userId }
@@ -99,23 +85,24 @@ const createCustomer = async (req, res, next) => {
             const error = new Error(action);
             error.code = 500;
             return errorHandler(error, req, res, next);
+        } else {
+            customerObj.created_timestamp = Date.now();
+            customerObj.created_by_login_name = fetchCreater.name;
+            customerObj.created_by_user_id = req.userId;
+
+            customerObj.updated_timestamp = Date.now();
+            customerObj.updated_by_login_name = fetchCreater.name;
+            customerObj.updated_by_user_id = req.userId
+
+            customerObj.lab_id = req.body.labId;
+            customerObj.rstatus = 1;
+            customerObj.calibmaster_customer_id = calibmaster_customer_id;
+
+            const newCustomer = new customer(customerObj)
+
+            customerResult = await newCustomer.save();
+            customer_id = customerResult.customer_id;
         }
-
-        customerObj.created_timestamp = Date.now();
-        customerObj.created_by_login_name = fetchCreater.name;
-        customerObj.created_by_user_id = req.userId;
-
-        customerObj.updated_timestamp = Date.now();
-        customerObj.updated_by_login_name = fetchCreater.name;
-        customerObj.updated_by_user_id = req.userId
-
-        customerObj.lab_id = req.body.labId;
-        customerObj.rstatus = 1;
-
-        const newCustomer = new customer(customerObj)
-
-        customerResult = await newCustomer.save();
-        customer_id = customerResult.customer_id;
 
     } catch (err) {
         console.log(err);
@@ -142,6 +129,36 @@ const createCustomer = async (req, res, next) => {
 
         customerContactResult = await newCustomerContact.save();
 
+    } catch (err) {
+        console.log(err);
+        let action = "Something went wrong while saving the customer contact";
+        const error = new Error(action);
+        error.code = 400;
+        error.path = "/api/uom/create";
+        return errorHandler(error, req, res, next);
+    }
+
+    // *** Send Request to Customer Portal
+    try {
+
+        const clientServerOptions = {
+            uri: config.CUSTOMER_PORTAL_SERVER + "/api/company/new",
+            body: JSON.stringify(req.body),
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            }
+        };
+
+        request(clientServerOptions, function (error, response) {
+            if (error) {
+                const error = new Error("Error while adding company in Customer Portal");
+                error.code = 500;
+                return errorHandler(error, req, res, next);
+            } else {
+                console.log("Company added in Customer Portal.");
+            }
+        });
     } catch (err) {
         console.log(err);
         let action = "Something went wrong while saving the customer contact";

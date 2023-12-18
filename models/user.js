@@ -29,6 +29,10 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       allowNull: false,
     },
+    calibmaster_client_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true
+    },
   });
 
   User.associate = function (models) {

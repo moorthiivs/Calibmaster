@@ -21,14 +21,15 @@ const create = async (req, res, next) => {
             calibration_due_date,
             calibration_certificate_no,
             uncertainty,
-            frequency_of_calibration
+            frequency_of_calibration,
+            lab_id
         } = req.body;
 
         if (
             !asset_identification_no || !equipment_name || !equipment_make_or_nodel || !equipment_serial_no ||
             !range_size || !least_count || !accuracy_or_acceptance || !year_of_purchase || !calibrated_by ||
             !date_of_calibration || !calibration_due_date || !calibration_certificate_no || !uncertainty ||
-            !frequency_of_calibration
+            !frequency_of_calibration || !lab_id
         ) {
             const error = new Error("All fields are required");
             error.code = 500;
@@ -83,9 +84,13 @@ const create = async (req, res, next) => {
 }
 
 const list = async (req, res, next) => {
+
+    const { lab_id } = req.body;
+
     try {
 
         let list = await MasterListEquipment.findAll({
+            where: { lab_id },
             order: [
                 ['master_list_equipment_id', 'DESC'],
             ]

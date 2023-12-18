@@ -149,6 +149,7 @@ const login = async (req, res, next) => {
           name: existingUser.name,
           email: existingUser.email,
           department: existingUser.department,
+          filename: existingUser.lab.dataValues.brand_logo_filename,
           image: existingUser.lab.dataValues.brand_logo,
           imgtype: existingUser.lab.dataValues.brand_logo_mime_type,
           labId: existingUser.labId,
@@ -210,6 +211,8 @@ const adduser = async (req, res, next) => {
 
   const { name, email, password, department, labId } = req.body;
 
+  const calibmaster_client_id = new Date().getTime();
+
   let companyId;
   if (department === "Client") {
     companyId = req.body.companyId;
@@ -265,6 +268,7 @@ const adduser = async (req, res, next) => {
       department,
       rstatus: 1,
       labId,
+      calibmaster_client_id
     });
     const result = await newUser.save();
   } catch (err) {
@@ -279,6 +283,9 @@ const adduser = async (req, res, next) => {
 
   //Registering in Certifymaster if user is client user
   if (department === "Client") {
+
+    req.body.calibmaster_client_id = calibmaster_client_id;
+
     var clientServerOptions = {
       uri: config.CUSTOMER_PORTAL_SERVER + "/api/users/adduser",
       body: JSON.stringify(req.body),

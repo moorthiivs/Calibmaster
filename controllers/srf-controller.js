@@ -1279,7 +1279,7 @@ const addSRFHandler = async (req, res, next) => {
           from: existingLab?.sender_email,
           to: req?.body?.srf?.contact_email,
           subject: "CalibMaster - New SRF Created " + fileName,
-          html: "<p><b>Please find delivery challan on attachment.</b></p>",
+          html: "<p><b>Please find the SRF on attachment.</b></p>",
           priority: "high",
           attachments: [
             {
@@ -1910,7 +1910,7 @@ const updateCalInfo = async (req, res, next) => {
         where: {
           srf_item_id: id,
           rstatus: "1",
-          status: "Not Calibrated",
+          status: "Calibrated",
         },
       });
 
@@ -1960,7 +1960,6 @@ const updateCalInfo = async (req, res, next) => {
       return errorHandler(error, req, res, next);
     }
   }
-
 
   // TODO: calculate calibration_due_date = calibration_done_date + frequency_in_months [calculate in srf-items table]
   try {

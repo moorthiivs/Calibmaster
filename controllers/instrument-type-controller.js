@@ -19,7 +19,8 @@ const createInstrumentType = async (req, res, next) => {
         least_count,
         least_count_uom_id,
         size_spec,
-        size_spec_uom_id
+        size_spec_uom_id,
+        lab_id
     } = req.body;
 
 
@@ -59,7 +60,9 @@ const createInstrumentType = async (req, res, next) => {
 
             updated_timestamp: Date.now(),
             updated_by_login_name: fetchCreater.name,
-            updated_by_user_id: req.userId
+            updated_by_user_id: req.userId,
+
+            lab_id
         });
 
         const result = await newInstrumentType.save();
@@ -74,6 +77,17 @@ const createInstrumentType = async (req, res, next) => {
 const listInstrumentTypes = async (req, res, next) => {
 
     try {
+
+        const { lab_id } = req.body;
+
+        if (!lab_id) {
+            let action = "Please send all required parameters";
+            const error = new Error(action);
+            error.code = 500;
+            return errorHandler(error, req, res, next);
+        }
+
+
         let instrumentTypesList = await db.sequelize.query(
             `SELECT 
 
@@ -109,6 +123,8 @@ const listInstrumentTypes = async (req, res, next) => {
             "instrument_groups" as "groupsTable"
             ON "groupsTable"."instrument_group_id" = "instrumentsMain"."instrument_group_id"
         
+        WHERE "instrument_types"."lab_id" = ${lab_id}
+
         ORDER BY
 	        "instrument_types"."instrument_type_id" DESC
         `,
@@ -249,7 +265,6 @@ const fetchById = async (req, res, next) => {
         error.code = 500;
         return errorHandler(error, req, res, next);
     }
-    res.json({ instrument_type_id });
 }
 
 const editInstrumentType = async (req, res, next) => {

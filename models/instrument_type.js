@@ -123,6 +123,12 @@ module.exports = (sequelize, DataTypes) => {
       foreignKey: "size_spec_uom_id",
     });
 
+    instrument_type.belongsTo(models.Lab, {
+      as: "lab",
+      constrains: true,
+      onDelete: "CASCADE",
+      foreignKey: "lab_id",
+    });
   }
 
   return instrument_type;

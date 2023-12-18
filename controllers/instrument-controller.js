@@ -5,9 +5,12 @@ const instrumentSchema = require("../schemas/instrument");
 
 const ListInstrument = async (req, res, next) => {
 
+    const { lab_id } = req.body
+
     try {
         let instrumentList = await instrument.findAll({
             include: ["UOM", "discipline", "group"],
+            where: { lab_id },
             order: [
                 ['instrument_id', 'DESC']
             ]
@@ -36,7 +39,8 @@ const createInstrument = async (req, res, next) => {
         instrument_name,
         instrument_uom_id,
         instrument_discipline_id,
-        instrument_group_id
+        instrument_group_id,
+        lab_id
     } = req.body;
 
     if (!instrument_name || !instrument_uom_id) {
@@ -64,7 +68,9 @@ const createInstrument = async (req, res, next) => {
 
             updated_timestamp: Date.now(),
             updated_by_login_name: fetchCreater.name,
-            updated_by_user_id: req.userId
+            updated_by_user_id: req.userId,
+
+            lab_id
         })
 
         const result = await newInstrument.save();

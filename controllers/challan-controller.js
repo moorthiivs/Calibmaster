@@ -14,6 +14,7 @@ const instrument_type = require("../models").instrument_type;
 
 const { errorHandler } = require("../helpers/error-handler");
 
+// ! Test function-1
 const generate = async (req, res, next) => {
 
     try {
@@ -173,6 +174,7 @@ const generate = async (req, res, next) => {
     }
 };
 
+// ! Test function-2
 const pdfCreateNode = async (req, res, next) => {
 
     try {

@@ -14,6 +14,7 @@ const sendMail = async (eachData, calibration_remainder) => {
     try {
         // Connecting to the STMP Server
         const transporter = nodemailer.createTransport({
+            name: "Next Calibration Notification",
             host: lab?.email_smtp_server_host,
             port: lab?.email_smtp_server_port,
             secure: true,
@@ -54,6 +55,8 @@ const sendMail = async (eachData, calibration_remainder) => {
             html: html
         });
 
+        console.log(info);
+
         return info.messageId;
     } catch (error) {
         console.log(error);
@@ -62,7 +65,7 @@ const sendMail = async (eachData, calibration_remainder) => {
 
 const sendNotificationMail_1 = async (req, res) => {
     try {
-        cron.schedule('0 10 * * *', async function () {
+        cron.schedule('0 * * * *', async function () {
             try {
                 let srfItems = await Item.findAll({
                     attributes: [
@@ -117,6 +120,7 @@ const sendNotificationMail_1 = async (req, res) => {
                         let currentDate = `${year}-${month}-${day}`;
 
                         let status;
+                        console.log(currentDate, reaminderDate);
 
                         if (currentDate === reaminderDate) {
                             status = "Today send the mail to contact person";
@@ -126,7 +130,7 @@ const sendNotificationMail_1 = async (req, res) => {
                                 status
                             });
 
-                            let calibration_remainder = 1
+                            let calibration_remainder = 1;
                             await sendMail(eachRow, calibration_remainder);
                         } else {
                             status = `The mail will send the contact person on ${reaminderDate}`
@@ -138,6 +142,7 @@ const sendNotificationMail_1 = async (req, res) => {
                     }
                 });
 
+                console.log(responseArr);
                 let data = `Cron Job attempt on calibration_remainder_date_1 ${new Date()} \n`;
 
                 fs.appendFile("cronLogger.txt", data, function (err) {
@@ -154,7 +159,7 @@ const sendNotificationMail_1 = async (req, res) => {
 
 const sendNotificationMail_2 = async (req, res) => {
     try {
-        cron.schedule('0 10 * * *', async function () {
+        cron.schedule('0 * * * *', async function () {
             try {
                 let srfItems = await Item.findAll({
                     attributes: [

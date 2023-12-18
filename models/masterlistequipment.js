@@ -115,5 +115,14 @@ module.exports = (sequelize, DataTypes) => {
     }
   );
 
+  MasterListEquipment.associate = function (models) {
+
+    MasterListEquipment.belongsTo(models.Lab, {
+      as: "lab",
+      constrains: true,
+      onDelete: "CASCADE",
+      foreignKey: "lab_id",
+    });
+  };
   return MasterListEquipment;
 };

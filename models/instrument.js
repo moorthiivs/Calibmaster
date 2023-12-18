@@ -84,7 +84,14 @@ module.exports = (sequelize, DataTypes) => {
       onDelete: "CASCADE",
       foreignKey: "instrument_group_id",
       allowNull: true
-    })
+    });
+
+    instrument.belongsTo(models.Lab, {
+      as: "lab",
+      constrains: true,
+      onDelete: "CASCADE",
+      foreignKey: "lab_id",
+    });
   };
 
   return instrument;

@@ -6,7 +6,7 @@ const instrumentTypeController = require("../controllers/instrument-type-control
 
 router.post("/create", Authorization, instrumentTypeController.createInstrumentType);
 
-router.get("/list", Authorization, instrumentTypeController.listInstrumentTypes);
+router.post("/list", Authorization, instrumentTypeController.listInstrumentTypes);
 
 router.get("/searchByName/:name", Authorization, instrumentTypeController.searchByName);
 

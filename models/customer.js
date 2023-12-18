@@ -96,6 +96,11 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         allowNull: false
       },
+
+      calibmaster_customer_id: {
+        type: DataTypes.STRING,
+        allowNull: false
+      }
     },
     {
       sequelize,

@@ -14,6 +14,10 @@ module.exports = {
         type: Sequelize.STRING,
         allowNull: false,
       },
+      calibmaster_lab_id: {
+        type: Sequelize.STRING,
+        allowNull: false,
+      },
       address1: {
         type: Sequelize.STRING,
         allowNull: false,

@@ -59,7 +59,8 @@
                 </p>
             </div>
             <div class="rightH" style="float: right; text-align: right;">
-                <img src="http://localhost:5000/images/339326.png" alt="Logo" style="width: 100px;" />
+                <img src="<%= BACKEND_SERVER%>/images/<%= existingLab?.brand_logo_filename  %>" alt="Logo"
+                    style="width: 100px;" />
             </div>
             <div class="spacer" style="clear: both;"></div>
         </div>
@@ -205,7 +206,6 @@
                             </th>
                         </tr>
                         <% } %>
-
                             <tr style="border-top: 2px solid black; border-bottom: 2px solid black;">
                                 <th colspan="6"
                                     style="border-right: 2px solid black; text-align: right; padding-right: 5px;">
@@ -349,7 +349,11 @@
                         </table>
                     </td>
                     <td style="text-align: center;">
-                        <p><b>TestCAL</b></p>
+                        <p>
+                            <b>
+                                <%= existingLab.symbol %>
+                            </b>
+                        </p>
                     </td>
                 </tr>
             </table>
