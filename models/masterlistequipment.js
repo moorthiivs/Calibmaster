@@ -23,63 +23,113 @@ module.exports = (sequelize, DataTypes) => {
         primaryKey: true,
       },
 
-      asset_identification_no: {
-        type: DataTypes.STRING,
+      standard_maintained: {
+        type: DataTypes.STRING(100),
+        allowNull: true,
+      },
+      name_of_equipment: {
+        type: DataTypes.STRING(500),
         allowNull: false,
       },
-      equipment_name: {
-        type: DataTypes.STRING,
+      uid: {
+        type: DataTypes.STRING(100),
+        allowNull: true,
+      },
+      type_of_facility: {
+        type: DataTypes.STRING(200),
+        allowNull: true,
+      },
+      make: {
+        type: DataTypes.STRING(200),
         allowNull: false,
       },
-      equipment_make_or_nodel: {
-        type: DataTypes.STRING,
+      model_type: {
+        type: DataTypes.STRING(200),
         allowNull: false,
       },
-      equipment_serial_no: {
-        type: DataTypes.STRING,
+      year_Of_make: {
+        type: DataTypes.STRING(10),
         allowNull: false,
       },
-      range_size: {
-        type: DataTypes.STRING,
+      serial_no: {
+        type: DataTypes.STRING(100),
         allowNull: false,
       },
-      least_count: {
-        type: DataTypes.STRING,
+      asset_number: {
+        type: DataTypes.STRING(100),
+        allowNull: true,
+      },
+      receipt_date: {
+        type: DataTypes.DATE,
+        allowNull: false
+      },
+      date_placed_in_service: {
+        type: DataTypes.DATE,
+        allowNull: false
+      },
+      range: {
+        type: DataTypes.STRING(100),
+        allowNull: true,
+      },
+      least_Count: {
+        type: DataTypes.STRING(100),
+        allowNull: true,
+      },
+      least_product_tolerance: {
+        type: DataTypes.STRING(100),
+        allowNull: true,
+      },
+      accuracy: {
+        type: DataTypes.STRING(100),
+        allowNull: true,
+      },
+      history_card_number: {
+        type: DataTypes.STRING(100),
         allowNull: false,
       },
-      accuracy_or_acceptance: {
-        type: DataTypes.STRING,
+      department: {
+        type: DataTypes.STRING(100),
+        allowNull: true,
+      },
+      date_of_last_calibration_date: {
+        type: DataTypes.DATE,
+        allowNull: false
+      },
+      calibration_certificate_no: {
+        type: DataTypes.STRING(100),
         allowNull: false,
       },
-      year_of_purchase: {
-        type: DataTypes.STRING,
+      calibration_frequency: {
+        type: DataTypes.STRING(100),
+        allowNull: true,
+      },
+      calibration_valid_upto: {
+        type: DataTypes.DATE,
+        allowNull: false
+      },
+      calibration_agency: {
+        type: DataTypes.STRING(300),
         allowNull: false,
       },
       calibrated_by: {
-        type: DataTypes.STRING,
+        type: DataTypes.STRING(100),
+        allowNull: true,
+      },
+      equipment_status: {
+        type: DataTypes.STRING(100),
         allowNull: false,
       },
-
-      date_of_calibration: {
-        type: DataTypes.DATE,
+      traceability: {
+        type: DataTypes.STRING(100),
+        allowNull: true,
+      },
+      next_calibration_reminder: {
+        type: DataTypes.STRING(100),
         allowNull: false,
       },
-      calibration_due_date: {
-        type: DataTypes.DATE,
-        allowNull: false,
-      },
-
-      calibration_certificate_no: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-      uncertainty: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-      frequency_of_calibration: {
-        type: DataTypes.STRING,
-        allowNull: false,
+      remark: {
+        type: DataTypes.STRING(1000),
+        allowNull: true,
       },
 
       created_timestamp: {
@@ -106,7 +156,7 @@ module.exports = (sequelize, DataTypes) => {
       updated_by_user_id: {
         type: DataTypes.STRING,
         allowNull: true
-      },
+      }
     },
     {
       sequelize,
@@ -123,6 +173,22 @@ module.exports = (sequelize, DataTypes) => {
       onDelete: "CASCADE",
       foreignKey: "lab_id",
     });
+
+
+    MasterListEquipment.belongsTo(models.instrument_discipline, {
+      as: "discipline",
+      constrains: true,
+      onDelete: "CASCADE",
+      foreignKey: "instrument_discipline_id"
+    });
+
+    MasterListEquipment.belongsTo(models.instrument_groups, {
+      as: "group",
+      constrains: true,
+      onDelete: "CASCADE",
+      foreignKey: "instrument_group_id"
+    });
+
   };
   return MasterListEquipment;
 };

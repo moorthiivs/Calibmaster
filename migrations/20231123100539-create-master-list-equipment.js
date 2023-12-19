@@ -10,9 +10,36 @@ module.exports = {
         type: Sequelize.INTEGER
       },
 
+      lab_id: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        references: {
+          model: "Labs",
+          key: "lab_id"
+        }
+      },
+
+      instrument_discipline_id: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        references: {
+          model: "instrument_disciplines",
+          key: "instrument_discipline_id",
+        },
+      },
+
+      instrument_group_id: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        references: {
+          model: "instrument_groups",
+          key: "instrument_group_id",
+        },
+      },
+
       standard_maintained: {
         type: Sequelize.STRING(100),
-        allowNull: false,
+        allowNull: true,
       },
       name_of_equipment: {
         type: Sequelize.STRING(500),
@@ -20,11 +47,11 @@ module.exports = {
       },
       uid: {
         type: Sequelize.STRING(100),
-        allowNull: false,
+        allowNull: true,
       },
       type_of_facility: {
         type: Sequelize.STRING(200),
-        allowNull: false,
+        allowNull: true,
       },
       make: {
         type: Sequelize.STRING(200),
@@ -44,7 +71,7 @@ module.exports = {
       },
       asset_number: {
         type: Sequelize.STRING(100),
-        allowNull: false,
+        allowNull: true,
       },
       receipt_date: {
         type: Sequelize.DATE,
@@ -56,19 +83,19 @@ module.exports = {
       },
       range: {
         type: Sequelize.STRING(100),
-        allowNull: false,
+        allowNull: true,
       },
       least_Count: {
         type: Sequelize.STRING(100),
-        allowNull: false,
+        allowNull: true,
       },
       least_product_tolerance: {
         type: Sequelize.STRING(100),
-        allowNull: false,
+        allowNull: true,
       },
       accuracy: {
         type: Sequelize.STRING(100),
-        allowNull: false,
+        allowNull: true,
       },
       history_card_number: {
         type: Sequelize.STRING(100),
@@ -76,7 +103,7 @@ module.exports = {
       },
       department: {
         type: Sequelize.STRING(100),
-        allowNull: false,
+        allowNull: true,
       },
       date_of_last_calibration_date: {
         type: Sequelize.DATE,
@@ -88,7 +115,7 @@ module.exports = {
       },
       calibration_frequency: {
         type: Sequelize.STRING(100),
-        allowNull: false,
+        allowNull: true,
       },
       calibration_valid_upto: {
         type: Sequelize.DATE,
@@ -100,7 +127,7 @@ module.exports = {
       },
       calibrated_by: {
         type: Sequelize.STRING(100),
-        allowNull: false,
+        allowNull: true,
       },
       equipment_status: {
         type: Sequelize.STRING(100),
@@ -108,7 +135,7 @@ module.exports = {
       },
       traceability: {
         type: Sequelize.STRING(100),
-        allowNull: false,
+        allowNull: true,
       },
       next_calibration_reminder: {
         type: Sequelize.STRING(100),
@@ -116,7 +143,7 @@ module.exports = {
       },
       remark: {
         type: Sequelize.STRING(1000),
-        allowNull: false,
+        allowNull: true,
       },
 
       created_timestamp: {
