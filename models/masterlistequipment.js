@@ -174,7 +174,6 @@ module.exports = (sequelize, DataTypes) => {
       foreignKey: "lab_id",
     });
 
-
     MasterListEquipment.belongsTo(models.instrument_discipline, {
       as: "discipline",
       constrains: true,

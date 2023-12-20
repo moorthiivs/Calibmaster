@@ -7,48 +7,17 @@ const create = async (req, res, next) => {
 
     try {
 
-        const {
-            asset_identification_no,
-            equipment_name,
-            equipment_make_or_nodel,
-            equipment_serial_no,
-            range_size,
-            least_count,
-            accuracy_or_acceptance,
-            year_of_purchase,
-            calibrated_by,
-            date_of_calibration,
-            calibration_due_date,
-            calibration_certificate_no,
-            uncertainty,
-            frequency_of_calibration,
-            lab_id
-        } = req.body;
+        // const {
+        //     lab_id
+        // } = req.body;
 
-        if (
-            !asset_identification_no || !equipment_name || !equipment_make_or_nodel || !equipment_serial_no ||
-            !range_size || !least_count || !accuracy_or_acceptance || !year_of_purchase || !calibrated_by ||
-            !date_of_calibration || !calibration_due_date || !calibration_certificate_no || !uncertainty ||
-            !frequency_of_calibration || !lab_id
-        ) {
-            const error = new Error("All fields are required");
-            error.code = 500;
-            return errorHandler(error, req, res, next);
-        }
+        // if (!lab_id) {
+        //     const error = new Error("All fields are required");
+        //     error.code = 500;
+        //     return errorHandler(error, req, res, next);
+        // }
 
         try {
-
-            //Checking MasterListEquipment in Database
-            var existingMasterListEquipment = await MasterListEquipment.findOne(
-                { where: { asset_identification_no } }
-            );
-
-            if (existingMasterListEquipment) {
-                let action = "This asset identification no is Already Associate with another Master Equipment";
-                const error = new Error(action);
-                error.code = 401;
-                return errorHandler(error, req, res, next);
-            }
 
             // Find Logged in user
             const fetchCreater = await User.findOne({
@@ -65,7 +34,10 @@ const create = async (req, res, next) => {
 
             const newMasterListEquipment = new MasterListEquipment(req.body);
             const result = await newMasterListEquipment.save();
-            return res.status(201).json({ status: "SUCCESS", msg: "Record created successfully", code: 201, result });
+
+            return res
+                .status(201)
+                .json({ status: "SUCCESS", msg: "Record created successfully", code: 201, result });
 
         } catch (err) {
             console.log(err);
@@ -156,29 +128,12 @@ const update = async (req, res, next) => {
 
         const {
             master_list_equipment_id,
-            asset_identification_no,
-            equipment_name,
-            equipment_make_or_nodel,
-            equipment_serial_no,
-            range_size,
-            least_count,
-            accuracy_or_acceptance,
-            year_of_purchase,
-            calibrated_by,
-            date_of_calibration,
-            calibration_due_date,
-            calibration_certificate_no,
-            uncertainty,
-            frequency_of_calibration
         } = req.body;
 
         if (
-            !master_list_equipment_id || !asset_identification_no || !equipment_name || !equipment_make_or_nodel ||
-            !equipment_serial_no || !range_size || !least_count || !accuracy_or_acceptance || !year_of_purchase ||
-            !calibrated_by || !date_of_calibration || !calibration_due_date || !calibration_certificate_no || !uncertainty ||
-            !frequency_of_calibration
+            !master_list_equipment_id
         ) {
-            const error = new Error("All fields are required");
+            const error = new Error("Master Equipment Id is required");
             error.code = 500;
             return errorHandler(error, req, res, next);
         }
@@ -191,28 +146,13 @@ const update = async (req, res, next) => {
             where: { master_list_equipment_id }
         });
 
+        req.body.updated_timestamp = Date.now();
+        req.body.updated_by_login_name = fetchCreater.name;
+        req.body.updated_by_user_id = req.userId;
+
         if (result) {
             await MasterListEquipment.update(
-                {
-                    asset_identification_no,
-                    equipment_name,
-                    equipment_make_or_nodel,
-                    equipment_serial_no,
-                    range_size,
-                    least_count,
-                    accuracy_or_acceptance,
-                    year_of_purchase,
-                    calibrated_by,
-                    date_of_calibration,
-                    calibration_due_date,
-                    calibration_certificate_no,
-                    uncertainty,
-                    frequency_of_calibration,
-
-                    updated_timestamp: Date.now(),
-                    updated_by_login_name: fetchCreater.name,
-                    updated_by_user_id: req.userId
-                },
+                req.body,
                 { where: { master_list_equipment_id } }
             )
             return res.status(200).json({
