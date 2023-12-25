@@ -601,10 +601,10 @@ const weighingBalance = async (req, res, next) => {
     }
 
     // Set standards/Master details table data
-    const masterDescription = masterListEquipment.equipment_name;
-    const masterMake = masterListEquipment.equipment_make_or_nodel;
-    const masterSlNo = masterListEquipment.equipment_serial_no;
-    const masterCertificateNo = masterListEquipment.calibration_certificate_no;
+    const masterDescription = masterListEquipment?.name_of_equipment;
+    const masterMake = masterListEquipment?.make;
+    const masterSlNo = masterListEquipment?.serial_no;
+    const masterCertificateNo = masterListEquipment?.calibration_certificate_no;
     const masterValidity = validity;
     const masterTraceability = traceability;
 
