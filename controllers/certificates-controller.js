@@ -119,7 +119,7 @@ const vernierCaliper = async (req, res, next) => {
         due_date = "--";
     }
 
-    // Set duc details table data
+    // Set DUC Details table data
     const description = item?.intrument_type?.instrument_full_name;
     const make = item?.make;
     const slNo = item?.serial_no;
@@ -139,11 +139,11 @@ const vernierCaliper = async (req, res, next) => {
         return errorHandler(error, req, res, next);
     }
 
-    // Set standards/Master details table data
-    const masterDescription = masterListEquipment.equipment_name;
-    const masterMake = masterListEquipment.equipment_make_or_nodel;
-    const masterSlNo = masterListEquipment.equipment_serial_no;
-    const masterCertificateNo = masterListEquipment.calibration_certificate_no;
+    // Set Standards/Master Details table data
+    const masterDescription = masterListEquipment?.name_of_equipment;
+    const masterMake = masterListEquipment?.make;
+    const masterSlNo = masterListEquipment?.serial_no;
+    const masterCertificateNo = masterListEquipment?.calibration_certificate_no;
     const masterValidity = validity;
     const masterTraceability = traceability;
 
