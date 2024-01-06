@@ -431,7 +431,7 @@ const create = async (req, res, next) => {
             return res.status(200).json({
                 msg: true,
                 code: 200,
-                response: "Mail Send Successfully"
+                msg: "Mail Send Successfully"
             });
         } catch (err) {
             console.log(err);
