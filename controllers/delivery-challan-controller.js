@@ -183,6 +183,7 @@ const create = async (req, res, next) => {
                     [
                         { text: `${existingLab.address1}`, width: 100 },
                         { text: `${existingLab.address2}`, width: 100 },
+                        { text: `${existingLab.address3}`, width: 100 },
                         { text: `${existingLab.city} - ${existingLab.pincode}`, width: 100 },
                         { text: `Telephone: ${existingLab.contact_number1}, email: ${existingLab.contact_email}`, width: 100 },
                     ],
@@ -422,10 +423,16 @@ const create = async (req, res, next) => {
             });
             console.log(info);
 
-            return res.set({
-                "Content-Type": "application/pdf",
-                "Content-Length": buffer.length
-            }).sendFile(pdfURL);
+            // return res.set({
+            //     "Content-Type": "application/pdf",
+            //     "Content-Length": buffer.length
+            // }).sendFile(pdfURL);
+
+            return res.status(200).json({
+                msg: true,
+                code: 200,
+                response: "Mail Send Successfully"
+            });
         } catch (err) {
             console.log(err);
             const error = new Error("Error when sending the mail");
