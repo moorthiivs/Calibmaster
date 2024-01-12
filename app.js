@@ -32,6 +32,8 @@ const masterListEquipmentsRoutes = require("./routes/master-list-equipments-rout
 const calibrationCertificateRoutes = require("./routes/calibration-certificate");
 const calibrationsCertificateRoutes = require("./routes/calibrations-certificate");
 
+const cmsRoutes = require('./routes/cms-routes');
+
 const testRoutes = require("./routes/test-route");
 
 const Authorization = require("./middleware/check-auth");
@@ -114,7 +116,9 @@ app.use("/api/srf-status", Authorization, srfStatushRoutes);
 app.use("/api/master-list-equipments", Authorization, masterListEquipmentsRoutes);
 
 app.use("/api/calibration-certificate", Authorization, calibrationCertificateRoutes);
-app.use("/api/calibrations-certificate", calibrationsCertificateRoutes); // *** Modified API for Calibration Certificates
+app.use("/api/calibrations-certificate", Authorization, calibrationsCertificateRoutes); // *** Modified API for Calibration Certificates
+
+app.use("/api/cms-setting", cmsRoutes);
 
 // app.use("/api/download", Authorization, srfdownloadRoute);
 // app.use("/api/masterlist", Authorization, masterlistRoutes);
