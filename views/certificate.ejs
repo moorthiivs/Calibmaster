@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certificate</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        .container {
+            width: 790px;
+            margin: 0 auto 0;
+        }
+
+        table,
+        th,
+        td {
+            border-collapse: collapse;
+        }
+
+        @media print {
+            .breakDiv {
+                break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+
+        <div class="firstSection" style="margin-bottom: 0;">
+            <table style="width: 100%; border: 1px solid black;">
+                <tr>
+                    <td style="width: 50%; vertical-align: baseline; border-right: 1px solid black;">
+                        <table style="width: 100%;">
+                            <tr style="border-bottom: 1px solid black;">
+                                <td style="width: 50%; border-right: 1px solid black;">CERTIFICATE NUMBER</td>
+                                <td style="width: 50%;text-align: center;">
+                                    <%= certificate_number %>
+                                </td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid black;">
+                                <td style="width: 50%; border-right: 1px solid black;">ULR NUMBER</td>
+                                <td style="width: 50%;text-align: center;">
+                                    <%= ulr_number %>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan="2">
+                                    <p>CUSTOMER ADDRESS:
+                                        <%= customer_address %>
+                                    </p>
+                                </td>
+                            </tr>
+
+                        </table>
+                    </td>
+                    <td style="width: 50%;">
+                        <table style="width: 100%;">
+                            <tr style="border-bottom: 1px solid black;">
+                                <td style="width: 50%; border-right: 1px solid black;">PAGE NUMBER</td>
+                                <td style="text-align: center;">1 OF 2</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid black;">
+                                <td style="width: 50%; border-right: 1px solid black;">DATE OF ISSUE</td>
+                                <td style="text-align: center;">
+                                    <%= date_of_issue %>
+                                </td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid black;">
+                                <td style="width: 50%; border-right: 1px solid black;">RECEIVED DATE</td>
+                                <td style="text-align: center;">
+                                    <%= received_date %>
+                                </td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid black;">
+                                <td style="width: 50%; border-right: 1px solid black;">CAL.DATE</td>
+                                <td style="text-align: center;">
+                                    <%= cal_date %>
+                                </td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid black;">
+                                <td style="width: 50%; border-right: 1px solid black;">DUE.DATE</td>
+                                <td style="text-align: center;">
+                                    <%= due_date %>
+                                </td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid black;">
+                                <td style="width: 50%; border-right: 1px solid black;">CONDITION</td>
+                                <td style="text-align: center;">
+                                    <%= condition %>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="width: 50%; border-right: 1px solid black;">CALIBRATED AT</td>
+                                <td style="text-align: center;">LAB</td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="scondSection" style="margin-bottom: 0;">
+            <table style="width: 100%; border-left: 1px solid black; border-radius: 1px solid black;">
+                <tr>
+                    <td style="width: 50%; vertical-align: baseline; border-right: 1px solid black;">
+                        <table style="width: 100%;">
+                            <tr style="border-bottom: 1px solid black;">
+                                <td colspan="2"
+                                    style="width: 50%; border-right: 0 solid black; text-align: center; padding: 5px;">
+                                    DUC DETAILS
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                    <td style="width: 50%;">
+                        <table style="width: 100%;">
+                            <tr style="border-bottom: 1px solid black;">
+                                <td colspan="2"
+                                    style="width: 50%; border-right: 1px solid black; text-align: center;padding: 5px;">
+                                    STANDARD DETAILS
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="thirdSection" style="margin-bottom: 0;">
+            <table style="width: 100%; border: 1px solid black; border-top: 0px solid black;">
+                <tr>
+                    <td style="width: 50%; vertical-align: baseline; border-right: 1px solid black;">
+                        <table style="width: 100%;">
+                            <tr style="border-bottom: 1px solid black;">
+                                <td style="width: 50%; border-right: 1px solid black;">DESCRIPTION</td>
+                                <td style="width: 50%;text-align: center;">
+                                    Weighing Balance
+                                </td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid black;">
+                                <td style="width: 50%; border-right: 1px solid black;">MAKE</td>
+                                <td style="width: 50%;text-align: center;">
+                                    <%= make %>
+                                </td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid black;">
+                                <td style="width: 50%; border-right: 1px solid black;">SL.NO</td>
+                                <td style="width: 50%;text-align: center;">
+                                    <%= slNo %>
+                                </td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid black;">
+                                <td style="width: 50%; border-right: 1px solid black;">ID.NO</td>
+                                <td style="width: 50%;text-align: center;">
+                                    <%= idNo %>
+                                </td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid black;">
+                                <td style="width: 50%; border-right: 1px solid black;">RANGE</td>
+                                <td style="width: 50%;text-align: center;">
+                                    <%= range %>
+                                </td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid black;">
+                                <td style="width: 50%; border-right: 1px solid black;">L.C</td>
+                                <td style="width: 50%;text-align: center;">
+                                    <%= lc %>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                    <td style="width: 50%; vertical-align: baseline;">
+                        <table style="width: 100%;">
+                            <tr style="border-bottom: 1px solid black;">
+                                <td style="width: 50%; border-right: 1px solid black;">DESCRIPTION</td>
+                                <td style="text-align: center;">
+                                    <%= masterDescription %>
+                                </td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid black;">
+                                <td style="width: 50%; border-right: 1px solid black;">MAKE</td>
+                                <td style="text-align: center;">
+                                    <%= masterMake %>
+                                </td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid black;">
+                                <td style="width: 50%; border-right: 1px solid black;">SL.NO</td>
+                                <td style="text-align: center;">
+                                    <%= masterSlNo %>
+                                </td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid black;">
+                                <td style="width: 50%; border-right: 1px solid black;">CERTIFICATE.NO</td>
+                                <td style="text-align: center;">
+                                    <%= masterCertificateNo %>
+                                </td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid black;">
+                                <td style="width: 50%; border-right: 1px solid black;">VALIDITY</td>
+                                <td style="text-align: center;">
+                                    <%= masterValidity %>
+                                </td>
+                            </tr>
+                            <tr style="border-bottom: 0 solid black;">
+                                <td style="width: 50%; border-right: 1px solid black;">TRACEABILITY</td>
+                                <td style="text-align: center;">
+                                    <%= masterTraceability %>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="forthSection" style="margin-bottom: 0; border: 1px solid black; border-top: 0px solid black;">
+            <p>CALIBRATION PROCEDURE & REF.STD :
+                <%= calibration_procedure %>
+            </p>
+        </div>
+
+        <div class="fifthSection" style="margin-bottom: 0; border: 1px solid black; border-top: 0px solid black;">
+            <p>ENVIRONMENTAL CONDITION:</p>
+        </div>
+
+        <div class="sixthSection" style="margin-bottom: 0;">
+            <table style="width: 100%; border: 1px solid black; border-top: 0px solid black;">
+                <tr style="border-bottom: 1px solid black;">
+                    <td style="width: 50%; border-right: 1px solid black;">
+                        TEMPERATURE (°C)
+                    </td>
+                    <td style="width: 50%;text-align: center;">
+                        <%= temperature %>
+                    </td>
+                </tr>
+                <tr style="border-bottom: 1px solid black;">
+                    <td style="width: 50%; border-right: 1px solid black;">
+                        HUMIDITY (RH %)
+                    </td>
+                    <td style="width: 50%;text-align: center;">
+                        <%= humidity %>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="seventhSection" style="margin-bottom: 0; border: 1px solid black; border-top: 0px solid black;">
+            <p>CALIBRATION RESULT ( All Values are in mm )</p>
+        </div>
+
+        <div class="mainSection" style="margin-bottom: 0; border: 1px solid black; border-top: 0px solid black;">
+            <table style="width: 100%;">
+                <tr>
+                    <td style="width: 80%; border-right: 1px solid black;">
+                        <table style="width: 100%; text-align: center;">
+                            <tr style="border-bottom: 1px solid black;">
+                                <td style="border-right: 1px solid black;">STD READING</td>
+                                <td style="border-right: 1px solid black;">EXTERNAL</td>
+                                <td style="border-right: 1px solid black;">ERROR</td>
+                                <td style="border-right: 1px solid black;">INTERNAL</td>
+                                <td style="border-right: 0 solid black;">ERROR</td>
+                            </tr>
+                            <% for (let i=0; i < calibration.length; i++) { %>
+                                <tr>
+                                    <td style="border-right: 1px solid black; border-bottom: 1px solid;">
+                                        <%= calibration[i]['std_reading'] %>
+                                    </td>
+                                    <td style="border-right: 1px solid black; border-bottom: 1px solid;">
+                                        <%= calibration[i]['external'] %>
+                                    </td>
+                                    <td style="border-right: 1px solid black; border-bottom: 1px solid;">
+                                        <%= calibration[i]['error_1'] %>
+                                    </td>
+                                    <td style="border-right: 1px solid black; border-bottom: 1px solid;">
+                                        <%= calibration[i]['internal'] %>
+                                    </td>
+                                    <td style="border-right: 0 solid black; border-bottom: 1px solid;">
+                                        <%= calibration[i]['error_2'] %>
+                                    </td>
+                                </tr>
+                                <% } %>
+                        </table>
+                    </td>
+                    <td style="width: 20%; vertical-align: baseline;" rowspan="6">
+                        <table style="width: 100%;">
+                            <tr style="border-bottom: 1px solid black;">
+                                <td>UNCERTAINTY ± µm</td>
+                            </tr>
+                            <tr>
+                                <td style="color: white;">---</td>
+                            </tr>
+                            <tr>
+                                <td style="color: white;">---</td>
+                            </tr>
+                            <tr>
+                                <td style="color: white;">---</td>
+                            </tr>
+                            <tr>
+                                <td style="color: white;">---</td>
+                            </tr>
+                            <tr>
+                                <td style="color: white;">---</td>
+                            </tr>
+                            <tr>
+                                <td style="text-align: center;">
+                                    <%= uncertainty %>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="footerSection" style="margin-bottom: 0; border: 1px solid black; border-top: 0px solid black;">
+            <div style="width: 31%; display: inline-block;">
+                <ul style="list-style: none; padding-left: 20px; padding-top: 10px;">
+                    <li class="signature" style="text-align: center; margin-bottom: -8px;">
+                        <img src="<%= BACKEND_SERVER %>/images/sign-1.png" alt="Logo" style="width: 100px;" />
+                    </li>
+                    <li style="text-align: center;">
+                        <%= calibrated_by %>
+                    </li>
+                    <li style="text-align: center;">Calibration Engineer</li>
+                    <li style="text-align: center;">Calibrated By</li>
+                </ul>
+            </div>
+
+            <div style="width: 35%; display: inline-block; padding: 1rem; text-align: center;">
+                <img src="<%= BACKEND_SERVER %>/images/seal.jpg" alt="Logo" style="width: 100px;" />
+            </div>
+
+            <div style="width: 31%; display: inline-block;">
+                <ul style="list-style: none; padding-right: 20px; padding-top: 10px;">
+                    <li class="signature" style="text-align: center; margin-bottom: -10px;">
+                        <img src="<%= BACKEND_SERVER %>/images/sign-2.png" alt="Logo" style="width: 100px;" />
+                    </li>
+                    <li style="text-align: center;">
+                        <%= approved_by %>
+                    </li>
+                    <li style="text-align: center;">Technical manager</li>
+                    <li style="text-align: center;">Approved by</li>
+                </ul>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="container breakDiv">
+
+        <div class="firstSection" style="margin-bottom: 0;">
+            <table style="width: 100%; border: 1px solid black;">
+                <tr>
+                    <td style="width: 25%; border-right: 1px solid black;">CERTIFICATE NUMBER</td>
+                    <td style="width: 25%;text-align: center; border-right: 1px solid black;">
+                        <%= certificate_number %>
+                    </td>
+                    <td style="width: 50%;">
+                        <table style="width: 100%;">
+                            <tr style="border-bottom: 1px solid black;">
+                                <td style="width: 50%; border-right: 1px solid black;">PAGE NUMBER</td>
+                                <td style="text-align: center;">2 OF 2</td>
+                            </tr>
+                            <tr style="border-bottom: 0px solid black;">
+                                <td style="width: 50%; border-right: 1px solid black;">DATE OF ISSUE</td>
+                                <td style="text-align: center;">
+                                    <%= date_of_issue %>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="scondSection" style=" border-bottom: 1px solid black;">
+            <table style="width: 100%; border-left: 1px solid black; border-right: 1px solid black;">
+                <tr>
+                    <td style="width: 50%; border-right: 0 solid black; text-align: left; padding: 5px;" rowspan="2">
+                        RWPEATABILITY TEST
+                    </td>
+                    <td style="color: white;">--</td>
+                </tr>
+                <tr>
+                    <td style="color: white;">--</td>
+                    <td style="color: white;">--</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="thirdSection REPEATABILITY_TEST" tyle=" border-bottom: 1px solid black;">
+            <table style="width: 100%; border: 1px solid black; border-top: 0px solid black;">
+                <tr>
+                    <td style="width: 33.33%; text-align: center; border-bottom: 1px solid black; 
+                            border-right: 1px solid black;">
+                        ZERO
+                    </td>
+                    <td style="width: 33.33%; text-align: center; border-bottom: 1px solid black; 
+                            border-right: 1px solid black;">
+                        HALF LOAD
+                    </td>
+                    <td style="width: 33.33%; text-align: center; border-bottom: 1px solid black;">
+                        HALF LOAD
+                    </td>
+                </tr>
+                <tr>
+                    <td style="width: 33.33%; text-align: center; border-right: 1px solid black;">Kg</td>
+                    <td style="width: 33.33%; text-align: center; border-right: 1px solid black;">Kg</td>
+                    <td style="width: 33.33%; text-align: center;">Kg</td>
+                </tr>
+
+                <% for (let i=0; i < repeatability.length; i++) { %>
+                    <tr style="border-top: 1px solid black;">
+                        <td style="width: 33.33%; text-align: center; border-right: 1px solid black;">
+                            <%= repeatability[i]['zero_kg'] %>
+                        </td>
+                        <td style="width: 33.33%; text-align: center; border-right: 1px solid black;">
+                            <%= repeatability[i]['half_load_kg'] %>
+                        </td>
+                        <td style="width: 33.33%; text-align: center;">
+                            <%= repeatability[i]['full_load_kg'] %>
+                        </td>
+                    </tr>
+                    <% } %>
+            </table>
+        </div>
+
+        <div class="forthSection" style=" border-bottom: 1px solid black;">
+            <table style="width: 100%; border-left: 1px solid black; border-right: 1px solid black;">
+                <tr>
+                    <td style="width: 50%; border-right: 0 solid black; text-align: left; padding: 5px;" rowspan="2">
+                        ECCENTRICITY TEST
+                    </td>
+                    <td style="color: white;">--</td>
+                </tr>
+                <tr>
+                    <td style="color: white;">--</td>
+                    <td style="color: white;">--</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="fifthSection" style=" border-bottom: 0 solid black;">
+            <table style="width: 100%; border-left: 1px solid black; border-right: 1px solid black;">
+                <tr style="text-align: center; border: 1px solid black; border-top: 0;">
+                    <td rowspan="2" style="border-right: 1px solid black;">PAN POSITION</td>
+                    <td style="border-right: 1px solid black;">STD. READING</td>
+                    <td style="border-right: 1px solid black;">DUC. READING</td>
+                    <td>ERROR</td>
+                    <td rowspan="2" style="border-left: 1px solid black;">PAN DIAGRAM</td>
+                </tr>
+                <tr style="text-align: center; border-bottom: 1px solid black;">
+                    <td style="border-right: 1px solid black;">Kg</td>
+                    <td style="border-right: 1px solid black;">Kg</td>
+                    <td>Kg</td>
+                </tr>
+
+                <% for (let i=0; i < eccentricity.length; i++) { %>
+                    <tr style="text-align: center;">
+                        <td style="border-bottom: 1px solid black; border-right: 1px solid black;">
+                            <%= eccentricity[i]['id'] %>
+                        </td>
+                        <td style="border-bottom: 1px solid black; border-right: 1px solid black;">
+                            <%= eccentricity[i]['std_reading_kg'] %>
+                        </td>
+                        <td style="border-bottom: 1px solid black; border-right: 1px solid black;">
+                            <%= eccentricity[i]['duc_reading_kg'] %>
+                        </td>
+                        <td style="border-bottom: 1px solid black; border-right: 1px solid black;">
+                            <%= eccentricity[i]['error_kg'] %>
+                        </td>
+                        <% if ( eccentricity[i]['id']==1) { %>
+                            <td rowspan="5"
+                                style="border-right: 1px solid black; border-bottom: 1px solid black; vertical-align: middle;">
+                                <div style="float:left; background:white;  width:25%; height:50px;">
+                                    <p style="padding-bottom: 44px; margin-top: -16px; margin-left: 40px;">
+                                        5
+                                    </p>
+                                    <p style="margin-left: 41px;">
+                                        2
+                                    </p>
+                                </div>
+                                <p style="float:left; background:white; border: 1px solid black; border-radius: 5px;
+                                        width:50%; padding:15px;">
+                                    1
+                                </p>
+                                <div style="float:right; text-align: left; background:white; width:25%; height:50px;">
+                                    <p style="padding-bottom: 44px; margin-top: -16px;">
+                                        4
+                                    </p>
+                                    <p>3</p>
+                                </div>
+                            </td>
+                            <% } %>
+                    </tr>
+                    <% } %>
+            </table>
+        </div>
+
+        <div class="remarksTitle" style="margin-bottom: 0; border: 1px solid black; border-top: 0px solid black;">
+            <p style="padding: 5px;">REMARKS:</p>
+            <ol type="1" style="padding-left: 25px; padding-bottom: 5px;">
+                <li>
+                    <%= remark_1 %>
+                </li>
+                <li>
+                    <%= remark_2 %>
+                </li>
+                <li>
+                    <%= remark_3 %>
+                </li>
+                <li>
+                    <%= remark_4 %>
+                </li>
+                <li>
+                    <%= remark_5 %>
+                </li>
+            </ol>
+        </div>
+
+        <div class="footerSection"
+            style="margin-bottom: 0; border: 1px solid black; border-top: 0px solid black; padding-top: 0rem;">
+            <div style="width: 31%; display: inline-block;">
+                <ul style="list-style: none; padding-left: 20px; padding-top: 10px;">
+                    <li class="signature" style="text-align: center; margin-bottom: -8px;">
+                        <img src="<%= BACKEND_SERVER %>/images/sign-1.png" alt="Logo" style="width: 100px;" />
+                    </li>
+                    <li style="text-align: center;">
+                        <%= calibrated_by %>
+                    </li>
+                    <li style="text-align: center;">Calibration Engineer</li>
+                    <li style="text-align: center;">Calibrated By</li>
+                </ul>
+            </div>
+
+            <div style="width: 35%; display: inline-block; padding: 1rem; text-align: center;">
+                <img src="<%= BACKEND_SERVER %>/images/seal.jpg" alt="Logo" style="width: 100px;" />
+            </div>
+
+            <div style="width: 31%; display: inline-block;">
+                <ul style="list-style: none; padding-right: 20px; padding-top: 10px;">
+                    <li class="signature" style="text-align: center; margin-bottom: -10px;">
+                        <img src="<%= BACKEND_SERVER %>/images/sign-2.png" alt="Logo" style="width: 100px;" />
+                    </li>
+                    <li style="text-align: center;">
+                        <%= approved_by %>
+                    </li>
+                    <li style="text-align: center;">Technical manager</li>
+                    <li style="text-align: center;">Approved by</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

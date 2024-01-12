@@ -1,0 +1,24 @@
+{
+  "files": {
+    "main.css": "/static/css/main.f6eb081f.chunk.css",
+    "main.js": "/static/js/main.edad33b4.chunk.js",
+    "main.js.map": "/static/js/main.edad33b4.chunk.js.map",
+    "runtime-main.js": "/static/js/runtime-main.e88369fb.js",
+    "runtime-main.js.map": "/static/js/runtime-main.e88369fb.js.map",
+    "static/js/2.fc0afaaf.chunk.js": "/static/js/2.fc0afaaf.chunk.js",
+    "static/js/2.fc0afaaf.chunk.js.map": "/static/js/2.fc0afaaf.chunk.js.map",
+    "index.html": "/index.html",
+    "static/css/main.f6eb081f.chunk.css.map": "/static/css/main.f6eb081f.chunk.css.map",
+    "static/js/2.fc0afaaf.chunk.js.LICENSE.txt": "/static/js/2.fc0afaaf.chunk.js.LICENSE.txt",
+    "static/media/CalibMaster_Logo2.png": "/static/media/CalibMaster_Logo2.35bbec40.png",
+    "static/media/calibration.d7439ee5.jpg": "/static/media/calibration.d7439ee5.jpg",
+    "static/media/service-unavailable.2b8ce3e8.jpg": "/static/media/service-unavailable.2b8ce3e8.jpg",
+    "static/media/user.89b7b4c7.png": "/static/media/user.89b7b4c7.png"
+  },
+  "entrypoints": [
+    "static/js/runtime-main.e88369fb.js",
+    "static/js/2.fc0afaaf.chunk.js",
+    "static/css/main.f6eb081f.chunk.css",
+    "static/js/main.edad33b4.chunk.js"
+  ]
+}
