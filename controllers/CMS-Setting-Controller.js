@@ -71,14 +71,17 @@ const edit_cms_certificate = async (req, res, next) => {
 
     try {
 
-        const { setting_certificate_value } = req.body;
+        const { setting_value, cmssetting_id } = req.body;
 
-        const fetchCMSsettings = await CMSsettings.findOne();
+        const fetchCMSsettings = await CMSsettings.findOne({
+            where: { cmssetting_id: cmssetting_id }
+        });
 
         if (fetchCMSsettings) {
 
             await fetchCMSsettings.update(
-                { setting_certificate_value }
+                { setting_value },
+                { where: { cmssetting_id: cmssetting_id } }
             )
 
             return res.status(200).json({

@@ -52,7 +52,7 @@ router.use("/api/instrument", instrument);
 router.use("/api/instrument-types", instrumentTypes);
 
 router.use("/api/company", Authorization, companyRoutes);
-router.use("/api/customers", customersRoutes);
+router.use("/api/customers", Authorization, customersRoutes);
 
 router.use("/api/srf-config", Authorization, srfConfigRoutes);
 router.use("/api/srf", Authorization, srfRoutes);
@@ -78,7 +78,7 @@ router.use("/api/master-list-equipments", Authorization, masterListEquipmentsRou
 router.use("/api/calibration-certificate", Authorization, calibrationCertificateRoutes);
 router.use("/api/calibrations-certificate", Authorization, calibrationsCertificateRoutes); // *** Modified API for Calibration Certificates
 
-router.use("/api/cms-setting", Authorization, cmsRoutes);
+router.use("/api/cms-setting", cmsRoutes);
 
 // router.use("/api/download", Authorization, srfdownloadRoute);
 // router.use("/api/masterlist", Authorization, masterlistRoutes);

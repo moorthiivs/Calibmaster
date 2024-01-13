@@ -1,7 +1,5 @@
 const express = require("express");
 
-const Authorization = require("../middleware/check-auth");
-
 const router = express.Router();
 
 const CMSSettingController = require("../controllers/CMS-Setting-Controller");

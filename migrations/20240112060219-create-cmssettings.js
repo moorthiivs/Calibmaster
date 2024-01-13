@@ -10,37 +10,36 @@ module.exports = {
         type: Sequelize.INTEGER
       },
 
-      setting_certificate_name: {
+      setting_name: {
         type: Sequelize.STRING(200),
-        allowNull: true,
-        defaultValue: 'ENABLE_CERTIFICATE_GENERATION'
+        allowNull: true
       },
 
-      setting_certificate_lable: {
+      setting_lable: {
         type: Sequelize.STRING(200),
-        allowNull: true,
-        defaultValue: 'Enable Certificate Generation'
+        allowNull: true
       },
 
-      setting_certificate_description: {
+      setting_description: {
         type: Sequelize.STRING(255),
-        allowNull: true,
-        defaultValue: 'This setting is used display'
+        allowNull: true
       },
 
-      setting_certificate_value: {
-        type: Sequelize.STRING(255),
+      setting_value: {
+        type: Sequelize.STRING(20),
         allowNull: true,
         defaultValue: 'NO'
       },
 
       createdAt: {
         allowNull: false,
-        type: Sequelize.DATE
+        type: Sequelize.DATE,
+        defaultValue: new Date()
       },
       updatedAt: {
         allowNull: false,
-        type: Sequelize.DATE
+        type: Sequelize.DATE,
+        defaultValue: new Date()
       }
     });
   },
