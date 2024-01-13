@@ -1,47 +1,10 @@
 const express = require("express");
 const bodyParser = require("body-parser");
-const usersRoutes = require("./routes/users-routes");
-const heartbeatRoute = require("./routes/heartbeat-route");
-const companyRoutes = require("./routes/company-routes");
-const srfConfigRoutes = require("./routes/srf-config-routes");
-const srfRoutes = require("./routes/srf-routes");
-const labRoutes = require("./routes/lab-routes");
-const srfdownloadRoute = require("./routes/srfdownload-routes");
-const masterlistRoutes = require("./routes/masterlist-routes");
-const certificateRoutes = require("./routes/certificate-routes");
-const uomRoutes = require("./routes/uom-routes");
-
-const instrumentDisciplineRoutes = require("./routes/instrument-discipline-routes")
-const instrumentGroupsRoutes = require("./routes/instrument-groups-routes");
-const instrument = require("./routes/instrument-routes");
-const instrumentTypes = require("./routes/instrument-types-routes")
-const customersRoutes = require("./routes/customer-routes");
-const calibrationDateRoutes = require("./routes/calibation-routes");
-
-const mailRoutes = require("./routes/mail-routes");
-const excelRoutes = require("./routes/excel-routes");
-
-const challanRoute = require("./routes/challan-route");
-const deliveryChallanRoute = require("./routes/delivery-challan-routes");
-
-const srfSearchRoutes = require("./routes/srf-search-routes");
-const srfStatushRoutes = require("./routes/srf-status-routes");
-
-const masterListEquipmentsRoutes = require("./routes/master-list-equipments-routes");
-
-const calibrationCertificateRoutes = require("./routes/calibration-certificate");
-const calibrationsCertificateRoutes = require("./routes/calibrations-certificate");
-
-const cmsRoutes = require('./routes/cms-routes');
-
-const testRoutes = require("./routes/test-route");
-
-const Authorization = require("./middleware/check-auth");
-
 const path = require("path");
-var cors = require("cors");
+const cors = require("cors");
 const logger = require("./utils/logger");
 const dotenv = require('dotenv');
+const routers = require('./routes/');
 const customCron = require('./cron');
 
 const app = express();
@@ -80,54 +43,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.set('view engine', 'ejs');
 app.set('views', './views');
 
-//Routes of the APP
-app.use("/api/heartbeat", heartbeatRoute);
-app.use("/api/users", usersRoutes);
-app.use("/api/lab", Authorization, labRoutes);
-app.use("/api/uom", uomRoutes);
-
-app.use("/api/instrument-discipline", instrumentDisciplineRoutes);
-app.use("/api/instrument-groups", instrumentGroupsRoutes);
-app.use("/api/instrument", instrument);
-app.use("/api/instrument-types", instrumentTypes);
-
-app.use("/api/company", Authorization, companyRoutes);
-app.use("/api/customers", customersRoutes);
-
-app.use("/api/srf-config", Authorization, srfConfigRoutes);
-app.use("/api/srf", Authorization, srfRoutes);
-
-app.use("/api/calibration-date", Authorization, calibrationDateRoutes);
-
-app.use("/api/certificate", Authorization, certificateRoutes);
-
-app.use("/api/mail", Authorization, mailRoutes);
-
-app.use("/api/excel", Authorization, excelRoutes);
-
-app.use("/api/pdf", Authorization, challanRoute);
-app.use("/api/delivery-challan", Authorization, deliveryChallanRoute); // *** Modified API for Delivery-Challan
-
-app.use("/api/srf-search", Authorization, srfSearchRoutes);
-
-app.use("/api/srf-status", Authorization, srfStatushRoutes);
-app.use("/api/srf-status", Authorization, srfStatushRoutes);
-
-app.use("/api/master-list-equipments", Authorization, masterListEquipmentsRoutes);
-
-app.use("/api/calibration-certificate", Authorization, calibrationCertificateRoutes);
-app.use("/api/calibrations-certificate", Authorization, calibrationsCertificateRoutes); // *** Modified API for Calibration Certificates
-
-app.use("/api/cms-setting", cmsRoutes);
-
-// app.use("/api/download", Authorization, srfdownloadRoute);
-// app.use("/api/masterlist", Authorization, masterlistRoutes);
-
-app.use("/api/test", testRoutes);
-
-app.get("/*", (req, res) => {
-  res.sendFile(__dirname + "/public/index.html");
-});
+app.use('/', routers);
 
 //Default Error Handler
 app.use((error, req, res, next) => {

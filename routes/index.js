@@ -1,0 +1,92 @@
+const express = require("express");
+
+const router = express.Router();
+
+const usersRoutes = require("./users-routes");
+const heartbeatRoute = require("./heartbeat-route");
+const companyRoutes = require("./company-routes");
+const srfConfigRoutes = require("./srf-config-routes");
+const srfRoutes = require("./srf-routes");
+const labRoutes = require("./lab-routes");
+const srfdownloadRoute = require("./srfdownload-routes");
+const masterlistRoutes = require("./masterlist-routes");
+const certificateRoutes = require("./certificate-routes");
+const uomRoutes = require("./uom-routes");
+
+const instrumentDisciplineRoutes = require("./instrument-discipline-routes")
+const instrumentGroupsRoutes = require("./instrument-groups-routes");
+const instrument = require("./instrument-routes");
+const instrumentTypes = require("./instrument-types-routes")
+const customersRoutes = require("./customer-routes");
+const calibrationDateRoutes = require("./calibation-routes");
+
+const mailRoutes = require("./mail-routes");
+const excelRoutes = require("./excel-routes");
+
+const challanRoute = require("./challan-route");
+const deliveryChallanRoute = require("./delivery-challan-routes");
+
+const srfSearchRoutes = require("./srf-search-routes");
+const srfStatushRoutes = require("./srf-status-routes");
+
+const masterListEquipmentsRoutes = require("./master-list-equipments-routes");
+
+const calibrationCertificateRoutes = require("./calibration-certificate");
+const calibrationsCertificateRoutes = require("./calibrations-certificate");
+
+const cmsRoutes = require('./cms-routes');
+
+const testRoutes = require("./test-route");
+
+const Authorization = require("../middleware/check-auth");
+
+//Routes of the APP
+router.use("/api/heartbeat", heartbeatRoute);
+router.use("/api/users", usersRoutes);
+router.use("/api/lab", Authorization, labRoutes);
+router.use("/api/uom", uomRoutes);
+
+router.use("/api/instrument-discipline", instrumentDisciplineRoutes);
+router.use("/api/instrument-groups", instrumentGroupsRoutes);
+router.use("/api/instrument", instrument);
+router.use("/api/instrument-types", instrumentTypes);
+
+router.use("/api/company", Authorization, companyRoutes);
+router.use("/api/customers", customersRoutes);
+
+router.use("/api/srf-config", Authorization, srfConfigRoutes);
+router.use("/api/srf", Authorization, srfRoutes);
+
+router.use("/api/calibration-date", Authorization, calibrationDateRoutes);
+
+router.use("/api/certificate", Authorization, certificateRoutes);
+
+router.use("/api/mail", Authorization, mailRoutes);
+
+router.use("/api/excel", Authorization, excelRoutes);
+
+router.use("/api/pdf", Authorization, challanRoute);
+router.use("/api/delivery-challan", Authorization, deliveryChallanRoute); // *** Modified API for Delivery-Challan
+
+router.use("/api/srf-search", Authorization, srfSearchRoutes);
+
+router.use("/api/srf-status", Authorization, srfStatushRoutes);
+router.use("/api/srf-status", Authorization, srfStatushRoutes);
+
+router.use("/api/master-list-equipments", Authorization, masterListEquipmentsRoutes);
+
+router.use("/api/calibration-certificate", Authorization, calibrationCertificateRoutes);
+router.use("/api/calibrations-certificate", Authorization, calibrationsCertificateRoutes); // *** Modified API for Calibration Certificates
+
+router.use("/api/cms-setting", Authorization, cmsRoutes);
+
+// router.use("/api/download", Authorization, srfdownloadRoute);
+// router.use("/api/masterlist", Authorization, masterlistRoutes);
+
+router.use("/api/test", testRoutes);
+
+router.get("/*", (req, res) => {
+    res.sendFile(__dirname + "../public/index.html");
+});
+
+module.exports = router;
