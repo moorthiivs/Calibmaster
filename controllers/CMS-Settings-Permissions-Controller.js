@@ -76,7 +76,42 @@ const fetch = async (req, res, next) => {
         error.path = "-";
         return errorHandler(error, req, res, next);
     }
-}
+};
+
+const edit = async (req, res, next) => {
+
+    try {
+
+        const { lab_id, setting_name, setting_lable, setting_description, setting_value, is_enable } = req.body;
+
+        const fetchConfig = await CMSsettingsPermissions.findOne({
+            where: { lab_id, setting_name }
+        });
+
+        if (fetchConfig) {
+
+            const response = await fetchConfig.update({
+                lab_id,
+                setting_name, setting_lable, setting_description, setting_value, is_enable
+            });
+
+            return res
+                .status(200)
+                .send({ status: 200, msg: "Configaration successfully updated.", response });
+
+        } else {
+            return res
+                .status(404)
+                .send({ status: 404, msg: "Failed to Updated Configaration." });
+        }
+    } catch (err) {
+        console.log(err);
+        const error = new Error("Something went wrong");
+        error.code = 500;
+        return errorHandler(error, req, res, next);
+    }
+};
 
 exports.create = create;
 exports.fetch = fetch;
+exports.edit = edit;
