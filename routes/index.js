@@ -35,6 +35,7 @@ const calibrationCertificateRoutes = require("./calibration-certificate");
 const calibrationsCertificateRoutes = require("./calibrations-certificate");
 
 const cmsRoutes = require('./cms-routes');
+const cmsPermissionsRoutes = require('./cms-permissions-route');
 
 const testRoutes = require("./test-route");
 
@@ -79,6 +80,7 @@ router.use("/api/calibration-certificate", Authorization, calibrationCertificate
 router.use("/api/calibrations-certificate", Authorization, calibrationsCertificateRoutes); // *** Modified API for Calibration Certificates
 
 router.use("/api/cms-setting", cmsRoutes);
+router.use("/api/cms-permissions-setting", cmsPermissionsRoutes);
 
 // router.use("/api/download", Authorization, srfdownloadRoute);
 // router.use("/api/masterlist", Authorization, masterlistRoutes);

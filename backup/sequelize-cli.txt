@@ -1,0 +1,18 @@
+Undo Specific one migration:
+=> npx sequelize-cli db:migrate:undo --name 20231026124933-create-certificate.js
+=> npx sequelize-cli db:migrate
+================================================================================
+
+20240112060219-create-cmssettings.js
+
+npx sequelize-cli db:migrate
+
+npx sequelize-cli db:migrate:undo:all --to 20240112060219-create-cmssettings.js
+
+npx sequelize-cli seed:generate --name cmssettings
+
+npx sequelize db:seed --seed 20240113061835-cmssettings.js
+
+===================================================================================
+
+npx sequelize-cli model:generate --name cmssettings_permissions --attributes firstName:string

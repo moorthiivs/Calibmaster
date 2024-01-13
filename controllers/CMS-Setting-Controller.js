@@ -1,6 +1,7 @@
-const { errorHandler } = require("../helpers/error-handler");
+const Lab = require("../models").Lab;
 const CMSsettings = require("../models").cmssettings;
 const { Op } = require("sequelize");
+const { errorHandler } = require("../helpers/error-handler");
 
 const create_cms_certificate = async (req, res, next) => {
 
@@ -43,7 +44,18 @@ const fetch_cms_certificate = async (req, res, next) => {
 
     try {
 
-        let result = await CMSsettings.findAll();
+        let result = await CMSsettings.findAll({
+            order: [
+                ['cmssetting_id', 'ASC'],
+            ],
+        });
+
+        let labList = await Lab.findAll({
+            attributes: { exclude: ['brand_logo'] },
+            order: [
+                ['lab_id', 'DESC'],
+            ]
+        });
 
         if (!result) {
             const error = new Error("There is no Certificate Settings.");
@@ -53,7 +65,7 @@ const fetch_cms_certificate = async (req, res, next) => {
             return res.status(200).json({
                 msg: true,
                 response: "CMS Certificate Settings fetched successfully.",
-                result
+                result, labList
             });
         }
 

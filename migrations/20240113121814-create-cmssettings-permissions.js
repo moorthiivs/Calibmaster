@@ -1,14 +1,25 @@
 'use strict';
+
 /** @type {import('sequelize-cli').Migration} */
+
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('cmssettings', {
+    await queryInterface.createTable('cmssettings_permissions', {
 
-      cmssetting_id: {
+      cmssetting_permission_id: {
         type: Sequelize.INTEGER,
         autoIncrement: true,
         primaryKey: true,
         allowNull: false
+      },
+
+      lab_id: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        references: {
+          model: "Labs",
+          key: "lab_id"
+        }
       },
 
       setting_name: {
@@ -31,19 +42,23 @@ module.exports = {
         allowNull: false,
       },
 
+      is_enable: {
+        type: Sequelize.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+      },
+
       createdAt: {
         allowNull: false,
-        type: Sequelize.DATE,
-        defaultValue: new Date()
+        type: Sequelize.DATE
       },
       updatedAt: {
         allowNull: false,
-        type: Sequelize.DATE,
-        defaultValue: new Date()
+        type: Sequelize.DATE
       }
     });
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('cmssettings');
+    await queryInterface.dropTable('cmssettings_permissions');
   }
 };

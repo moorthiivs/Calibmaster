@@ -28,8 +28,15 @@ module.exports = {
         cmssetting_id: '2',
         setting_name: "SEND_SRF_MAIL",
         setting_lable: "SEND SRF MAIL",
-        setting_description: "This setting is used to sending SRF as mail, the SRF will be sent as excel",
+        setting_description: "This setting is used to sending SRF as email, the SRF will be sent as excel",
         setting_value: "NO"
+      },
+      {
+        cmssetting_id: '3',
+        setting_name: "SEND_SRF_EMAIL_FORMAT",
+        setting_lable: "Set SRF Email Format",
+        setting_description: "This setting is used to sending SRF as email, the SRF will be sent as excel",
+        setting_value: "PDF"
       },
     ]);
   },
