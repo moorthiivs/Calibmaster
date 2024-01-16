@@ -76,7 +76,7 @@ router.use("/api/srf-status", Authorization, srfStatushRoutes);
 
 router.use("/api/master-list-equipments", Authorization, masterListEquipmentsRoutes);
 
-router.use("/api/calibration-certificate", Authorization, calibrationCertificateRoutes);
+router.use("/api/calibration-certificate", Authorization, calibrationCertificateRoutes); // ! Currently Muted
 router.use("/api/calibrations-certificate", Authorization, calibrationsCertificateRoutes); // *** Modified API for Calibration Certificates
 
 router.use("/api/cms-setting", cmsRoutes);
