@@ -37,6 +37,8 @@ const calibrationsCertificateRoutes = require("./calibrations-certificate");
 const cmsRoutes = require('./cms-routes');
 const cmsPermissionsRoutes = require('./cms-permissions-route');
 
+const designProceduresRoutes = require('./design-procedures-routes');
+
 const testRoutes = require("./test-route");
 
 const Authorization = require("../middleware/check-auth");
@@ -84,6 +86,9 @@ router.use("/api/cms-permissions-setting", cmsPermissionsRoutes);
 
 // router.use("/api/download", Authorization, srfdownloadRoute);
 // router.use("/api/masterlist", Authorization, masterlistRoutes);
+
+// Routes for Design Procedures
+router.use("/api/design-procedures", designProceduresRoutes);
 
 router.use("/api/test", testRoutes);
 

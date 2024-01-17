@@ -3,11 +3,11 @@ Undo Specific one migration:
 => npx sequelize-cli db:migrate
 ================================================================================
 
-20240112060219-create-cmssettings.js
+20240116162234-create-master-design-procedure.js
 
 npx sequelize-cli db:migrate
 
-npx sequelize-cli db:migrate:undo:all --to 20240112060219-create-cmssettings.js
+npx sequelize-cli db:migrate:undo:all --to 20240116162234-create-master-design-procedure.js
 
 npx sequelize-cli seed:generate --name cmssettings
 
