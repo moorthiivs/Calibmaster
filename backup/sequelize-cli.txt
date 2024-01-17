@@ -3,16 +3,42 @@ Undo Specific one migration:
 => npx sequelize-cli db:migrate
 ================================================================================
 
+*** Migration & Model Command ***
+
+npx sequelize-cli model:generate --name cmssettings_permissions --attributes firstName:string
+
+================================================================================
+
+npx sequelize-cli seed:generate --name cmssettings
+
+npx sequelize db:seed --seed 20240113061835-cmssettings.js
+
+================================================================================
+
+1 => Design Procedure
+
 20240116162234-create-master-design-procedure.js
 
 npx sequelize-cli db:migrate
 
 npx sequelize-cli db:migrate:undo:all --to 20240116162234-create-master-design-procedure.js
 
-npx sequelize-cli seed:generate --name cmssettings
+===================================================================================
 
-npx sequelize db:seed --seed 20240113061835-cmssettings.js
+2 => Master From Table 
+
+npx sequelize-cli model:generate --name master_from_table --attributes firstName:string
+
+npx sequelize-cli db:migrate
+
+npx sequelize-cli db:migrate:undo:all --to 20240117152957-create-master-from-table.js
 
 ===================================================================================
 
-npx sequelize-cli model:generate --name cmssettings_permissions --attributes firstName:string
+3 => First From Table 
+
+npx sequelize-cli model:generate --name first_from_table --attributes firstName:string
+
+npx sequelize-cli db:migrate
+
+npx sequelize-cli db:migrate:undo:all --to 20240117152957-create-master-from-table.js
