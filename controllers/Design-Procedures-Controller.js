@@ -10,14 +10,15 @@ const create = async (req, res, next) => {
         const {
             lab_id, mainArray,
             ulr_number, validity, traceability, calibration_procedure,
-            temperature, humidity
+            temperature, humidity, atmospheric_pressure
         } = req.body;
 
         // TODO: Create Parent-Table Id
         const newMasterTable = new MasterTable({
             lab_id: lab_id,
             calibration_procedure: calibration_procedure,
-            parentTableId: "parentTableId"
+            ulr_number, validity, traceability, temperature, humidity,
+            atmospheric_pressure
         });
         const result = await newMasterTable.save();
 
@@ -27,12 +28,7 @@ const create = async (req, res, next) => {
 
                 mainArray[i].master_design_procedure_id = await result.master_design_procedure_id;
                 mainArray[i].unique_id = new Date().getTime();
-                mainArray[i].ulr_number = ulr_number;
-                mainArray[i].validity = validity;
-                mainArray[i].traceability = traceability;
                 mainArray[i].calibration_procedure = calibration_procedure;
-                mainArray[i].temperature = temperature;
-                mainArray[i].humidity = humidity;
 
                 const newTableDesign = new Dynamicdesign(mainArray[i]);
                 await newTableDesign.save();
@@ -49,8 +45,101 @@ const create = async (req, res, next) => {
     }
 }
 
-//TODO: Listing FindAll MasterTable where { lab_id:"1" }
+const list = async (req, res, next) => {
+
+    try {
+
+        const { lab_id } = req.body;
+
+        const masterTables = await MasterTable.findAll({
+            where: {
+                lab_id: lab_id
+            }
+        });
+        return res.json(masterTables);
+    } catch (err) {
+        console.log(err)
+        res.status(404);
+        const error = new Error("Internal Server Error");
+        next(errorHandler(error, req, res, next))
+    }
+}
+
+const fetch = async (req, res, next) => {
+
+    try {
+        const { master_design_procedure_id, lab_id } = req.body;
+
+        const masterTable = await MasterTable.findOne({
+            where: {
+                lab_id,
+                master_design_procedure_id
+            },
+        });
+
+        const tableDesign = await Dynamicdesign.findAll({
+            where: { master_design_procedure_id },
+            order: [
+                ['fromId', 'ASC'],
+            ],
+        });
+
+        return res.json({ masterTable, tableDesign });
+    } catch (err) {
+        console.log(err)
+        res.status(404);
+        const error = new Error("Internal Server Error");
+        next(errorHandler(error, req, res, next))
+    }
+}
+
+const update = async (req, res, next) => {
+
+    try {
+
+        const {
+            lab_id, mainArray,
+            ulr_number, validity, traceability, calibration_procedure,
+            temperature, humidity, atmospheric_pressure, master_design_procedure_id
+        } = req.body;
+
+        const masterTableUpdate = await MasterTable.update(
+            { calibration_procedure, ulr_number, validity, traceability, temperature, humidity, atmospheric_pressure },
+            { where: { master_design_procedure_id, lab_id } }
+        );
+
+        for (let i = 0; i < mainArray.length; i++) {
+
+            const {
+                design_procedure_id, fromId,
+                rows, columns,
+                header_types, header_texts, second_row_headers, cell_texts
+            } = mainArray[i];
+
+            const response = await Dynamicdesign.update(
+                { rows, columns, header_types, header_texts, second_row_headers, cell_texts },
+                { where: { design_procedure_id } }
+            );
+            console.log({ log: `${design_procedure_id} is updated ${response}` });
+        }
+
+        return res.json({
+            msg: "Dynamic Tables Updated Successfully",
+            mainArray,
+            masterTableUpdate
+        });
+
+    } catch (err) {
+        console.log(err)
+        res.status(404);
+        const error = new Error("Internal Server Error");
+        next(errorHandler(error, req, res, next))
+    }
+}
 
 module.exports = {
     create,
+    list,
+    fetch,
+    update
 }

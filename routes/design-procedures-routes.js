@@ -6,4 +6,10 @@ const router = express.Router();
 
 router.post("/create", DesignProceduresController.create);
 
+router.post("/list", DesignProceduresController.list);
+
+router.post("/fetch", DesignProceduresController.fetch);
+
+router.post("/update", DesignProceduresController.update);
+
 module.exports = router;

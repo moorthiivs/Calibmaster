@@ -58,31 +58,6 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
       },
 
-      ulr_number: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-      validity: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-      traceability: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-      calibration_procedure: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-      temperature: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-      humidity: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-
     },
     {
       sequelize,

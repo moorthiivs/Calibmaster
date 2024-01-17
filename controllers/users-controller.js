@@ -122,7 +122,7 @@ const login = async (req, res, next) => {
         department: existingUser.department,
       },
       config.TOKEN_SECRET,
-      { expiresIn: "1h" }
+      { expiresIn: "10h" }
     );
   } catch (err) {
     isError = true;
