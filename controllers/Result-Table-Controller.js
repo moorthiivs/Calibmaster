@@ -1,5 +1,5 @@
-const MasterTable = require("../models").master_design_procedure;
-const Dynamicdesign = require("../models").design_procedure;
+const MasterTable = require("../models").master_result_table;
+const Dynamicdesign = require("../models").result_table;
 
 const { errorHandler } = require("../helpers/error-handler");
 
@@ -8,41 +8,44 @@ const create = async (req, res, next) => {
     try {
 
         const {
-            lab_id, mainArray,
+            lab_id,
             calibration_procedure, ref_std,
             validity, traceability,
-            temperature, humidity, atmospheric_pressure
+            temperature, humidity, atmospheric_pressure, ulr_number,
+            mainArray
         } = req.body;
 
-        // TODO: Create Parent-Table Id
         const newMasterTable = new MasterTable({
-            lab_id: lab_id,
+            lab_id,
             calibration_procedure, ref_std,
             validity, traceability,
-            temperature, humidity, atmospheric_pressure
+            temperature, humidity, atmospheric_pressure, ulr_number
         });
         const result = await newMasterTable.save();
 
         if (result) {
-
             for (let i = 0; i < mainArray?.length; i++) {
 
-                mainArray[i].master_design_procedure_id = await result.master_design_procedure_id;
+                mainArray[i].master_result_table_id = await result.master_result_table_id;
                 mainArray[i].unique_id = new Date().getTime();
-                mainArray[i].calibration_procedure = calibration_procedure;
 
                 const newTableDesign = new Dynamicdesign(mainArray[i]);
                 await newTableDesign.save();
             }
-            return res.json(result);
+
+            return res.json({ msg: "Result Tables Added Successfully" });
         } else {
-            return res.json({ msg: false });
+            const error = new Error("Failed To Add Result Tables");
+            error.code = 500;
+            error.path = "--";
+            return errorHandler(error, req, res, next);
         }
     } catch (err) {
-        console.log(err)
-        res.status(404);
-        const error = new Error("Internal Server Error");
-        next(errorHandler(error, req, res, next))
+        console.log(err);
+        const error = new Error("Something went wrong");
+        error.code = 500;
+        error.path = "--";
+        return errorHandler(error, req, res, next);
     }
 }
 
@@ -55,31 +58,35 @@ const list = async (req, res, next) => {
         const masterTables = await MasterTable.findAll({
             where: {
                 lab_id: lab_id
-            }
+            },
+            order: [
+                ['master_result_table_id', 'ASC'],
+            ],
         });
         return res.json(masterTables);
     } catch (err) {
-        console.log(err)
-        res.status(404);
-        const error = new Error("Internal Server Error");
-        next(errorHandler(error, req, res, next))
+        console.log(err);
+        const error = new Error("Something went wrong");
+        error.code = 500;
+        error.path = "--";
+        return errorHandler(error, req, res, next);
     }
 }
 
 const fetch = async (req, res, next) => {
 
     try {
-        const { master_design_procedure_id, lab_id } = req.body;
+        const { master_result_table_id, lab_id } = req.body;
 
         const masterTable = await MasterTable.findOne({
             where: {
-                lab_id,
-                master_design_procedure_id
+                master_result_table_id,
+                lab_id
             },
         });
 
         const tableDesign = await Dynamicdesign.findAll({
-            where: { master_design_procedure_id },
+            where: { master_result_table_id },
             order: [
                 ['fromId', 'ASC'],
             ],
@@ -99,10 +106,11 @@ const update = async (req, res, next) => {
     try {
 
         const {
-            master_design_procedure_id, lab_id,
+            master_result_table_id, lab_id,
             calibration_procedure, ref_std,
             validity, traceability,
             temperature, humidity, atmospheric_pressure,
+            ulr_number,
             mainArray
         } = req.body;
 
@@ -110,31 +118,29 @@ const update = async (req, res, next) => {
             {
                 calibration_procedure, ref_std,
                 validity, traceability,
-                temperature, humidity, atmospheric_pressure
+                temperature, humidity, atmospheric_pressure,
+                ulr_number
             },
-            { where: { master_design_procedure_id, lab_id } }
+            { where: { master_result_table_id, lab_id } }
         );
 
         for (let i = 0; i < mainArray.length; i++) {
 
             const {
-                design_procedure_id, fromId,
+                result_table_id,
                 rows, columns,
+                fromId,
                 header_types, header_texts, second_row_headers, cell_texts
             } = mainArray[i];
 
             const response = await Dynamicdesign.update(
                 { rows, columns, header_types, header_texts, second_row_headers, cell_texts },
-                { where: { design_procedure_id } }
+                { where: { result_table_id } }
             );
-            console.log({ log: `${design_procedure_id} is updated ${response}` });
+            console.log(response);
         }
 
-        return res.json({
-            msg: "Dynamic Tables Updated Successfully",
-            mainArray,
-            masterTableUpdate
-        });
+        return res.json({ msg: "Result Tables Updated Successfully", masterTableUpdate });
 
     } catch (err) {
         console.log(err)

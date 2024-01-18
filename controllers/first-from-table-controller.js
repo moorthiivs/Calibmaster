@@ -8,17 +8,19 @@ const create = async (req, res, next) => {
     try {
 
         const {
-            lab_id, mainArray,
-            ulr_number, validity, traceability, calibration_procedure,
+            lab_id,
+            calibration_procedure, ref_std,
+            validity, traceability,
             temperature, humidity, atmospheric_pressure,
+            mainArray
         } = req.body;
 
         // TODO: Create Parent-Table Id
         const newMasterTable = new MasterTable({
-            lab_id: lab_id,
-            calibration_procedure: calibration_procedure,
-            ulr_number, validity, traceability, temperature, humidity,
-            atmospheric_pressure
+            lab_id,
+            calibration_procedure, ref_std,
+            validity, traceability,
+            temperature, humidity, atmospheric_pressure,
         });
         const result = await newMasterTable.save();
 

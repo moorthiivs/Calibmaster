@@ -28,11 +28,16 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         allowNull: false,
       },
-
-      ulr_number: {
+      ref_std: {
         type: DataTypes.STRING,
         allowNull: false,
       },
+
+      calibration: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+
       validity: {
         type: DataTypes.STRING,
         allowNull: false,
@@ -41,21 +46,18 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         allowNull: false,
       },
-      calibration_procedure: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
+
       temperature: {
         type: DataTypes.STRING,
-        allowNull: false,
+        allowNull: true,
       },
       humidity: {
         type: DataTypes.STRING,
-        allowNull: false,
+        allowNull: true,
       },
       atmospheric_pressure: {
         type: DataTypes.STRING,
-        allowNull: false,
+        allowNull: true
       },
     },
     {

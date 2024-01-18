@@ -39,6 +39,7 @@ const cmsPermissionsRoutes = require('./cms-permissions-route');
 
 const designProceduresRoutes = require('./design-procedures-routes');
 const firstFromTableRoutes = require('./first-from-table-routes');
+const resultTableRoutes = require('./result-table-routes');
 
 const testRoutes = require("./test-route");
 
@@ -91,6 +92,7 @@ router.use("/api/cms-permissions-setting", cmsPermissionsRoutes);
 // Routes for Design Procedures
 router.use("/api/design-procedures", designProceduresRoutes);
 router.use("/api/first-from-tables", firstFromTableRoutes);
+router.use("/api/result-tables", resultTableRoutes);
 
 router.use("/api/test", testRoutes);
 

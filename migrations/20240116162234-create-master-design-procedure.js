@@ -24,11 +24,16 @@ module.exports = {
         type: Sequelize.STRING,
         allowNull: false,
       },
-
-      ulr_number: {
+      ref_std: {
         type: Sequelize.STRING,
         allowNull: false,
       },
+
+      calibration: {
+        type: Sequelize.STRING,
+        allowNull: true,
+      },
+
       validity: {
         type: Sequelize.STRING,
         allowNull: false,
@@ -37,21 +42,18 @@ module.exports = {
         type: Sequelize.STRING,
         allowNull: false,
       },
-      calibration_procedure: {
-        type: Sequelize.STRING,
-        allowNull: false,
-      },
+
       temperature: {
         type: Sequelize.STRING,
-        allowNull: false,
+        allowNull: true,
       },
       humidity: {
         type: Sequelize.STRING,
-        allowNull: false,
+        allowNull: true,
       },
       atmospheric_pressure: {
         type: Sequelize.STRING,
-        allowNull: false,
+        allowNull: true,
       },
 
       createdAt: {

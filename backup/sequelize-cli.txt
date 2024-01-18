@@ -29,9 +29,9 @@ npx sequelize-cli db:migrate:undo:all --to 20240116162234-create-master-design-p
 
 npx sequelize-cli model:generate --name master_from_table --attributes firstName:string
 
-npx sequelize-cli db:migrate
-
 npx sequelize-cli db:migrate:undo:all --to 20240117152957-create-master-from-table.js
+
+npx sequelize-cli db:migrate
 
 ===================================================================================
 
@@ -39,6 +39,16 @@ npx sequelize-cli db:migrate:undo:all --to 20240117152957-create-master-from-tab
 
 npx sequelize-cli model:generate --name first_from_table --attributes firstName:string
 
+npx sequelize-cli db:migrate:undo:all --to 20240117152957-create-master-from-table.js
+
 npx sequelize-cli db:migrate
 
-npx sequelize-cli db:migrate:undo:all --to 20240117152957-create-master-from-table.js
+===================================================================================
+
+4 => Result Table 
+
+npx sequelize-cli model:generate --name result_table --attributes firstName:string
+
+npx sequelize-cli db:migrate:undo:all --to 20240118105454-create-master-result-table.js
+
+npx sequelize-cli db:migrate

@@ -4,7 +4,7 @@ const { Model } = require('sequelize');
 
 module.exports = (sequelize, DataTypes) => {
 
-  class master_from_table extends Model {
+  class master_result_table extends Model {
     /**
      * Helper method for defining associations.
      * This method is not a part of Sequelize lifecycle.
@@ -15,9 +15,9 @@ module.exports = (sequelize, DataTypes) => {
     }
   }
 
-  master_from_table.init(
+  master_result_table.init(
     {
-      master_from_table_id: {
+      master_result_table_id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
@@ -34,6 +34,11 @@ module.exports = (sequelize, DataTypes) => {
       },
 
       calibration: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+
+      ulr_number: {
         type: DataTypes.STRING,
         allowNull: true,
       },
@@ -62,12 +67,12 @@ module.exports = (sequelize, DataTypes) => {
     },
     {
       sequelize,
-      modelName: 'master_from_table',
+      modelName: 'master_result_table',
     }
   );
 
-  master_from_table.associate = function (models) {
-    master_from_table.belongsTo(models.Lab, {
+  master_result_table.associate = function (models) {
+    master_result_table.belongsTo(models.Lab, {
       as: "lab",
       constrains: true,
       onDelete: "CASCADE",
@@ -75,5 +80,5 @@ module.exports = (sequelize, DataTypes) => {
     });
   };
 
-  return master_from_table;
+  return master_result_table;
 };

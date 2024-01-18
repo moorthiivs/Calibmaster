@@ -2,8 +2,8 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('master_from_tables', {
-      master_from_table_id: {
+    await queryInterface.createTable('master_result_tables', {
+      master_result_table_id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
@@ -29,6 +29,11 @@ module.exports = {
       },
 
       calibration: {
+        type: Sequelize.STRING,
+        allowNull: true,
+      },
+
+      ulr_number: {
         type: Sequelize.STRING,
         allowNull: true,
       },
@@ -66,6 +71,6 @@ module.exports = {
     });
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('master_from_tables');
+    await queryInterface.dropTable('master_result_tables');
   }
 };
