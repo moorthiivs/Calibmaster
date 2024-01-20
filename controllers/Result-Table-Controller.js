@@ -8,7 +8,7 @@ const create = async (req, res, next) => {
     try {
 
         const {
-            lab_id,
+            lab_id, instrument_type_id,
             calibration_procedure, ref_std,
             validity, traceability,
             temperature, humidity, atmospheric_pressure, ulr_number,
@@ -16,7 +16,7 @@ const create = async (req, res, next) => {
         } = req.body;
 
         const newMasterTable = new MasterTable({
-            lab_id,
+            lab_id, instrument_type_id,
             calibration_procedure, ref_std,
             validity, traceability,
             temperature, humidity, atmospheric_pressure, ulr_number
@@ -106,7 +106,7 @@ const update = async (req, res, next) => {
     try {
 
         const {
-            master_result_table_id, lab_id,
+            master_result_table_id, lab_id, instrument_type_id,
             calibration_procedure, ref_std,
             validity, traceability,
             temperature, humidity, atmospheric_pressure,
@@ -116,7 +116,7 @@ const update = async (req, res, next) => {
 
         const masterTableUpdate = await MasterTable.update(
             {
-                calibration_procedure, ref_std,
+                calibration_procedure, ref_std, instrument_type_id,
                 validity, traceability,
                 temperature, humidity, atmospheric_pressure,
                 ulr_number

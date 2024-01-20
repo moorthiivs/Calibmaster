@@ -8,7 +8,7 @@ const create = async (req, res, next) => {
     try {
 
         const {
-            lab_id, mainArray,
+            lab_id, instrument_type_id, mainArray,
             calibration_procedure, ref_std,
             validity, traceability,
             temperature, humidity, atmospheric_pressure
@@ -17,6 +17,7 @@ const create = async (req, res, next) => {
         // TODO: Create Parent-Table Id
         const newMasterTable = new MasterTable({
             lab_id: lab_id,
+            instrument_type_id,
             calibration_procedure, ref_std,
             validity, traceability,
             temperature, humidity, atmospheric_pressure
@@ -99,7 +100,7 @@ const update = async (req, res, next) => {
     try {
 
         const {
-            master_design_procedure_id, lab_id,
+            master_design_procedure_id, lab_id, instrument_type_id,
             calibration_procedure, ref_std,
             validity, traceability,
             temperature, humidity, atmospheric_pressure,
@@ -108,7 +109,7 @@ const update = async (req, res, next) => {
 
         const masterTableUpdate = await MasterTable.update(
             {
-                calibration_procedure, ref_std,
+                calibration_procedure, ref_std, instrument_type_id,
                 validity, traceability,
                 temperature, humidity, atmospheric_pressure
             },

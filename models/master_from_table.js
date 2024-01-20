@@ -67,12 +67,21 @@ module.exports = (sequelize, DataTypes) => {
   );
 
   master_from_table.associate = function (models) {
+
     master_from_table.belongsTo(models.Lab, {
       as: "lab",
       constrains: true,
       onDelete: "CASCADE",
       foreignKey: "lab_id",
     });
+
+    master_from_table.belongsTo(models.instrument_type, {
+      as: "instrument_type",
+      constrains: true,
+      onDelete: "CASCADE",
+      foreignKey: "instrument_type_id",
+    });
+
   };
 
   return master_from_table;
