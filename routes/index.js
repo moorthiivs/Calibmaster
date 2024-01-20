@@ -41,6 +41,8 @@ const designProceduresRoutes = require('./design-procedures-routes');
 const firstFromTableRoutes = require('./first-from-table-routes');
 const resultTableRoutes = require('./result-table-routes');
 
+const dynamicCertificateRoutes = require('./dynamic-certificate-routes');
+
 const testRoutes = require("./test-route");
 
 const Authorization = require("../middleware/check-auth");
@@ -81,7 +83,7 @@ router.use("/api/srf-status", Authorization, srfStatushRoutes);
 router.use("/api/master-list-equipments", Authorization, masterListEquipmentsRoutes);
 
 router.use("/api/calibration-certificate", Authorization, calibrationCertificateRoutes); // ! Currently Muted
-router.use("/api/calibrations-certificate", Authorization, calibrationsCertificateRoutes); // *** Modified API for Calibration Certificates
+router.use("/api/calibrations-certificate", calibrationsCertificateRoutes); // *** Modified API for Calibration Certificates
 
 router.use("/api/cms-setting", cmsRoutes);
 router.use("/api/cms-permissions-setting", cmsPermissionsRoutes);
@@ -91,8 +93,13 @@ router.use("/api/cms-permissions-setting", cmsPermissionsRoutes);
 
 // Routes for Design Procedures
 router.use("/api/design-procedures", designProceduresRoutes);
+// Routes for First From Tables
 router.use("/api/first-from-tables", firstFromTableRoutes);
+// Routes for Result Tables
 router.use("/api/result-tables", resultTableRoutes);
+
+// Routes for Dynamic Certificate
+router.use("/api/dynamic-certificate", dynamicCertificateRoutes);
 
 router.use("/api/test", testRoutes);
 
