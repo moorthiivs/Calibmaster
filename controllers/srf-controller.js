@@ -1910,7 +1910,7 @@ const updateCalInfo = async (req, res, next) => {
         where: {
           srf_item_id: id,
           rstatus: "1",
-          status: "Calibrated",
+          // status: "Calibrated",
         },
       });
 
