@@ -47,7 +47,7 @@ const create = async (req, res, next) => {
     }
 }
 
-const list = async (req, res, next) => {
+const findAllList = async (req, res, next) => {
 
     try {
 
@@ -55,8 +55,37 @@ const list = async (req, res, next) => {
 
         const masterTables = await MasterTable.findAll({
             where: {
-                lab_id: lab_id
-            }
+                lab_id: lab_id,
+            },
+            include: ["instrument_type"],
+            order: [
+                ['master_design_procedure_id', 'ASC']
+            ],
+        });
+        return res.json(masterTables);
+    } catch (err) {
+        console.log(err)
+        res.status(404);
+        const error = new Error("Internal Server Error");
+        next(errorHandler(error, req, res, next))
+    }
+}
+
+const list = async (req, res, next) => {
+
+    try {
+
+        const { lab_id, instrument_type_id } = req.body;
+
+        const masterTables = await MasterTable.findAll({
+            where: {
+                lab_id: lab_id,
+                instrument_type_id: instrument_type_id
+            },
+            include: ["instrument_type"],
+            order: [
+                ['master_design_procedure_id', 'ASC']
+            ],
         });
         return res.json(masterTables);
     } catch (err) {
@@ -147,6 +176,7 @@ const update = async (req, res, next) => {
 
 module.exports = {
     create,
+    findAllList,
     list,
     fetch,
     update

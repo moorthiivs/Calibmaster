@@ -6,6 +6,8 @@ const router = express.Router();
 
 router.post("/create", DesignProceduresController.create);
 
+router.post("/findAllList", DesignProceduresController.findAllList);
+
 router.post("/list", DesignProceduresController.list);
 
 router.post("/fetch", DesignProceduresController.fetch);

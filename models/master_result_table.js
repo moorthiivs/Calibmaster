@@ -87,6 +87,20 @@ module.exports = (sequelize, DataTypes) => {
       foreignKey: "instrument_type_id",
     });
 
+    master_result_table.belongsTo(models.srf_list, {
+      as: "srf",
+      constrains: true,
+      onDelete: "CASCADE",
+      foreignKey: "srf_id"
+    });
+
+    master_result_table.belongsTo(models.srfitem, {
+      as: "srf_item",
+      constrains: true,
+      onDelete: "CASCADE",
+      foreignKey: "srf_item_id"
+    });
+
   };
 
   return master_result_table;

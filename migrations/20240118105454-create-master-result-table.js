@@ -28,6 +28,24 @@ module.exports = {
         }
       },
 
+      srf_id: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        references: {
+          model: "srf_lists",
+          key: "srf_id"
+        }
+      },
+
+      srf_item_id: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        references: {
+          model: "srfitems",
+          key: "srf_item_id"
+        }
+      },
+
       calibration_procedure: {
         type: Sequelize.STRING,
         allowNull: false,
