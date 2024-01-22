@@ -24,6 +24,11 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.INTEGER
       },
 
+      unique_id: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+
       calibration_procedure: {
         type: DataTypes.STRING,
         allowNull: false,

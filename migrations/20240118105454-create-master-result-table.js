@@ -46,6 +46,11 @@ module.exports = {
         }
       },
 
+      unique_id: {
+        type: Sequelize.STRING,
+        allowNull: false,
+      },
+
       calibration_procedure: {
         type: Sequelize.STRING,
         allowNull: false,

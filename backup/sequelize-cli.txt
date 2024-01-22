@@ -19,9 +19,9 @@ npx sequelize db:seed --seed 20240113061835-cmssettings.js
 
 20240116162234-create-master-design-procedure.js
 
-npx sequelize-cli db:migrate
-
 npx sequelize-cli db:migrate:undo:all --to 20240116162234-create-master-design-procedure.js
+
+npx sequelize-cli db:migrate
 
 ===================================================================================
 

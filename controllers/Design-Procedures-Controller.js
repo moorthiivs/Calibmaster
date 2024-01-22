@@ -1,6 +1,9 @@
 const MasterTable = require("../models").master_design_procedure;
 const Dynamicdesign = require("../models").design_procedure;
 
+const MasterResultTable = require("../models").master_result_table;
+const resultTable = require("../models").result_table;
+
 const { errorHandler } = require("../helpers/error-handler");
 
 const create = async (req, res, next) => {
@@ -14,10 +17,12 @@ const create = async (req, res, next) => {
             temperature, humidity, atmospheric_pressure
         } = req.body;
 
+
         // TODO: Create Parent-Table Id
         const newMasterTable = new MasterTable({
             lab_id: lab_id,
             instrument_type_id,
+            unique_id: new Date().getTime(),
             calibration_procedure, ref_std,
             validity, traceability,
             temperature, humidity, atmospheric_pressure
@@ -87,6 +92,7 @@ const list = async (req, res, next) => {
                 ['master_design_procedure_id', 'ASC']
             ],
         });
+
         return res.json(masterTables);
     } catch (err) {
         console.log(err)
@@ -99,23 +105,53 @@ const list = async (req, res, next) => {
 const fetch = async (req, res, next) => {
 
     try {
-        const { master_design_procedure_id, lab_id } = req.body;
+        const {
+            master_design_procedure_id, lab_id,
+            srf_id, srf_item_id,
+        } = req.body;
 
-        const masterTable = await MasterTable.findOne({
+        const ifExistResultMasterTable = await MasterResultTable.findOne({
             where: {
-                lab_id,
-                master_design_procedure_id
+                srf_id, srf_item_id,
+                lab_id
             },
         });
 
-        const tableDesign = await Dynamicdesign.findAll({
-            where: { master_design_procedure_id },
-            order: [
-                ['fromId', 'ASC'],
-            ],
-        });
+        if (ifExistResultMasterTable) {
 
-        return res.json({ masterTable, tableDesign });
+            const masterTable = await MasterResultTable.findOne({
+                where: {
+                    srf_id, srf_item_id,
+                    lab_id
+                },
+            });
+
+            const tableDesign = await resultTable.findAll({
+                where: { master_result_table_id: masterTable.master_result_table_id },
+                order: [
+                    ['fromId', 'ASC'],
+                ],
+            });
+
+            return res.json({ masterTable, tableDesign, ifExistResultMasterTable: true });
+
+        } else {
+            const masterTable = await MasterTable.findOne({
+                where: {
+                    lab_id,
+                    master_design_procedure_id
+                }
+            });
+
+            const tableDesign = await Dynamicdesign.findAll({
+                where: { master_design_procedure_id },
+                order: [
+                    ['fromId', 'ASC'],
+                ],
+            });
+
+            return res.json({ masterTable, tableDesign, ifExistResultMasterTable: false });
+        }
     } catch (err) {
         console.log(err)
         res.status(404);

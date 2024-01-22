@@ -15,30 +15,67 @@ const create = async (req, res, next) => {
             mainArray
         } = req.body;
 
-        const newMasterTable = new MasterTable({
-            lab_id, instrument_type_id, srf_id, srf_item_id,
-            calibration_procedure, ref_std,
-            validity, traceability,
-            temperature, humidity, atmospheric_pressure, ulr_number
+        const ifExistsMasterTable = await MasterTable.findOne({
+            where: { srf_id, srf_item_id }
         });
-        const result = await newMasterTable.save();
 
-        if (result) {
-            for (let i = 0; i < mainArray?.length; i++) {
+        if (ifExistsMasterTable) {
 
-                mainArray[i].master_result_table_id = await result.master_result_table_id;
-                mainArray[i].unique_id = new Date().getTime();
+            const masterTableUpdate = await MasterTable.update(
+                {
+                    calibration_procedure, ref_std, instrument_type_id,
+                    validity, traceability,
+                    temperature, humidity, atmospheric_pressure,
+                    ulr_number
+                },
+                { where: { lab_id, srf_id, srf_item_id, } }
+            );
 
-                const newTableDesign = new Dynamicdesign(mainArray[i]);
-                await newTableDesign.save();
+            for (let i = 0; i < mainArray.length; i++) {
+
+                const {
+                    result_table_id,
+                    rows, columns,
+                    fromId,
+                    header_types, header_texts, second_row_headers, cell_texts
+                } = mainArray[i];
+
+                const response = await Dynamicdesign.update(
+                    { rows, columns, header_types, header_texts, second_row_headers, cell_texts },
+                    { where: { result_table_id } }
+                );
+                console.log(response);
             }
+            return res.json({ msg: "Result Tables Updated Successfully", masterTableUpdate });
 
-            return res.json({ msg: "Result Tables Added Successfully" });
         } else {
-            const error = new Error("Failed To Add Result Tables");
-            error.code = 500;
-            error.path = "--";
-            return errorHandler(error, req, res, next);
+
+            const newMasterTable = new MasterTable({
+                lab_id, instrument_type_id, srf_id, srf_item_id,
+                calibration_procedure, ref_std,
+                unique_id: new Date().getTime(),
+                validity, traceability,
+                temperature, humidity, atmospheric_pressure, ulr_number
+            });
+            const result = await newMasterTable.save();
+
+            if (result) {
+                for (let i = 0; i < mainArray?.length; i++) {
+
+                    mainArray[i].master_result_table_id = await result.master_result_table_id;
+                    mainArray[i].unique_id = new Date().getTime();
+
+                    const newTableDesign = new Dynamicdesign(mainArray[i]);
+                    await newTableDesign.save();
+                }
+
+                return res.json({ msg: "Result Tables Added Successfully" });
+            } else {
+                const error = new Error("Failed To Add Result Tables");
+                error.code = 500;
+                error.path = "--";
+                return errorHandler(error, req, res, next);
+            }
         }
     } catch (err) {
         console.log(err);
@@ -139,9 +176,7 @@ const update = async (req, res, next) => {
             );
             console.log(response);
         }
-
         return res.json({ msg: "Result Tables Updated Successfully", masterTableUpdate });
-
     } catch (err) {
         console.log(err)
         res.status(404);
