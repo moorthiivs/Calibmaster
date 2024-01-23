@@ -19,6 +19,15 @@ module.exports = {
         }
       },
 
+      master_design_procedure_id: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        references: {
+          model: "master_design_procedures",
+          key: "master_design_procedure_id"
+        }
+      },
+
       instrument_type_id: {
         type: Sequelize.INTEGER,
         allowNull: false,

@@ -85,6 +85,13 @@ module.exports = (sequelize, DataTypes) => {
       foreignKey: "lab_id",
     });
 
+    master_result_table.belongsTo(models.master_design_procedure, {
+      as: "master_design_procedure",
+      constrains: true,
+      onDelete: "CASCADE",
+      foreignKey: "master_design_procedure_id",
+    });
+
     master_result_table.belongsTo(models.instrument_type, {
       as: "instrument_type",
       constrains: true,

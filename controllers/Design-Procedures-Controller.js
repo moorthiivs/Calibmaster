@@ -80,9 +80,19 @@ const list = async (req, res, next) => {
 
     try {
 
-        const { lab_id, instrument_type_id } = req.body;
+        const {
+            lab_id, instrument_type_id,
+            srf_id, srf_item_id,
+        } = req.body;
 
-        const masterTables = await MasterTable.findAll({
+        const existingResultMaster = await MasterResultTable.findOne({
+            where: {
+                srf_id, srf_item_id,
+                lab_id
+            },
+        });
+
+        const definedProcedures = await MasterTable.findAll({
             where: {
                 lab_id: lab_id,
                 instrument_type_id: instrument_type_id
@@ -93,7 +103,21 @@ const list = async (req, res, next) => {
             ],
         });
 
-        return res.json(masterTables);
+        if (existingResultMaster) {
+
+            return res.json({
+                definedProcedures: definedProcedures,
+                existingResultMaster,
+                is_exist: true
+            });
+
+        } else {
+
+            return res.json({
+                definedProcedures: definedProcedures,
+                is_exist: false
+            });
+        }
     } catch (err) {
         console.log(err)
         res.status(404);

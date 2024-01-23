@@ -8,7 +8,7 @@ const create = async (req, res, next) => {
     try {
 
         const {
-            lab_id, instrument_type_id, srf_id, srf_item_id,
+            lab_id, instrument_type_id, srf_id, srf_item_id, master_design_procedure_id,
             calibration_procedure, ref_std,
             validity, traceability,
             temperature, humidity, atmospheric_pressure, ulr_number,
@@ -52,6 +52,7 @@ const create = async (req, res, next) => {
 
             const newMasterTable = new MasterTable({
                 lab_id, instrument_type_id, srf_id, srf_item_id,
+                master_design_procedure_id,
                 calibration_procedure, ref_std,
                 unique_id: new Date().getTime(),
                 validity, traceability,
