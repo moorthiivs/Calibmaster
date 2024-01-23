@@ -41,7 +41,7 @@ const designProceduresRoutes = require('./design-procedures-routes');
 const firstFromTableRoutes = require('./first-from-table-routes');
 const resultTableRoutes = require('./result-table-routes');
 
-const dynamicCertificateRoutes = require('./dynamic-certificate-routes');
+const generateCertificateRoutes = require('./generate-certificate-routes');
 
 const testRoutes = require("./test-route");
 
@@ -99,7 +99,7 @@ router.use("/api/first-from-tables", firstFromTableRoutes);
 router.use("/api/result-tables", resultTableRoutes);
 
 // Routes for Dynamic Certificate
-router.use("/api/dynamic-certificate", dynamicCertificateRoutes);
+router.use("/api/generate-certificate", generateCertificateRoutes);
 
 router.use("/api/test", testRoutes);
 

@@ -1983,9 +1983,7 @@ const updateCalInfo = async (req, res, next) => {
     }
 
     await Item.update(
-      {
-        calibration_due_date
-      },
+      { calibration_due_date },
       { where: { srf_item_id: id } }
     )
   } catch (err) {
@@ -2015,6 +2013,7 @@ const updateCalInfo = async (req, res, next) => {
   let createResponse = "";
   let calibration_remainder_date_1;
   let calibration_remainder_date_2;
+
   if (frequency_days == 1) {
 
     let due_date_1 = new Date(calibration_due_date);
@@ -2071,13 +2070,12 @@ const updateCalInfo = async (req, res, next) => {
   if (isError == false) {
     let message = `${ip} ${userId} ${sessionId} ${code} ${path} - ${action}`;
     logger.info(message);
-    res.status(code).json({
+
+    return res.status(code).json({
       status: "SUCCESS",
       code: code,
       message: "SRF Item Updated Successfully",
-      data: {
-        items,
-      },
+      data: { items },
     });
   }
 };

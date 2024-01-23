@@ -38,6 +38,13 @@ module.exports = {
         setting_description: "This setting is used to sending SRF as email, the SRF will be sent as excel",
         setting_value: "PDF"
       },
+      {
+        cmssetting_id: '4',
+        setting_name: "GENERATE_CERTIFICATE",
+        setting_lable: "Generate Certificate",
+        setting_description: "This setting is used to generating certificates pdf",
+        setting_value: "NO"
+      },
     ]);
   },
 
