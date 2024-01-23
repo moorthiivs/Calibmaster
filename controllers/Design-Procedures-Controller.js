@@ -136,6 +136,7 @@ const fetch = async (req, res, next) => {
             return res.json({ masterTable, tableDesign, ifExistResultMasterTable: true });
 
         } else {
+
             const masterTable = await MasterTable.findOne({
                 where: {
                     lab_id,
@@ -152,6 +153,37 @@ const fetch = async (req, res, next) => {
 
             return res.json({ masterTable, tableDesign, ifExistResultMasterTable: false });
         }
+    } catch (err) {
+        console.log(err)
+        res.status(404);
+        const error = new Error("Internal Server Error");
+        next(errorHandler(error, req, res, next))
+    }
+}
+
+const viewDefinedProcedures = async (req, res, next) => {
+
+    try {
+        const {
+            master_design_procedure_id, lab_id,
+        } = req.body;
+
+        const masterTable = await MasterTable.findOne({
+            where: {
+                lab_id,
+                master_design_procedure_id
+            }
+        });
+
+        const tableDesign = await Dynamicdesign.findAll({
+            where: { master_design_procedure_id },
+            order: [
+                ['fromId', 'ASC'],
+            ],
+        });
+
+        return res.json({ masterTable, tableDesign, ifExistResultMasterTable: false });
+
     } catch (err) {
         console.log(err)
         res.status(404);
@@ -215,5 +247,6 @@ module.exports = {
     findAllList,
     list,
     fetch,
+    viewDefinedProcedures,
     update
 }

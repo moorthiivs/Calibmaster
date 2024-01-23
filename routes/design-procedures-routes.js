@@ -12,6 +12,8 @@ router.post("/list", DesignProceduresController.list);
 
 router.post("/fetch", DesignProceduresController.fetch);
 
+router.post("/view-defined-procedure", DesignProceduresController.viewDefinedProcedures);
+
 router.post("/update", DesignProceduresController.update);
 
 module.exports = router;
