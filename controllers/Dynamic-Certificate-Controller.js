@@ -11,6 +11,9 @@ const Item = require("../models").srfitem;
 const instrument = require("../models").instrument;
 const instrumentTypeModel = require("../models").instrument_type;
 const MasterListEquipment = require("../models").MasterListEquipment;
+// *** Result Table Models ***
+const masterResultTable = require("../models").master_result_table;
+const resultTable = require("../models").result_table;
 
 // Error Handler
 const { errorHandler } = require("../helpers/error-handler");
@@ -58,7 +61,7 @@ const create = async (req, res, next) => {
 
     const certificate_number = new Date().getTime();
 
-    // Query SRF-Items by srf_item_id
+    // ***  Query SRF-Items by srf_item_id *** 
     let item = await Item.findOne({
         where: { lab_id: labId, srf_item_id, rstatus: 1 },
         include: [
@@ -96,7 +99,7 @@ const create = async (req, res, next) => {
         return errorHandler(error, req, res, next);
     }
 
-    // Set First table data
+    // ***  Set First table data *** 
     const customer_address = item?.srf?.customer?.address1;
     const date_of_issue = (item?.srf?.issue_date) ? item?.srf?.issue_date : "--";
     const received_date = item?.srf?.customer_dc_date;
@@ -118,7 +121,7 @@ const create = async (req, res, next) => {
         due_date = "--";
     }
 
-    // Set duc details table data
+    // ***  Set duc details table data *** 
     const description = item?.intrument_type?.instrument_full_name;
     const make = item?.make;
     const slNo = item?.serial_no;
@@ -126,7 +129,7 @@ const create = async (req, res, next) => {
     const range = `${item?.intrument_type?.range_minimum} - ${item?.intrument_type?.range_maximum} ${item?.intrument_type?.range_maximum_uom?.uom_printsysmbol}`
     const lc = `${item?.intrument_type?.least_count} ${item?.intrument_type?.least_count_uom?.uom_printsysmbol}`;
 
-    // Query Master List Equipmentsby master_list_equipment_id
+    // ***  Query Master List Equipmentsby master_list_equipment_id *** 
     let masterListEquipment = await MasterListEquipment.findOne({
         where: { master_list_equipment_id }
     });
@@ -138,7 +141,7 @@ const create = async (req, res, next) => {
         return errorHandler(error, req, res, next);
     }
 
-    // Set standards/Master details table data
+    // *** Set standards/Master details table data *** 
     const masterDescription = masterListEquipment?.name_of_equipment;
     const masterMake = masterListEquipment?.make;
     const masterSlNo = masterListEquipment?.serial_no;
@@ -159,6 +162,58 @@ const create = async (req, res, next) => {
 
     const pandiagramLogoPath = path.resolve(__dirname, '../public/logos/pandiagram.png');
     const pandiagramLogoBuffer = await imageToBuffer(pandiagramLogoPath);
+
+    // *** Find Results ***
+    const tableDesignArr = await resultTable.findAll({
+        where: { master_result_table_id: 3 },
+        order: [
+            ['fromId', 'ASC'],
+        ],
+    });
+
+    const bigEyeObj = [];
+
+    for (let x = 0; x < tableDesignArr.length; x++) {
+
+        const Columns = tableDesignArr[x].columns;
+        const FirstHeaderTexts = tableDesignArr[x].header_texts;
+        const secondHeaderTexts = tableDesignArr[x].second_row_headers;
+
+        const headerTypes = tableDesignArr[x].header_types;
+        const cellTexts = tableDesignArr[x].cell_texts;
+
+        const widthsArr = [];
+        for (let i = 0; i < Columns; i++) {
+            widthsArr.push("*");
+        }
+
+        for (let i = 0; i < cellTexts.length; i++) {
+            for (let j = 0; j < headerTypes.length; j++) {
+                if (headerTypes[j] == "Formula") {
+                    const mainObj = cellTexts[i][j];
+                    const textObj = { text: mainObj.val }
+                    Object.assign(mainObj, textObj);
+                }
+            }
+        }
+
+        cellTexts.unshift(FirstHeaderTexts, secondHeaderTexts);
+
+        const eachObj = {
+            style: 'eachTableStyle',
+            color: '#444',
+            table: {
+                widths: widthsArr,
+                headerRows: 2,
+                keepWithHeaderRows: 1,
+                body: cellTexts
+            },
+            // pageBreak: "after"
+        }
+
+        bigEyeObj.push(eachObj);
+    }
+    // return res.json(bigEyeObj);
 
     const docDefinition = {
         pageSize: 'A4',
@@ -339,6 +394,7 @@ const create = async (req, res, next) => {
                 }
             },
 
+            bigEyeObj,
 
             {
                 style: 'firstTable', pageBreak: 'before',
@@ -431,10 +487,13 @@ const create = async (req, res, next) => {
             eccentricityTable: {
                 alignment: 'center'
             },
+            eachTableStyle: {
+                margin: [0, 0, 0, 10]
+            }
         }
     }
 
-    var pdfDocGenerator = pdfMake.createPdf(docDefinition, {});
+    const pdfDocGenerator = pdfMake.createPdf(docDefinition, {});
 
     pdfDocGenerator.getBuffer(function (buffer) {
 
