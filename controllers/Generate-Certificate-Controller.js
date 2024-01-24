@@ -590,31 +590,51 @@ const generate = async (req, res, next) => {
         const range = `${item?.intrument_type?.range_minimum} - ${item?.intrument_type?.range_maximum} ${item?.intrument_type?.range_maximum_uom?.uom_printsysmbol}`
         const lc = `${item?.intrument_type?.least_count} ${item?.intrument_type?.least_count_uom?.uom_printsysmbol}`;
 
-        // ***  Query Master List Equipmentsby master_list_equipment_id *** 
+        // ***  Query Master Result List  *** 
         let masterResult = await masterResultTable.findOne({
             where: { lab_id, srf_id, srf_item_id }
         });
         // return res.json(masterResult);
 
         if (!masterResult) {
+            let action = "Master Result is not available";
+            const error = new Error(action);
+            error.code = 501;
+            return errorHandler(error, req, res, next);
+        }
+
+        // ***  Query Master List Equipmentsby master_list_equipment_id *** 
+        let masterListEquipment = await MasterListEquipment.findOne();
+        // return res.json(masterListEquipment);
+
+        if (!masterListEquipment) {
             let action = "Master Equipment is not available";
             const error = new Error(action);
             error.code = 501;
             return errorHandler(error, req, res, next);
         }
 
-        // *** Set standards/Master details table data *** 
-        const masterDescription = "--";
-        const masterMake = "--";
-        const masterSlNo = "--";
-        const masterCertificateNo = "--";
+        // *** Set standards details table data *** 
         const ulr_number = masterResult?.ulr_number;
-        const masterValidity = masterResult?.validity;
-        const masterTraceability = masterResult?.traceability;
         const calibration_procedure = masterResult?.calibration_procedure;
         const ref_std = masterResult?.ref_std;
         const temperature = masterResult?.temperature;
         const humidity = masterResult?.humidity;
+
+        let validity = ""
+        if (masterListEquipment?.calibration_valid_upto) {
+            const vDate = masterResult?.validity;
+            validity = new Date(vDate);
+            validity = `${new Date(vDate).getDate() - 1}/${new Date(vDate).getMonth() + 1}/${new Date(vDate).getFullYear()}`
+        }
+        // return res.json(validity);
+
+        const masterDescription = masterListEquipment?.remark;
+        const masterMake = masterListEquipment?.make;
+        const masterSlNo = masterListEquipment?.master_list_equipment_id;
+        const masterCertificateNo = masterListEquipment?.calibration_valid_upto;
+        const masterValidity = validity;
+        const masterTraceability = masterListEquipment?.traceability;
 
         // *** Find Lab Logos ***
         const lab = await Lab.findOne({
@@ -970,11 +990,11 @@ const generate = async (req, res, next) => {
         pdfDocGenerator.getBuffer(function (buffer) {
 
             const todayDate = new Date().getTime();
-            const fileName = `certificate-002-${todayDate}.pdf`;
+            const fileName = `certificate-${todayDate}.pdf`;
 
-            fs.writeFileSync(`./public/certificate/${fileName}`, buffer);
+            fs.writeFileSync(`./certificates/${fileName}`, buffer);
 
-            const pdfURL = path.join(__dirname, '../public/certificate', fileName);
+            const pdfURL = path.join(__dirname, '../certificates', fileName);
 
             res.set({
                 "Content-Type": "application/pdf",

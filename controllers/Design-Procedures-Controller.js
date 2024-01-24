@@ -23,6 +23,7 @@ const create = async (req, res, next) => {
             lab_id: lab_id,
             instrument_type_id,
             unique_id: new Date().getTime(),
+            master_list_equipments: ['1', '2', '3'],
             calibration_procedure, ref_std,
             validity, traceability,
             temperature, humidity, atmospheric_pressure

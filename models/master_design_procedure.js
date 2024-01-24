@@ -29,6 +29,11 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
       },
 
+      master_list_equipments: {
+        type: DataTypes.ARRAY(DataTypes.STRING),
+        allowNull: false
+      },
+
       calibration_procedure: {
         type: DataTypes.STRING,
         allowNull: false,

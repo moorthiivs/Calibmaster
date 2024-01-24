@@ -55,6 +55,7 @@ const create = async (req, res, next) => {
                 master_design_procedure_id,
                 calibration_procedure, ref_std,
                 unique_id: new Date().getTime(),
+                master_list_equipments: ['1', '2', '3'],
                 validity, traceability,
                 temperature, humidity, atmospheric_pressure, ulr_number
             });
