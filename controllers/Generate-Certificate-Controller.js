@@ -638,7 +638,13 @@ const generate = async (req, res, next) => {
 
         // *** Find Lab Logos ***
         const lab = await Lab.findOne({
-            attributes: ['brand_logo_filename'],
+            attributes: [
+                'lab_name',
+                'address1', 'address2', 'address3',
+                'city', 'state', 'country', 'pincode',
+                'lab_website', 'contact_email', 'contact_number1', 'contact_number2',
+                'brand_logo_filename'
+            ],
             where: { lab_id },
         });
         // return res.json(lab);
@@ -714,22 +720,22 @@ const generate = async (req, res, next) => {
             pageMargins: [20, 130, 20, 90],
             header: [
                 {
-                    text: 'DEMO CALIBRATION SERVICES',
+                    text: `${lab.lab_name}`,
                     alignment: 'center', fontSize: 18, bold: true,
                     margin: [0, 10, 0, 0],
                 },
                 {
-                    text: '25/50 Kalighat Area 15th Street, Shyama Prasad Mukherjee Kolkata - 600 0100',
+                    text: `${lab.address1}, ${lab.state}, ${lab.city}-${lab.pincode},`,
                     alignment: 'center', fontSize: 12,
                     margin: [0, 5, 0, 0],
                 },
                 {
-                    text: 'Mobile: 9804806699/55480 18000/ 91767 40455 / Website: www.dempcalibration.com',
+                    text: `Mobile: ${lab.contact_number1}/ Website: ${lab.lab_website}`,
                     alignment: 'center', fontSize: 12,
                     margin: [0, 2, 0, 0],
                 },
                 {
-                    text: 'Email: democalibrationservices@gmail.com / democalibrationservices@yahoo.com / calibrationdemo2016@gmail.com',
+                    text: `Email: ${lab.contact_email}`,
                     alignment: 'center', fontSize: 10,
                     margin: [0, 2, 0, 0],
                 },
@@ -912,47 +918,7 @@ const generate = async (req, res, next) => {
                         { text: `Remark 4` },
                         { text: `Remark 5` },
                     ]
-                },
-                {
-                    alignment: 'justify',
-                    columns: [
-                        {
-                            ul: [
-                                {
-                                    image: sign1LogoBuffer,
-                                    width: 50,
-                                    margin: [0, 0, 0, 0],
-                                    alignment: 'center'
-                                },
-                                { text: `${calibrated_by}`, listType: 'none' },
-                                { text: 'Calibration Engineer', listType: 'none' },
-                                { text: 'Calibrated By', listType: 'none' }
-                            ],
-                            alignment: 'center'
-                        },
-                        {
-                            image: sealBuffer,
-                            width: 80,
-                            margin: [0, 0, 0, 0],
-                            alignment: 'center'
-                        },
-                        {
-                            ul: [
-                                {
-                                    image: sign2LogoBuffer,
-                                    width: 50,
-                                    margin: [0, 0, 0, 0],
-                                    alignment: 'center'
-                                },
-                                { text: `${approved_by}`, listType: 'none' },
-                                { text: 'Technical manager', listType: 'none' },
-                                { text: 'Approved by', listType: 'none' }
-                            ],
-                            alignment: 'center'
-                        },
-                    ],
-                    margin: [0, 30, 0, 5],
-                },
+                }
             ],
             pageBreakBefore: function (currentNode) {
                 return currentNode.style && currentNode.style.indexOf('pdf-pagebreak-before') > -1;
@@ -1003,8 +969,13 @@ const generate = async (req, res, next) => {
             return res.sendFile(pdfURL);
         });
 
-    } catch (error) {
-        console.log(error);
+    } catch (err) {
+        console.log(err);
+        let action = "Something went wrong";
+        const error = new Error(action);
+        error.code = 500;
+        error.path = "Certificate Create Error";
+        return errorHandler(error, req, res, next);
     }
 
 }
