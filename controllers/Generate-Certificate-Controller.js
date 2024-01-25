@@ -620,6 +620,7 @@ const generate = async (req, res, next) => {
         const ref_std = masterResult?.ref_std;
         const temperature = masterResult?.temperature;
         const humidity = masterResult?.humidity;
+        const remarks = masterResult?.remarks;
 
         let validity = ""
         if (masterListEquipment?.calibration_valid_upto) {
@@ -632,7 +633,7 @@ const generate = async (req, res, next) => {
         const masterDescription = masterListEquipment?.remark;
         const masterMake = masterListEquipment?.make;
         const masterSlNo = masterListEquipment?.master_list_equipment_id;
-        const masterCertificateNo = masterListEquipment?.calibration_valid_upto;
+        const masterCertificateNo = masterListEquipment?.calibration_certificate_no;
         const masterValidity = validity;
         const masterTraceability = masterListEquipment?.traceability;
 
@@ -911,13 +912,7 @@ const generate = async (req, res, next) => {
                 { text: 'REMARKS:', margin: [0, 10, 0, 5] },
                 {
                     style: 'remarksList',
-                    ol: [
-                        { text: `Remark 1` },
-                        { text: `Remark 2` },
-                        { text: `Remark 3` },
-                        { text: `Remark 4` },
-                        { text: `Remark 5` },
-                    ]
+                    ol: remarks
                 }
             ],
             pageBreakBefore: function (currentNode) {

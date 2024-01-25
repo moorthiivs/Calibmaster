@@ -12,6 +12,7 @@ const create = async (req, res, next) => {
             calibration_procedure, ref_std,
             validity, traceability,
             temperature, humidity, atmospheric_pressure, ulr_number,
+            remarks,
             mainArray
         } = req.body;
 
@@ -26,7 +27,7 @@ const create = async (req, res, next) => {
                     calibration_procedure, ref_std, instrument_type_id,
                     validity, traceability,
                     temperature, humidity, atmospheric_pressure,
-                    ulr_number
+                    ulr_number, remarks
                 },
                 { where: { lab_id, srf_id, srf_item_id, } }
             );
@@ -57,7 +58,7 @@ const create = async (req, res, next) => {
                 unique_id: new Date().getTime(),
                 master_list_equipments: ['1', '2', '3'],
                 validity, traceability,
-                temperature, humidity, atmospheric_pressure, ulr_number
+                temperature, humidity, atmospheric_pressure, ulr_number, remarks
             });
             const result = await newMasterTable.save();
 

@@ -74,6 +74,11 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         allowNull: true
       },
+
+      remarks: {
+        type: DataTypes.ARRAY(DataTypes.STRING),
+        allowNull: false
+      },
     },
     {
       sequelize,
