@@ -38,7 +38,6 @@ const cmsRoutes = require('./cms-routes');
 const cmsPermissionsRoutes = require('./cms-permissions-route');
 
 const designProceduresRoutes = require('./design-procedures-routes');
-const firstFromTableRoutes = require('./first-from-table-routes');
 const resultTableRoutes = require('./result-table-routes');
 
 const generateCertificateRoutes = require('./generate-certificate-routes');
@@ -93,8 +92,6 @@ router.use("/api/cms-permissions-setting", cmsPermissionsRoutes);
 
 // Routes for Design Procedures
 router.use("/api/design-procedures", designProceduresRoutes);
-// Routes for First From Tables
-router.use("/api/first-from-tables", firstFromTableRoutes);
 // Routes for Result Tables
 router.use("/api/result-tables", resultTableRoutes);
 
