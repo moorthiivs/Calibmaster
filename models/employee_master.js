@@ -55,5 +55,16 @@ module.exports = (sequelize, DataTypes) => {
     }
   );
 
+  employee_master.associate = function (models) {
+
+    employee_master.belongsTo(models.Lab, {
+      as: "lab",
+      constrains: true,
+      onDelete: "CASCADE",
+      foreignKey: "lab_id",
+    });
+
+  };
+
   return employee_master;
 };

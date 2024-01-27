@@ -10,6 +10,15 @@ module.exports = {
         type: Sequelize.INTEGER
       },
 
+      lab_id: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        references: {
+          model: "Labs",
+          key: "lab_id"
+        }
+      },
+
       employee_title: {
         type: Sequelize.STRING,
         allowNull: false,

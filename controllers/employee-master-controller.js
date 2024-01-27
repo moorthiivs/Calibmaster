@@ -7,6 +7,7 @@ const create = async (req, res, next) => {
     try {
 
         const newEmployeeMaster = new employeeMaster({
+            lab_id: req.body.lab_id,
             employee_title: req.body.employee_title,
             employee_full_name: req.body.employee_full_name,
             employee_role: req.body.employee_role,
@@ -31,7 +32,10 @@ const list = async (req, res, next) => {
     try {
 
         let employeeMasterList = await employeeMaster.findAll({
-            where: { 'employee_enable': "YES" },
+            where: {
+                employee_enable: "YES",
+                lab_id: req.body.lab_id
+            },
         });
 
         return res.status(200).json({
@@ -55,10 +59,10 @@ const disableEmplyee = async (req, res, next) => {
 
     try {
 
-        const { employee_id } = req.body;
+        const { employee_id, lab_id } = req.body;
 
         let findEmployeeMaster = await employeeMaster.findOne({
-            where: { employee_id }
+            where: { employee_id, lab_id }
         });
 
         if (findEmployeeMaster) {
@@ -93,10 +97,10 @@ const fetchEmployee = async (req, res, next) => {
 
     try {
 
-        const { employee_id } = req.body;
+        const { employee_id, lab_id } = req.body;
 
         let result = await employeeMaster.findOne({
-            where: { employee_id, employee_enable: "YES" }
+            where: { employee_id, employee_enable: "YES", lab_id }
         });
 
         if (!result) {
@@ -123,9 +127,9 @@ const updateEmployee = async (req, res, next) => {
 
     try {
 
-        const { employee_id, employee_title, employee_full_name, employee_role, employee_enable } = req.body
+        const { lab_id, employee_id, employee_title, employee_full_name, employee_role, employee_enable } = req.body
 
-        if (!employee_id || !employee_title || !employee_full_name || !employee_role || !employee_enable) {
+        if (!lab_id || !employee_id || !employee_title || !employee_full_name || !employee_role || !employee_enable) {
             const error = new Error("Please follow lab guidelines");
             error.code = 500;
             error.path = "/api/uom/edit";
@@ -133,7 +137,7 @@ const updateEmployee = async (req, res, next) => {
         }
 
         let findEmployeeMaster = await employeeMaster.findOne({
-            where: { employee_id }
+            where: { employee_id, lab_id }
         });
 
         if (findEmployeeMaster) {
