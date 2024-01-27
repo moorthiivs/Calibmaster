@@ -15,7 +15,7 @@ module.exports = {
         allowNull: false,
       },
 
-      employee_full: {
+      employee_full_name: {
         type: Sequelize.STRING,
         allowNull: false,
       },

@@ -29,7 +29,7 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
       },
 
-      employee_full: {
+      employee_full_name: {
         type: DataTypes.STRING,
         allowNull: false,
       },
@@ -54,5 +54,6 @@ module.exports = (sequelize, DataTypes) => {
       modelName: 'employee_master',
     }
   );
+
   return employee_master;
 };

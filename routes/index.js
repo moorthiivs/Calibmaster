@@ -38,6 +38,7 @@ const cmsRoutes = require('./cms-routes');
 const cmsPermissionsRoutes = require('./cms-permissions-route');
 
 const designProceduresRoutes = require('./design-procedures-routes');
+const employeeMasterRoutes = require('./employee-master-routes');
 const resultTableRoutes = require('./result-table-routes');
 
 const generateCertificateRoutes = require('./generate-certificate-routes');
@@ -92,6 +93,8 @@ router.use("/api/cms-permissions-setting", cmsPermissionsRoutes);
 
 // Routes for Design Procedures
 router.use("/api/design-procedures", designProceduresRoutes);
+// Routes for Employee Master
+router.use("/api/employee-master", employeeMasterRoutes);
 // Routes for Result Tables
 router.use("/api/result-tables", resultTableRoutes);
 

@@ -35,11 +35,11 @@ npx sequelize-cli db:migrate
 
 ===================================================================================
 
-3 => First From Table 
+3 => Employee Master
 
-npx sequelize-cli model:generate --name first_from_table --attributes firstName:string
+npx sequelize-cli model:generate --name employee_master --attributes firstName:string
 
-npx sequelize-cli db:migrate:undo:all --to 20240117152957-create-master-from-table.js
+npx sequelize-cli db:migrate:undo:all --to 20240116163445-create-employee-master
 
 npx sequelize-cli db:migrate
 
