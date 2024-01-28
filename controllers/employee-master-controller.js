@@ -175,8 +175,42 @@ const updateEmployee = async (req, res, next) => {
     }
 };
 
+const fetchEmployeeByLab = async (req, res, next) => {
+
+    try {
+
+        const { lab_id } = req.body;
+
+        let result = await employeeMaster.findAll({
+            where: { employee_enable: "YES", lab_id },
+            order: [
+                ['employee_id', 'ASC']
+            ]
+        });
+
+        if (!result) {
+            const error = new Error('Failed to fetch Employee');
+            error.code = 500;
+            error.path = "--";
+            return errorHandler(error, req, res, next);
+        } else {
+            return res.status(200).json({
+                msg: true,
+                response: "Lab Employee fetched successfully!!!",
+                result
+            });
+        }
+    } catch (err) {
+        const error = new Error("Something went wrong, please try again");
+        error.code = 500;
+        error.path = "--";
+        return errorHandler(error, req, res, next);
+    }
+};
+
 exports.create = create;
 exports.list = list;
 exports.disableEmplyee = disableEmplyee;
 exports.fetchEmployee = fetchEmployee;
 exports.updateEmployee = updateEmployee;
+exports.fetchEmployeeByLab = fetchEmployeeByLab;

@@ -29,4 +29,6 @@ router.post("/fetch-emplyee", employeeMasterController.fetchEmployee);
 
 router.post("/update-emplyee", upload.single('employee_signature'), employeeMasterController.updateEmployee);
 
+router.post("/fetch-employee-by-lab", employeeMasterController.fetchEmployeeByLab);
+
 module.exports = router;

@@ -60,6 +60,30 @@ module.exports = {
         allowNull: false,
       },
 
+      employee_id: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        references: {
+          model: "employee_masters",
+          key: "employee_id"
+        }
+      },
+
+      employee_full_name: {
+        type: Sequelize.STRING,
+        allowNull: false,
+      },
+
+      employee_role: {
+        type: Sequelize.STRING,
+        allowNull: false,
+      },
+
+      employee_signature: {
+        type: Sequelize.STRING,
+        allowNull: false,
+      },
+
       master_list_equipments: {
         type: Sequelize.ARRAY(Sequelize.STRING),
         allowNull: false

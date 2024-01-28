@@ -29,6 +29,21 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
       },
 
+      employee_full_name: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+
+      employee_role: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+
+      employee_signature: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+
       master_list_equipments: {
         type: DataTypes.ARRAY(DataTypes.STRING),
         allowNull: false
@@ -93,6 +108,13 @@ module.exports = (sequelize, DataTypes) => {
       constrains: true,
       onDelete: "CASCADE",
       foreignKey: "lab_id",
+    });
+
+    master_result_table.belongsTo(models.employee_master, {
+      as: "employee_master",
+      constrains: true,
+      onDelete: "CASCADE",
+      foreignKey: "employee_id",
     });
 
     master_result_table.belongsTo(models.master_design_procedure, {
