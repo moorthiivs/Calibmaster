@@ -56,3 +56,5 @@ Cron Job attempt on calibration_remainder_date_2 at Sun Jan 28 2024 00:00:00 GMT
 Cron Job attempt on calibration_remainder_date_1 Sun Jan 28 2024 00:00:00 GMT+0530 (India Standard Time) 
 Cron Job attempt on calibration_remainder_date_2 at Mon Jan 29 2024 01:00:00 GMT+0530 (India Standard Time) 
 Cron Job attempt on calibration_remainder_date_1 Mon Jan 29 2024 01:00:00 GMT+0530 (India Standard Time) 
+Cron Job attempt on calibration_remainder_date_1 Tue Jan 30 2024 13:00:00 GMT+0530 (India Standard Time) 
+Cron Job attempt on calibration_remainder_date_2 at Tue Jan 30 2024 13:00:00 GMT+0530 (India Standard Time) 
