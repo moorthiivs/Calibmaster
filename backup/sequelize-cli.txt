@@ -1,6 +1,7 @@
 Undo Specific one migration:
 => npx sequelize-cli db:migrate:undo --name 20231026124933-create-certificate.js
 => npx sequelize-cli db:migrate
+=> npx sequelize-cli db:migrate:undo:all
 ================================================================================
 
 *** Migration & Model Command ***

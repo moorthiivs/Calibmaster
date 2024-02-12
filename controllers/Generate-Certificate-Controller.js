@@ -1,9 +1,11 @@
+// *** Import Dev Packages ***
 var pdfMake = require("pdfmake/build/pdfmake");
 var pdfFonts = require("pdfmake/build/vfs_fonts");
 pdfMake.vfs = pdfFonts.pdfMake.vfs;
 var fs = require("fs");
 const path = require('path');
 const imageDataURI = require('image-data-uri');
+const nodemailer = require("nodemailer");
 
 // *** Import Models ***
 const Lab = require("../models").Lab;
@@ -12,6 +14,7 @@ const Item = require("../models").srfitem;
 const instrument = require("../models").instrument;
 const instrumentTypeModel = require("../models").instrument_type;
 const MasterListEquipment = require("../models").MasterListEquipment;
+const Certificate = require("../models").Certificate;
 
 // *** Result Table Models ***
 const masterResultTable = require("../models").master_result_table;
@@ -650,16 +653,6 @@ const generate = async (req, res, next) => {
         });
         // return res.json(lab);
 
-        // *** Seal & Logos area ***
-        const sealLogoPath = path.resolve(__dirname, `../public/images/${lab.brand_logo_filename}`);
-        const sealBuffer = await imageToBuffer(sealLogoPath);
-
-        const sign1LogoPath = path.resolve(__dirname, '../public/logos/sign-1.png');
-        const sign1LogoBuffer = await imageToBuffer(sign1LogoPath);
-
-        const sign2LogoPath = path.resolve(__dirname, '../public/logos/sign-2.png');
-        const sign2LogoBuffer = await imageToBuffer(sign2LogoPath);
-
         // *** Find Results ***
         const tableDesignArr = await resultTable.findAll({
             where: { master_result_table_id: masterResult?.master_result_table_id },
@@ -711,6 +704,16 @@ const generate = async (req, res, next) => {
             bigEyeObj.push(eachObj);
         }
         // return res.json(bigEyeObj);
+
+        // *** Seal & Logos area ***
+        const sealLogoPath = path.resolve(__dirname, `../public/images/${lab.brand_logo_filename}`);
+        const sealBuffer = await imageToBuffer(sealLogoPath);
+
+        const sign1LogoPath = path.resolve(__dirname, '../public/logos/sign-1.png');
+        const sign1LogoBuffer = await imageToBuffer(sign1LogoPath);
+
+        const sign2LogoPath = path.resolve(__dirname, '../public/logos/sign-2.png');
+        const sign2LogoBuffer = await imageToBuffer(sign2LogoPath);
 
         const calibrated_by = "--";
         const approved_by = "--";
@@ -893,9 +896,7 @@ const generate = async (req, res, next) => {
                         ]
                     }
                 },
-
                 bigEyeObj,
-
                 {
                     style: 'firstTable', pageBreak: 'before',
                     table: {
@@ -913,7 +914,47 @@ const generate = async (req, res, next) => {
                 {
                     style: 'remarksList',
                     ol: remarks
-                }
+                },
+                {
+                    alignment: 'justify',
+                    columns: [
+                        {
+                            ul: [
+                                {
+                                    image: sign1LogoBuffer,
+                                    width: 50,
+                                    margin: [0, 0, 0, 0],
+                                    alignment: 'center'
+                                },
+                                { text: `${calibrated_by}`, listType: 'none' },
+                                { text: 'Calibration Engineer', listType: 'none' },
+                                { text: 'Calibrated By', listType: 'none' }
+                            ],
+                            alignment: 'center'
+                        },
+                        {
+                            image: sealBuffer,
+                            width: 80,
+                            margin: [0, 0, 0, 0],
+                            alignment: 'center'
+                        },
+                        {
+                            ul: [
+                                {
+                                    image: sign2LogoBuffer,
+                                    width: 50,
+                                    margin: [0, 0, 0, 0],
+                                    alignment: 'center'
+                                },
+                                { text: `${approved_by}`, listType: 'none' },
+                                { text: 'Technical manager', listType: 'none' },
+                                { text: 'Approved by', listType: 'none' }
+                            ],
+                            alignment: 'center'
+                        },
+                    ],
+                    margin: [0, 30, 0, 5],
+                },
             ],
             pageBreakBefore: function (currentNode) {
                 return currentNode.style && currentNode.style.indexOf('pdf-pagebreak-before') > -1;
@@ -948,14 +989,52 @@ const generate = async (req, res, next) => {
 
         const pdfDocGenerator = pdfMake.createPdf(docDefinition, {});
 
-        pdfDocGenerator.getBuffer(function (buffer) {
+        pdfDocGenerator.getBuffer(async function (buffer) {
 
             const todayDate = new Date().getTime();
             const fileName = `certificate-${todayDate}.pdf`;
 
             fs.writeFileSync(`./certificates/${fileName}`, buffer);
 
+            const newCertificate = new Certificate({
+                fileName: fileName,
+                rstatus: 1,
+                srfitemId: srf_item_id
+            });
+            const result = await newCertificate.save();
+            // return console.log(result);
+
+            let srfItemsQuery = await Item.findOne({
+                where: { srf_item_id },
+                attributes: [
+                    "serial_no", "identification_details", "calibration_done_date",
+                    "url_number", "certificate_date",
+                    "calibration_due_date", "calibration_remainder_date_1",
+                ],
+                include: [
+                    {
+                        model: Lab,
+                        as: "lab",
+                        attributes: [
+                            "contact_email",
+                            "email_smtp_server_host", "email_smtp_server_port", "sender_email", "sender_password"
+                        ]
+                    },
+                    {
+                        model: SRF,
+                        as: "srf",
+                        attributes: [
+                            "srf_number", "contact_name", "contact_email"
+                        ]
+                    }
+                ]
+            });
+            // return console.log(result);
+
             const pdfURL = path.join(__dirname, '../certificates', fileName);
+
+            const { msg, status } = await sendMail(srfItemsQuery, pdfURL);
+            console.log({ msg, status });
 
             res.set({
                 "Content-Type": "application/pdf",
@@ -973,6 +1052,49 @@ const generate = async (req, res, next) => {
         return errorHandler(error, req, res, next);
     }
 
+}
+
+// *** Helper function ***
+const sendMail = async (srfItemsQuery, filePath) => {
+
+    try {
+
+        const { lab, srf } = srfItemsQuery;
+
+        // Connecting to the STMP Server
+        const transporter = nodemailer.createTransport({
+            name: "CalibMaster",
+            host: lab?.email_smtp_server_host,
+            port: lab?.email_smtp_server_port,
+            secure: true,
+            auth: {
+                user: lab?.sender_email,
+                pass: lab?.sender_password
+            }
+        });
+
+        const info = await transporter.sendMail({
+            from: lab?.sender_email,
+            to: srf?.contact_email,
+            subject: "Certificate Mail",
+            text: "Please find the certificate on the attachment",
+            html: "<b>Please find the certificate on the attachment</b>",
+            priority: "high",
+            attachments: [
+                {
+                    path: filePath,
+                    filename: 'certificate.pdf',
+                    contentType: "application/pdf",
+                }
+            ]
+        });
+
+        console.log(info);
+        return { msg: "Certificate Mail Send Successfully", status: true }
+    } catch (error) {
+        console.log(error);
+        return { msg: "Failed to send Certificate Mail", status: true }
+    }
 }
 
 exports.create = create;
