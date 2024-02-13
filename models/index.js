@@ -12,9 +12,9 @@ const db = {};
 
 let sequelize;
 
-if (NODE_ENV === "development") {
-  config.logging = true;
-}
+// if (NODE_ENV === "development") {
+//   config.logging = true;
+// }
 
 if (config.use_env_variable) {
   sequelize = new Sequelize(process.env[config.use_env_variable], config);

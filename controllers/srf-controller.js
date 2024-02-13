@@ -1554,7 +1554,10 @@ const getSrfItems = async (req, res, next) => {
   try {
     let items = await Item.findAll({
       where: { lab_id: labId, rstatus: 1 },
-      include: ["intrument_type", "srf"],
+      include: [
+        { model: instrument_type, as: "intrument_type" },
+        { model: SRF, as: "srf", include: "customer" }
+      ],
       order: [["srf_item_id", "ASC"]]
     });
 
