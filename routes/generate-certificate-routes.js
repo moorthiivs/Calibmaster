@@ -4,8 +4,8 @@ const GenerateCertificatesController = require("../controllers/Generate-Certific
 
 const router = express.Router();
 
-router.post("/create", GenerateCertificatesController.create);
-
 router.post("/generate", GenerateCertificatesController.generate);
+
+router.post("/download", GenerateCertificatesController.download);
 
 module.exports = router;

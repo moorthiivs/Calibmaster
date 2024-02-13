@@ -92,11 +92,11 @@ router.use("/api/cms-permissions-setting", cmsPermissionsRoutes);
 // router.use("/api/masterlist", Authorization, masterlistRoutes);
 
 // Routes for Design Procedures
-router.use("/api/design-procedures", designProceduresRoutes);
+router.use("/api/design-procedures", Authorization, designProceduresRoutes);
 // Routes for Employee Master
-router.use("/api/employee-master", employeeMasterRoutes);
+router.use("/api/employee-master", Authorization, employeeMasterRoutes);
 // Routes for Result Tables
-router.use("/api/result-tables", resultTableRoutes);
+router.use("/api/result-tables", Authorization, resultTableRoutes);
 
 // Routes for Dynamic Certificate
 router.use("/api/generate-certificate", generateCertificateRoutes);
