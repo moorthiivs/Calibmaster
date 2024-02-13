@@ -235,7 +235,7 @@ const generate = async (req, res, next) => {
 
             const widthsArr = [];
             for (let i = 0; i < Columns; i++) {
-                widthsArr.push("*");
+                widthsArr.push(60);
             }
 
             for (let i = 0; i < cellTexts.length; i++) {
