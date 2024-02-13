@@ -150,7 +150,7 @@ const generate = async (req, res, next) => {
         const description = item?.intrument_type?.instrument_full_name;
         const make = item?.make;
         const slNo = item?.serial_no;
-        const idNo = item?.serial_no;
+        const idNo = item?.identification_details;
         const range = `${item?.intrument_type?.range_minimum} - ${item?.intrument_type?.range_maximum} ${item?.intrument_type?.range_maximum_uom?.uom_printsysmbol}`
         const lc = `${item?.intrument_type?.least_count} ${item?.intrument_type?.least_count_uom?.uom_printsysmbol}`;
 
@@ -188,9 +188,9 @@ const generate = async (req, res, next) => {
 
         let validity = ""
         if (masterListEquipment?.calibration_valid_upto) {
-            const vDate = masterResult?.validity;
+            const vDate = masterListEquipment?.calibration_valid_upto;
             validity = new Date(vDate);
-            validity = `${new Date(vDate).getDate() - 1}/${new Date(vDate).getMonth() + 1}/${new Date(vDate).getFullYear()}`
+            validity = `${new Date(vDate).getDate() - 1}/${new Date(vDate).getMonth() + 1}/${new Date(vDate).getFullYear()}`;
         }
         // return res.json(validity);
 
