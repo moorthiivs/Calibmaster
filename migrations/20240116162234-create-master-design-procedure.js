@@ -34,11 +34,6 @@ module.exports = {
         allowNull: false,
       },
 
-      master_list_equipments: {
-        type: Sequelize.ARRAY(Sequelize.STRING),
-        allowNull: false
-      },
-
       calibration_procedure: {
         type: Sequelize.STRING,
         allowNull: false,
@@ -73,6 +68,11 @@ module.exports = {
       atmospheric_pressure: {
         type: Sequelize.STRING,
         allowNull: true,
+      },
+
+      master_list_equipments: {
+        type: Sequelize.ARRAY(Sequelize.JSON),
+        allowNull: false
       },
 
       remarks: {
