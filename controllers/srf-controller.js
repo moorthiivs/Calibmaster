@@ -1504,7 +1504,7 @@ const getsrfbyId = async (req, res, next) => {
       where: { srf_id: req.body.srfId, rstatus: 1 },
       include: ["intrument_type", "srf"],
       order: [
-        ['srf_item_no', 'ASC'],
+        ['srf_item_id', 'ASC'],
       ]
     });
 
@@ -1769,7 +1769,7 @@ const updateDCInfo = async (req, res, next) => {
     error.path = path;
     return errorHandler(error, req, res, next);
   }
-  ////console.log(req.body);
+
   let ids = [];
   req.body.items.map((v, i) => {
     ids.push(v.id);
@@ -1831,7 +1831,7 @@ const updateDCInfo = async (req, res, next) => {
       attributes: {
         exclude: ["createdAt", "updatedAt"],
       },
-      order: [["sno", "ASC"]],
+      order: [["srf_item_id", "ASC"]],
     });
   } catch (err) {
     isError = true;
@@ -2058,6 +2058,7 @@ const updateCalInfo = async (req, res, next) => {
     items = await Item.findAll({
       where: { srf_id: srfId, rstatus: 1 },
       include: ["intrument_type"],
+      order: [["srf_item_id", "ASC"]]
     });
   } catch (err) {
     isError = true;
@@ -2274,7 +2275,7 @@ const updatePaymentInfo = async (req, res, next) => {
   const sessionId = req.sessionId;
   let isError = false;
   const department = req.department;
-  ////console.log(req.body);
+
   if (
     !req.body ||
     !req.body.items ||
@@ -2301,7 +2302,7 @@ const updatePaymentInfo = async (req, res, next) => {
     error.path = path;
     return errorHandler(error, req, res, next);
   }
-  ////console.log(req.body);
+
   let ids = [];
   req.body.items.map((v, i) => {
     ids.push(v.id);
@@ -2341,7 +2342,7 @@ const updatePaymentInfo = async (req, res, next) => {
       attributes: {
         exclude: ["createdAt", "updatedAt"],
       },
-      order: [["sno", "ASC"]],
+      order: [["srf_item_id", "ASC"]]
     });
   } catch (err) {
     isError = true;
@@ -2403,7 +2404,7 @@ const getfilteredSRFItems = async (req, res, next) => {
       attributes: {
         exclude: ["createdAt", "updatedAt"],
       },
-      order: [["sno", "ASC"]],
+      order: [["srf_item_id", "ASC"]]
     });
   } catch (err) {
     isError = true;
@@ -2444,7 +2445,8 @@ const fetchSrfItem = async (req, res, next) => {
   try {
     let items = await Item.findOne({
       where: { srf_item_id },
-      include: ["intrument_type", "srf"]
+      include: ["intrument_type", "srf"],
+      order: [["srf_item_id", "ASC"]]
     });
 
     return res.status(200).json({
