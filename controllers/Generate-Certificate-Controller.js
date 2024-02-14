@@ -642,5 +642,41 @@ const download = async (req, res, next) => {
     }
 }
 
+// *** Result Table Models ***
+const masterDesignProcedure = require("../models").master_design_procedure;
+
+const standard_details = async (req, res, next) => {
+
+    // ***  Query Master Result List  *** 
+    let query = await masterDesignProcedure.findOne();
+    let master_list_equipments = query.master_list_equipments;
+
+    let description = [];
+    let make = [];
+    let serial_no = [];
+    let certificate_no = [];
+    let validity = [];
+    let traceability = [];
+
+    master_list_equipments?.map((eachItem) => {
+        description?.push(eachItem.remark);
+        make?.push(eachItem.make);
+        serial_no?.push(eachItem.serial_no);
+        certificate_no?.push(eachItem.calibration_certificate_no);
+        validity?.push(eachItem.calibration_valid_upto);
+        traceability?.push(eachItem.traceability);
+    });
+
+    const m_description = description?.join("/");
+    const m_make = make?.join("/");
+    const m_serial_no = serial_no?.join("/");
+    const m_certificate_no = certificate_no?.join("/");
+    const m_validity = validity?.join("/");
+    const m_traceability = traceability?.join("/");
+
+    return res.json({ m_description, m_make, m_serial_no, m_certificate_no, m_validity, m_traceability });
+}
+
 exports.generate = generate;
 exports.download = download;
+exports.standard_details = standard_details;
