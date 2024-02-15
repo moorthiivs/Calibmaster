@@ -167,17 +167,6 @@ const generate = async (req, res, next) => {
             return errorHandler(error, req, res, next);
         }
 
-        // ***  Query Master List Equipmentsby master_list_equipment_id *** 
-        let masterListEquipment = await MasterListEquipment.findOne();
-        // return res.json(masterListEquipment);
-
-        if (!masterListEquipment) {
-            let action = "Master Equipment is not available";
-            const error = new Error(action);
-            error.code = 501;
-            return errorHandler(error, req, res, next);
-        }
-
         // *** Set standards details table data *** 
         const ulr_number = masterResult?.ulr_number;
         const calibration_procedure = masterResult?.calibration_procedure;
@@ -186,20 +175,17 @@ const generate = async (req, res, next) => {
         const humidity = masterResult?.humidity;
         const remarks = masterResult?.remarks;
 
-        let validity = ""
-        if (masterListEquipment?.calibration_valid_upto) {
-            const vDate = masterListEquipment?.calibration_valid_upto;
-            validity = new Date(vDate);
-            validity = `${new Date(vDate).getDate() - 1}/${new Date(vDate).getMonth() + 1}/${new Date(vDate).getFullYear()}`;
-        }
-        // return res.json(validity);
+        // *** Create Format for Master list Equipments ***
+        let masterListEquipment = await standard_details(masterResult?.master_list_equipments);
+        const { m_description, m_make, m_serial_no, m_certificate_no, m_validity, m_traceability } = masterListEquipment;
+        // return res.json(masterListEquipment);
 
-        const masterDescription = masterListEquipment?.remark;
-        const masterMake = masterListEquipment?.make;
-        const masterSlNo = masterListEquipment?.master_list_equipment_id;
-        const masterCertificateNo = masterListEquipment?.calibration_certificate_no;
-        const masterValidity = validity;
-        const masterTraceability = masterListEquipment?.traceability;
+        const masterDescription = m_description;
+        const masterMake = m_make;
+        const masterSlNo = m_serial_no;
+        const masterCertificateNo = m_certificate_no;
+        const masterValidity = m_validity;
+        const masterTraceability = m_traceability;
 
         // *** Find Lab Logos ***
         const lab = await Lab.findOne({
@@ -371,7 +357,7 @@ const generate = async (req, res, next) => {
                         widths: ['*', '*'],
                         body: [
                             [
-                                { text: 'DESCRIPTION: Weigh Device' },
+                                { text: `DESCRIPTION: ${description}` },
                                 { text: `DESCRIPTION: ${masterDescription}` },
                             ],
                             [
@@ -642,14 +628,7 @@ const download = async (req, res, next) => {
     }
 }
 
-// *** Result Table Models ***
-const masterDesignProcedure = require("../models").master_design_procedure;
-
-const standard_details = async (req, res, next) => {
-
-    // ***  Query Master Result List  *** 
-    let query = await masterDesignProcedure.findOne();
-    let master_list_equipments = query.master_list_equipments;
+const standard_details = async (master_list_equipments) => {
 
     let description = [];
     let make = [];
@@ -663,7 +642,14 @@ const standard_details = async (req, res, next) => {
         make?.push(eachItem.make);
         serial_no?.push(eachItem.serial_no);
         certificate_no?.push(eachItem.calibration_certificate_no);
-        validity?.push(eachItem.calibration_valid_upto);
+
+        if (eachItem?.calibration_valid_upto) {
+            let vDate = eachItem?.calibration_valid_upto;
+            vDate = new Date(vDate);
+            vDate = `${new Date(vDate).getDate() - 1}/${new Date(vDate).getMonth() + 1}/${new Date(vDate).getFullYear()}`;
+            validity?.push(vDate);
+        }
+
         traceability?.push(eachItem.traceability);
     });
 
@@ -671,10 +657,10 @@ const standard_details = async (req, res, next) => {
     const m_make = make?.join("/");
     const m_serial_no = serial_no?.join("/");
     const m_certificate_no = certificate_no?.join("/");
-    const m_validity = validity?.join("/");
-    const m_traceability = traceability?.join("/");
+    const m_validity = validity?.join(",");
+    const m_traceability = traceability?.join(",");
 
-    return res.json({ m_description, m_make, m_serial_no, m_certificate_no, m_validity, m_traceability });
+    return { m_description, m_make, m_serial_no, m_certificate_no, m_validity, m_traceability };
 }
 
 exports.generate = generate;
