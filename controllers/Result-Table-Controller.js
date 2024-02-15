@@ -12,7 +12,7 @@ const create = async (req, res, next) => {
             calibration_procedure, ref_std,
             validity, traceability,
             temperature, humidity, atmospheric_pressure, ulr_number,
-            master_list_equipments, remarks,
+            master_list_equipments, remarks, calibrated_employee_id, approved_employee_id,
             mainArray
         } = req.body;
 
@@ -27,7 +27,7 @@ const create = async (req, res, next) => {
                     calibration_procedure, ref_std, instrument_type_id,
                     validity, traceability,
                     temperature, humidity, atmospheric_pressure, ulr_number,
-                    master_list_equipments, remarks
+                    master_list_equipments, remarks, calibrated_employee_id, approved_employee_id
                 },
                 { where: { lab_id, srf_id, srf_item_id, } }
             );
@@ -58,7 +58,7 @@ const create = async (req, res, next) => {
                 unique_id: new Date().getTime(),
                 validity, traceability,
                 temperature, humidity, atmospheric_pressure, ulr_number,
-                master_list_equipments, remarks
+                master_list_equipments, remarks, calibrated_employee_id, approved_employee_id
             });
             const result = await newMasterTable.save();
 
@@ -150,7 +150,7 @@ const update = async (req, res, next) => {
             calibration_procedure, ref_std,
             validity, traceability,
             temperature, humidity, atmospheric_pressure, ulr_number,
-            master_list_equipments, remarks,
+            master_list_equipments, remarks, calibrated_employee_id, approved_employee_id,
             mainArray
         } = req.body;
 
@@ -159,7 +159,7 @@ const update = async (req, res, next) => {
                 calibration_procedure, ref_std, instrument_type_id,
                 validity, traceability,
                 temperature, humidity, atmospheric_pressure, ulr_number,
-                master_list_equipments, remarks,
+                master_list_equipments, remarks, calibrated_employee_id, approved_employee_id
             },
             { where: { master_result_table_id, lab_id } }
         );

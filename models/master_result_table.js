@@ -29,21 +29,6 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
       },
 
-      // employee_full_name: {
-      //   type: DataTypes.STRING,
-      //   allowNull: false,
-      // },
-
-      // employee_role: {
-      //   type: DataTypes.STRING,
-      //   allowNull: false,
-      // },
-
-      // employee_signature: {
-      //   type: DataTypes.STRING,
-      //   allowNull: false,
-      // },
-
       calibration_procedure: {
         type: DataTypes.STRING,
         allowNull: false,
@@ -110,13 +95,6 @@ module.exports = (sequelize, DataTypes) => {
       foreignKey: "lab_id",
     });
 
-    // master_result_table.belongsTo(models.employee_master, {
-    //   as: "employee_master",
-    //   constrains: true,
-    //   onDelete: "CASCADE",
-    //   foreignKey: "employee_id",
-    // });
-
     master_result_table.belongsTo(models.master_design_procedure, {
       as: "master_design_procedure",
       constrains: true,
@@ -143,6 +121,20 @@ module.exports = (sequelize, DataTypes) => {
       constrains: true,
       onDelete: "CASCADE",
       foreignKey: "srf_item_id"
+    });
+
+    master_result_table.belongsTo(models.employee_master, {
+      as: "calibrated_employee_master",
+      constrains: true,
+      onDelete: "CASCADE",
+      foreignKey: "calibrated_employee_id",
+    });
+
+    master_result_table.belongsTo(models.employee_master, {
+      as: "approved_employee_master",
+      constrains: true,
+      onDelete: "CASCADE",
+      foreignKey: "approved_employee_id",
     });
 
   };

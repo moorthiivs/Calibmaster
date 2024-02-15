@@ -3,6 +3,7 @@
 module.exports = {
   async up(queryInterface, Sequelize) {
     await queryInterface.createTable('master_result_tables', {
+
       master_result_table_id: {
         allowNull: false,
         autoIncrement: true,
@@ -60,30 +61,6 @@ module.exports = {
         allowNull: false,
       },
 
-      // employee_id: {
-      //   type: Sequelize.INTEGER,
-      //   allowNull: false,
-      //   references: {
-      //     model: "employee_masters",
-      //     key: "employee_id"
-      //   }
-      // },
-
-      // employee_full_name: {
-      //   type: Sequelize.STRING,
-      //   allowNull: false,
-      // },
-
-      // employee_role: {
-      //   type: Sequelize.STRING,
-      //   allowNull: false,
-      // },
-
-      // employee_signature: {
-      //   type: Sequelize.STRING,
-      //   allowNull: false,
-      // },
-
       calibration_procedure: {
         type: Sequelize.STRING,
         allowNull: false,
@@ -92,17 +69,14 @@ module.exports = {
         type: Sequelize.STRING,
         allowNull: false,
       },
-
       calibration: {
         type: Sequelize.STRING,
         allowNull: true,
       },
-
       ulr_number: {
         type: Sequelize.STRING,
         allowNull: true,
       },
-
       validity: {
         type: Sequelize.STRING,
         allowNull: false,
@@ -111,7 +85,6 @@ module.exports = {
         type: Sequelize.STRING,
         allowNull: false,
       },
-
       temperature: {
         type: Sequelize.STRING,
         allowNull: true,
@@ -124,7 +97,6 @@ module.exports = {
         type: Sequelize.STRING,
         allowNull: true,
       },
-
       master_list_equipments: {
         type: Sequelize.ARRAY(Sequelize.JSON),
         allowNull: false
@@ -133,6 +105,24 @@ module.exports = {
       remarks: {
         type: Sequelize.ARRAY(Sequelize.STRING),
         allowNull: false
+      },
+
+      calibrated_employee_id: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        references: {
+          model: "employee_masters",
+          key: "employee_id"
+        }
+      },
+
+      approved_employee_id: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        references: {
+          model: "employee_masters",
+          key: "employee_id"
+        }
       },
 
       createdAt: {
