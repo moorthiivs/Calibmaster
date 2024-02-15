@@ -16,7 +16,7 @@ npx sequelize db:seed --seed 20240113061835-cmssettings.js
 
 ================================================================================
 
-1 => Design Procedure
+1 => Master Design Procedure
 
 20240116162234-create-master-design-procedure.js
 
@@ -36,7 +36,7 @@ npx sequelize-cli db:migrate
 
 ===================================================================================
 
-3 => Result Table 
+3 => Master Result Table 
 
 npx sequelize-cli model:generate --name result_table --attributes firstName:string
 

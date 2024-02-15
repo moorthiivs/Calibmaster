@@ -44,11 +44,6 @@ module.exports = (sequelize, DataTypes) => {
       //   allowNull: false,
       // },
 
-      master_list_equipments: {
-        type: DataTypes.ARRAY(DataTypes.STRING),
-        allowNull: false
-      },
-
       calibration_procedure: {
         type: DataTypes.STRING,
         allowNull: false,
@@ -88,6 +83,11 @@ module.exports = (sequelize, DataTypes) => {
       atmospheric_pressure: {
         type: DataTypes.STRING,
         allowNull: true
+      },
+
+      master_list_equipments: {
+        type: DataTypes.ARRAY(DataTypes.JSON),
+        allowNull: false
       },
 
       remarks: {

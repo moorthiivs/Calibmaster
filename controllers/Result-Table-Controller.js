@@ -12,7 +12,7 @@ const create = async (req, res, next) => {
             calibration_procedure, ref_std,
             validity, traceability,
             temperature, humidity, atmospheric_pressure, ulr_number,
-            remarks,
+            master_list_equipments, remarks,
             mainArray
         } = req.body;
 
@@ -26,8 +26,8 @@ const create = async (req, res, next) => {
                 {
                     calibration_procedure, ref_std, instrument_type_id,
                     validity, traceability,
-                    temperature, humidity, atmospheric_pressure,
-                    ulr_number, remarks
+                    temperature, humidity, atmospheric_pressure, ulr_number,
+                    master_list_equipments, remarks
                 },
                 { where: { lab_id, srf_id, srf_item_id, } }
             );
@@ -56,9 +56,9 @@ const create = async (req, res, next) => {
                 master_design_procedure_id,
                 calibration_procedure, ref_std,
                 unique_id: new Date().getTime(),
-                master_list_equipments: ['1', '2', '3'],
                 validity, traceability,
-                temperature, humidity, atmospheric_pressure, ulr_number, remarks
+                temperature, humidity, atmospheric_pressure, ulr_number,
+                master_list_equipments, remarks
             });
             const result = await newMasterTable.save();
 
@@ -149,8 +149,8 @@ const update = async (req, res, next) => {
             master_result_table_id, lab_id, instrument_type_id,
             calibration_procedure, ref_std,
             validity, traceability,
-            temperature, humidity, atmospheric_pressure,
-            ulr_number,
+            temperature, humidity, atmospheric_pressure, ulr_number,
+            master_list_equipments, remarks,
             mainArray
         } = req.body;
 
@@ -158,8 +158,8 @@ const update = async (req, res, next) => {
             {
                 calibration_procedure, ref_std, instrument_type_id,
                 validity, traceability,
-                temperature, humidity, atmospheric_pressure,
-                ulr_number
+                temperature, humidity, atmospheric_pressure, ulr_number,
+                master_list_equipments, remarks,
             },
             { where: { master_result_table_id, lab_id } }
         );
