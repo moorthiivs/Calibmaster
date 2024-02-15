@@ -156,7 +156,8 @@ const generate = async (req, res, next) => {
 
         // ***  Query Master Result List  *** 
         let masterResult = await masterResultTable.findOne({
-            where: { lab_id, srf_id, srf_item_id }
+            where: { lab_id, srf_id, srf_item_id },
+            include: ["calibrated_employee_master", "approved_employee_master"]
         });
         // return res.json(masterResult);
 
@@ -253,17 +254,23 @@ const generate = async (req, res, next) => {
         // return res.json(bigEyeObj);
 
         // *** Seal & Logos area ***
+
+        let calibrated_employee_master = await masterResult.calibrated_employee_master;
+        let calibrated_employee_name = calibrated_employee_master.employee_full_name;
+        let calibrated_employee_signature = calibrated_employee_master.employee_signature;
+
+        let approved_employee_master = await masterResult.approved_employee_master;
+        let approved_employee_name = approved_employee_master.employee_full_name;
+        let approved_employee_signature = approved_employee_master.employee_signature;
+
         const sealLogoPath = path.resolve(__dirname, `../public/images/${lab.brand_logo_filename}`);
         const sealBuffer = await imageToBuffer(sealLogoPath);
 
-        const sign1LogoPath = path.resolve(__dirname, '../public/logos/sign-1.png');
+        const sign1LogoPath = path.resolve(__dirname, `../public/${calibrated_employee_signature}`);
         const sign1LogoBuffer = await imageToBuffer(sign1LogoPath);
 
-        const sign2LogoPath = path.resolve(__dirname, '../public/logos/sign-2.png');
+        const sign2LogoPath = path.resolve(__dirname, `../public/${approved_employee_signature}`);
         const sign2LogoBuffer = await imageToBuffer(sign2LogoPath);
-
-        const calibrated_by = "--";
-        const approved_by = "--";
 
         const docDefinition = {
             pageSize: 'A4',
@@ -473,8 +480,7 @@ const generate = async (req, res, next) => {
                                     margin: [0, 0, 0, 0],
                                     alignment: 'center'
                                 },
-                                { text: `${calibrated_by}`, listType: 'none' },
-                                { text: 'Calibration Engineer', listType: 'none' },
+                                { text: `${calibrated_employee_name}`, listType: 'none' },
                                 { text: 'Calibrated By', listType: 'none' }
                             ],
                             alignment: 'center'
@@ -493,8 +499,7 @@ const generate = async (req, res, next) => {
                                     margin: [0, 0, 0, 0],
                                     alignment: 'center'
                                 },
-                                { text: `${approved_by}`, listType: 'none' },
-                                { text: 'Technical manager', listType: 'none' },
+                                { text: `${approved_employee_name}`, listType: 'none' },
                                 { text: 'Approved by', listType: 'none' }
                             ],
                             alignment: 'center'
