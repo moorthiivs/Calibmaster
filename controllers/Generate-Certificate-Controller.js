@@ -195,7 +195,7 @@ const generate = async (req, res, next) => {
                 'address1', 'address2', 'address3',
                 'city', 'state', 'country', 'pincode',
                 'lab_website', 'contact_email', 'contact_number1', 'contact_number2',
-                'brand_logo_filename'
+                'brand_logo_filename', 'seal_image_filename'
             ],
             where: { lab_id },
         });
@@ -263,7 +263,22 @@ const generate = async (req, res, next) => {
         let approved_employee_name = approved_employee_master.employee_full_name;
         let approved_employee_signature = approved_employee_master.employee_signature;
 
-        const sealLogoPath = path.resolve(__dirname, `../public/images/${lab.brand_logo_filename}`);
+        const labLogo_1_Path = path.resolve(__dirname, `../public/images/${lab.brand_logo_filename}`);
+        const labLogo_1_Buffer = await imageToBuffer(labLogo_1_Path);
+
+        const labLogo_2_Path = path.resolve(__dirname, `../public/images/${lab.other_logo1_image_filename}`);
+
+        let labLogo_2_Buffer = '';
+        let labLogo_2_array = [];
+
+        if (lab.other_logo1_image_filename !== undefined) {
+            labLogo_2_Buffer = await imageToBuffer(labLogo_2_Path);
+            if (labLogo_2_Buffer) {
+                return labLogo_2_array.push({ width: 80, image: labLogo_2_Buffer });
+            }
+        }
+
+        const sealLogoPath = path.resolve(__dirname, `../public/images/${lab.seal_image_filename}`);
         const sealBuffer = await imageToBuffer(sealLogoPath);
 
         const sign1LogoPath = path.resolve(__dirname, `../public/${calibrated_employee_signature}`);
@@ -278,30 +293,48 @@ const generate = async (req, res, next) => {
             pageMargins: [20, 130, 20, 90],
             header: [
                 {
-                    text: `${lab.lab_name}`,
-                    alignment: 'center', fontSize: 18, bold: true,
-                    margin: [0, 10, 0, 0],
+                    alignment: 'justify',
+                    columnGap: 0,
+                    columns: [
+                        {
+                            width: 80,
+                            image: labLogo_1_Buffer,
+                            margin: [15, 10, 0, 0]
+                        },
+                        [
+                            {
+                                text: `${lab.lab_name}`,
+                                alignment: 'center', fontSize: 18, bold: true,
+                                margin: [0, 10, 0, 0],
+                            },
+                            {
+                                text: `${lab.address1}, ${lab.state}, ${lab.city}-${lab.pincode},`,
+                                alignment: 'center', fontSize: 12,
+                                margin: [0, 5, 0, 0],
+                            },
+                            {
+                                text: `Mobile: ${lab.contact_number1}/ Website: ${lab.lab_website}`,
+                                alignment: 'center', fontSize: 12,
+                                margin: [0, 2, 0, 0],
+                            },
+                            {
+                                text: `Email: ${lab.contact_email}`,
+                                alignment: 'center', fontSize: 10,
+                                margin: [0, 2, 0, 0],
+                            },
+                            {
+                                text: 'CERTIFICATE OF CALIBRATION',
+                                alignment: 'center', fontSize: 18, bold: true,
+                                margin: [0, 5, 0, 0],
+                            }
+                        ],
+                        {
+                            width: 100,
+                            columns: [],
+                            margin: [0, 10, 0, 0]
+                        }
+                    ]
                 },
-                {
-                    text: `${lab.address1}, ${lab.state}, ${lab.city}-${lab.pincode},`,
-                    alignment: 'center', fontSize: 12,
-                    margin: [0, 5, 0, 0],
-                },
-                {
-                    text: `Mobile: ${lab.contact_number1}/ Website: ${lab.lab_website}`,
-                    alignment: 'center', fontSize: 12,
-                    margin: [0, 2, 0, 0],
-                },
-                {
-                    text: `Email: ${lab.contact_email}`,
-                    alignment: 'center', fontSize: 10,
-                    margin: [0, 2, 0, 0],
-                },
-                {
-                    text: 'CERTIFICATE OF CALIBRATION',
-                    alignment: 'center', fontSize: 18, bold: true,
-                    margin: [0, 5, 0, 0],
-                }
             ],
             footer: function (currentPage, pageCount) {
                 return [
