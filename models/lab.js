@@ -134,6 +134,11 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: true,
       },
 
+      seal_image_filename: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+
       created_timestamp: {
         type: DataTypes.DATE,
         allowNull: false

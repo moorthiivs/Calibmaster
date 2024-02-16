@@ -74,7 +74,9 @@ const addlab = async (req, res, next) => {
 
     MainLogo,
     secondLogo,
-    thirdLogo
+    thirdLogo,
+
+    sealLogo
 
   } = req.body;
 
@@ -101,6 +103,7 @@ const addlab = async (req, res, next) => {
     return response;
   }
 
+  // *** Brand Logo ***
   let mainLogoImgFileName;
   let buff1 = "";
   if (MainLogo) {
@@ -120,6 +123,7 @@ const addlab = async (req, res, next) => {
     mainLogoImgFileName = "";
   }
 
+  // *** Other Brand Logo 1 ***
   let secondLogoImgFileName;
   let buff2 = "";
   if (secondLogo) {
@@ -139,6 +143,7 @@ const addlab = async (req, res, next) => {
     secondLogoImgFileName = "";
   }
 
+  // *** Other Brand Logo 2 ***
   let thirdLogoImgFileName;
   let buff3 = "";
   if (thirdLogo) {
@@ -156,6 +161,24 @@ const addlab = async (req, res, next) => {
     }
   } else {
     thirdLogoImgFileName = "";
+  }
+
+  // *** Seal Logo ***
+  let sealLogoImgFileName;
+  if (sealLogo) {
+    const sealLogoDecodeImg = decodeBase64Image(sealLogo);
+    const imageBuffer = sealLogoDecodeImg.data;
+    const fileExtension = sealLogoDecodeImg.type.slice(6);
+    sealLogoImgFileName = Math.floor(Math.random() * 9999999) + "." + fileExtension;
+
+    try {
+      fs.writeFileSync("public/images/" + sealLogoImgFileName, imageBuffer, 'utf8');
+    }
+    catch (err) {
+      console.error(err)
+    }
+  } else {
+    sealLogoImgFileName = "";
   }
 
   try {
@@ -218,7 +241,7 @@ const addlab = async (req, res, next) => {
         error.code = 500;
         return errorHandler(error, req, res, next);
       }
-      console.log(response);
+      // console.log(response);
     });
 
     const newLab = new Lab({
@@ -259,6 +282,8 @@ const addlab = async (req, res, next) => {
       other_logo2_image_filename: thirdLogoImgFileName,
       other_logo2_image_mime_type,
       other_logo2_image: buff3,
+
+      seal_image_filename: sealLogoImgFileName,
 
       rstatus: 1,
       lab_active_flag: 1,
