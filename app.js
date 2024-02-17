@@ -5,13 +5,15 @@ const cors = require("cors");
 const logger = require("./utils/logger");
 const dotenv = require('dotenv');
 const routers = require('./routes/');
-const cronservice = require('./cron-service/cron');
+const srfItemsCronservices = require('./cron-service/srf-items-cron');
+const masterEquipmentsCronservices = require('./cron-service/master-equipments-cron');
 
 const app = express();
 
 // Cron Job Run
-cronservice.sendNotificationMail_1();
-cronservice.sendNotificationMail_2();
+// srfItemsCronservices.sendNotificationMail_1();
+// srfItemsCronservices.sendNotificationMail_2();
+masterEquipmentsCronservices.emailRemainder();
 
 const whitelist = ["http://localhost:5173"];
 
