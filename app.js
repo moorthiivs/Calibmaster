@@ -5,13 +5,13 @@ const cors = require("cors");
 const logger = require("./utils/logger");
 const dotenv = require('dotenv');
 const routers = require('./routes/');
-const customCron = require('./cron');
+const cronservice = require('./cron-service/cron');
 
 const app = express();
 
 // Cron Job Run
-customCron.sendNotificationMail_1();
-customCron.sendNotificationMail_2();
+cronservice.sendNotificationMail_1();
+cronservice.sendNotificationMail_2();
 
 const whitelist = ["http://localhost:5173"];
 
@@ -56,7 +56,7 @@ app.use((error, req, res, next) => {
   let message = `${ip} ${userId} ${sessionId} ${code} ${path} - ${action}`;
   logger.error(message);
 
-  res.status(error.code).json({
+  return res.status(error.code).json({
     status: "FAILURE",
     message: error.message,
     code: error.code,
