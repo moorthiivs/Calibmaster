@@ -25,11 +25,10 @@ const { errorHandler } = require("../helpers/error-handler");
 
 async function imageToBuffer(imagePath) {
     try {
-        return await imageDataURI.encodeFromFile(imagePath)
-            .then(dataURI => dataURI)
+        return await imageDataURI.encodeFromFile(imagePath).then(dataURI => dataURI)
     } catch (error) {
         console.log(error);
-        throw error;
+        return false;
     }
 }
 
@@ -195,7 +194,8 @@ const generate = async (req, res, next) => {
                 'address1', 'address2', 'address3',
                 'city', 'state', 'country', 'pincode',
                 'lab_website', 'contact_email', 'contact_number1', 'contact_number2',
-                'brand_logo_filename', 'seal_image_filename'
+                'brand_logo_filename', 'seal_image_filename',
+                'certificate_accreditation_qr_code_logo_1', 'scope_accreditation_qr_code_logo_2'
             ],
             where: { lab_id },
         });
@@ -254,7 +254,6 @@ const generate = async (req, res, next) => {
         // return res.json(bigEyeObj);
 
         // *** Seal & Logos area ***
-
         let calibrated_employee_master = await masterResult.calibrated_employee_master;
         let calibrated_employee_name = calibrated_employee_master.employee_full_name;
         let calibrated_employee_signature = calibrated_employee_master.employee_signature;
@@ -266,10 +265,11 @@ const generate = async (req, res, next) => {
         const labLogo_1_Path = path.resolve(__dirname, `../public/images/${lab.brand_logo_filename}`);
         const labLogo_1_Buffer = await imageToBuffer(labLogo_1_Path);
 
-        const labLogo_2_Path = path.resolve(__dirname, `../public/images/${lab.other_logo1_image_filename}`);
-
+        // *** Lab Other Brand Logo 1 Start ***
         let labLogo_2_Buffer = '';
         let labLogo_2_array = [];
+
+        const labLogo_2_Path = path.resolve(__dirname, `../public/images/${lab.other_logo1_image_filename}`);
 
         if (lab.other_logo1_image_filename !== undefined) {
             labLogo_2_Buffer = await imageToBuffer(labLogo_2_Path);
@@ -277,6 +277,25 @@ const generate = async (req, res, next) => {
                 return labLogo_2_array.push({ width: 80, image: labLogo_2_Buffer });
             }
         }
+        // *** Lab Other Brand Logo 1 End ***
+
+        // *** Lab QR LOGO-1 Start ***
+        let lab_QR_LOGO_1_Buffer = '';
+        const lab_QR_Logo_1_Path = path.resolve(__dirname, `../public/images/${lab.certificate_accreditation_qr_code_logo_1}`);
+
+        if (lab.certificate_accreditation_qr_code_logo_1 !== undefined) {
+            lab_QR_LOGO_1_Buffer = await imageToBuffer(lab_QR_Logo_1_Path);
+        }
+        // *** Lab QR LOGO-1 End ***
+
+        // *** Lab QR LOGO-2 Start ***
+        let lab_QR_LOGO_2_Buffer = '';
+        const lab_QR_Logo_2_Path = path.resolve(__dirname, `../public/images/${lab.scope_accreditation_qr_code_logo_2}`);
+
+        if (lab.scope_accreditation_qr_code_logo_2 !== undefined) {
+            lab_QR_LOGO_2_Buffer = await imageToBuffer(lab_QR_Logo_2_Path);
+        }
+        // *** Lab QR LOGO-2 End ***
 
         const sealLogoPath = path.resolve(__dirname, `../public/images/${lab.seal_image_filename}`);
         const sealBuffer = await imageToBuffer(sealLogoPath);
@@ -339,8 +358,13 @@ const generate = async (req, res, next) => {
             footer: function (currentPage, pageCount) {
                 return [
                     {
-                        text: footerLongText,
                         alignment: 'left',
+                        columnGap: 5,
+                        columns: [
+                            { text: footerLongText, width: 'auto' },
+                            lab_QR_LOGO_1_Buffer ? { image: lab_QR_LOGO_1_Buffer, width: 50, } : { text: '' },
+                            lab_QR_LOGO_2_Buffer ? { image: lab_QR_LOGO_2_Buffer, width: 50, } : { text: '' },
+                        ],
                         margin: [10, 0, 10, 10]
                     },
                     { text: currentPage.toString() + ' of ' + pageCount, alignment: 'center' }
@@ -518,12 +542,7 @@ const generate = async (req, res, next) => {
                             ],
                             alignment: 'center'
                         },
-                        {
-                            image: sealBuffer,
-                            width: 80,
-                            margin: [0, 0, 0, 0],
-                            alignment: 'center'
-                        },
+                        sealBuffer ? { image: sealBuffer, width: 80, margin: [0, 0, 0, 0], alignment: 'center' } : { text: '' },
                         {
                             ul: [
                                 {
