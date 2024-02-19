@@ -139,6 +139,24 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: true,
       },
 
+      certificate_accreditation_qr_code_logo_1: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      certificate_accreditation_url_1: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+
+      scope_accreditation_qr_code_logo_2: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      scope_accreditation_url_2: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+
       created_timestamp: {
         type: DataTypes.DATE,
         allowNull: false

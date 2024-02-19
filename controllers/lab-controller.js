@@ -76,8 +76,10 @@ const addlab = async (req, res, next) => {
     secondLogo,
     thirdLogo,
 
-    sealLogo
+    sealLogo,
 
+    nabl_qr_Code_logo_1, nableURL_1,
+    nabl_qr_Code_logo_2, nableURL_2
   } = req.body;
 
   // checking non required for values
@@ -181,6 +183,42 @@ const addlab = async (req, res, next) => {
     sealLogoImgFileName = "";
   }
 
+  // *** QR CODE Logo-1 ***
+  let qr_codo_logo_1;
+  if (nabl_qr_Code_logo_1) {
+    const decodeImage = decodeBase64Image(nabl_qr_Code_logo_1);
+    const imageBuffer = decodeImage.data;
+    const fileExtension = decodeImage.type.slice(6);
+    qr_codo_logo_1 = Math.floor(Math.random() * 9999999) + "." + fileExtension;
+
+    try {
+      fs.writeFileSync("public/images/" + qr_codo_logo_1, imageBuffer, 'utf8');
+    }
+    catch (err) {
+      console.error(err)
+    }
+  } else {
+    qr_codo_logo_1 = "";
+  }
+
+  // *** QR CODE Logo-2 ***
+  let qr_codo_logo_2;
+  if (nabl_qr_Code_logo_2) {
+    const decodeImage = decodeBase64Image(nabl_qr_Code_logo_2);
+    const imageBuffer = decodeImage.data;
+    const fileExtension = decodeImage.type.slice(6);
+    qr_codo_logo_2 = Math.floor(Math.random() * 9999999) + "." + fileExtension;
+
+    try {
+      fs.writeFileSync("public/images/" + qr_codo_logo_2, imageBuffer, 'utf8');
+    }
+    catch (err) {
+      console.error(err)
+    }
+  } else {
+    qr_codo_logo_2 = "";
+  }
+
   try {
 
     var calibmaster_lab_id = new Date().getTime();
@@ -241,7 +279,6 @@ const addlab = async (req, res, next) => {
         error.code = 500;
         return errorHandler(error, req, res, next);
       }
-      // console.log(response);
     });
 
     const newLab = new Lab({
@@ -287,6 +324,12 @@ const addlab = async (req, res, next) => {
 
       rstatus: 1,
       lab_active_flag: 1,
+
+      certificate_accreditation_qr_code_logo_1: qr_codo_logo_1,
+      certificate_accreditation_url_1: nableURL_1,
+
+      scope_accreditation_qr_code_logo_2: qr_codo_logo_2,
+      scope_accreditation_url_2: nableURL_2,
 
       created_timestamp: Date.now(),
       created_by_login_name: fetchCreater.name,

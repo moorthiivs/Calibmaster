@@ -103,10 +103,6 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING(100),
         allowNull: true,
       },
-      calibration_valid_upto: {
-        type: DataTypes.DATE,
-        allowNull: false
-      },
       calibration_agency: {
         type: DataTypes.STRING(300),
         allowNull: false,
@@ -127,6 +123,19 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING(100),
         allowNull: false,
       },
+      calibration_valid_upto: {
+        type: DataTypes.DATE,
+        allowNull: false
+      },
+      calibration_remainder_date_1: {
+        type: DataTypes.DATE,
+        allowNull: true
+      },
+      calibration_remainder_date_2: {
+        type: DataTypes.DATE,
+        allowNull: true
+      },
+
       remark: {
         type: DataTypes.STRING(1000),
         allowNull: true,

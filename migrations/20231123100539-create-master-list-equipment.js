@@ -117,10 +117,6 @@ module.exports = {
         type: Sequelize.STRING(100),
         allowNull: true,
       },
-      calibration_valid_upto: {
-        type: Sequelize.DATE,
-        allowNull: false
-      },
       calibration_agency: {
         type: Sequelize.STRING(300),
         allowNull: false,
@@ -137,10 +133,24 @@ module.exports = {
         type: Sequelize.STRING(100),
         allowNull: true,
       },
+
       next_calibration_reminder: {
         type: Sequelize.STRING(100),
         allowNull: false,
       },
+      calibration_valid_upto: {
+        type: Sequelize.DATE,
+        allowNull: false
+      },
+      calibration_remainder_date_1: {
+        type: Sequelize.DATE,
+        allowNull: true
+      },
+      calibration_remainder_date_2: {
+        type: Sequelize.DATE,
+        allowNull: true
+      },
+
       remark: {
         type: Sequelize.STRING(1000),
         allowNull: true,

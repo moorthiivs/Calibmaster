@@ -139,6 +139,24 @@ module.exports = {
         allowNull: true,
       },
 
+      certificate_accreditation_qr_code_logo_1: {
+        type: Sequelize.STRING,
+        allowNull: true,
+      },
+      certificate_accreditation_url_1: {
+        type: Sequelize.STRING,
+        allowNull: true,
+      },
+
+      scope_accreditation_qr_code_logo_2: {
+        type: Sequelize.STRING,
+        allowNull: true,
+      },
+      scope_accreditation_url_2: {
+        type: Sequelize.STRING,
+        allowNull: true,
+      },
+
       created_timestamp: {
         type: Sequelize.DATE,
         allowNull: false

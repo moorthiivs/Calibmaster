@@ -43,3 +43,5 @@ npx sequelize-cli model:generate --name result_table --attributes firstName:stri
 npx sequelize-cli db:migrate:undo:all --to 20240118105454-create-master-result-table.js
 
 npx sequelize-cli db:migrate
+
+npx sequelize-cli db:migrate:undo:all --to 20231123100539-create-master-list-equipment.js

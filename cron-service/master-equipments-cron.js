@@ -36,7 +36,7 @@ const sendMail = async (eachData) => {
         const info = await transporter.sendMail({
             from: lab.sender_email,
             to: lab.sender_email,
-            subject: "Notification Mail",
+            subject: "Notification Mail For Master Equipment",
             html: html
         });
 
@@ -48,7 +48,7 @@ const sendMail = async (eachData) => {
     }
 }
 
-const emailRemainder = async (req, res, next) => {
+const emailRemainder_1 = async (req, res, next) => {
 
     try {
 
@@ -65,7 +65,68 @@ const emailRemainder = async (req, res, next) => {
                 masterLists.map(async (eachRow) => {
 
                     // *** Reaminder Date in yyyy--mm-dd format ***
-                    rDate = new Date(eachRow?.calibration_valid_upto);
+                    rDate = new Date(eachRow?.calibration_remainder_date_1);
+                    let rDay = rDate.getDate();
+                    let rMonth = rDate.getMonth() + 1;
+                    let rYear = rDate.getFullYear();
+                    let reaminderDate = `${rYear}-${rMonth}-${rDay}`;
+
+                    // *** Today Date in yyyy--mm-dd format ***
+                    const todayDate = new Date();
+                    let day = todayDate.getDate();
+                    let month = todayDate.getMonth() + 1;
+                    let year = todayDate.getFullYear();
+                    let currentDate = `${year}-${month}-${day}`;
+
+                    let status;
+                    console.log(currentDate, reaminderDate);
+
+                    if (currentDate === reaminderDate) {
+                        status = "Today send the mail to contact person";
+
+                        responseArr.push({
+                            serial_no: eachRow?.serial_no,
+                            status
+                        });
+
+                        await sendMail(eachRow);
+                    } else {
+                        status = `The mail will send the contact person on ${reaminderDate}`
+                        responseArr.push({
+                            serial_no: eachRow?.serial_no,
+                            status
+                        });
+                    }
+                });
+
+            } catch (err) {
+                console.log(err);
+            }
+
+        })
+    } catch (err) {
+        console.log(err);
+    }
+};
+
+const emailRemainder_2 = async (req, res, next) => {
+
+    try {
+
+        cron.schedule('0 * * * *', async function () {
+
+            try {
+                let masterLists = await MasterListEquipment.findAll({
+                    include: ['lab']
+                });
+                // return res.json(masterLists);
+
+                let responseArr = [];
+
+                masterLists.map(async (eachRow) => {
+
+                    // *** Reaminder Date in yyyy--mm-dd format ***
+                    rDate = new Date(eachRow?.calibration_remainder_date_2);
                     let rDay = rDate.getDate();
                     let rMonth = rDate.getMonth() + 1;
                     let rYear = rDate.getFullYear();
@@ -110,5 +171,6 @@ const emailRemainder = async (req, res, next) => {
 };
 
 module.exports = {
-    emailRemainder
+    emailRemainder_1,
+    emailRemainder_2
 };

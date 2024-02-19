@@ -24,6 +24,30 @@ const create = async (req, res, next) => {
                 where: { id: req.userId }
             });
 
+            let calibration_due_date = req.body.calibration_valid_upto;
+            let calibration_remainder_date_1 = "";
+            let calibration_remainder_date_2 = "";
+
+            if (req.body.next_calibration_reminder === "1 Reminder 7 days before") {
+
+                let due_date_1 = new Date(calibration_due_date);
+                let diffDateInMS_1 = due_date_1.setDate(due_date_1.getDate() - 7);
+                req.body.calibration_remainder_date_1 = new Date(diffDateInMS_1);
+            }
+
+            if (req.body.next_calibration_reminder === "2 Reminders 15 days before") {
+
+                let due_date_1 = new Date(calibration_due_date);
+                let diffDateInMS_1 = due_date_1.setDate(due_date_1.getDate() - 15);
+                req.body.calibration_remainder_date_1 = new Date(diffDateInMS_1);
+
+                let due_date_2 = new Date(calibration_due_date);
+                let diffDateInMS_2 = due_date_2.setDate(due_date_2.getDate() - 7);
+                req.body.calibration_remainder_date_2 = new Date(diffDateInMS_2);
+            }
+
+            // return res.json({ calibration_due_date, calibration_remainder_date_1, calibration_remainder_date_2 });
+
             req.body.created_timestamp = Date.now();
             req.body.created_by_login_name = fetchCreater.name;
             req.body.created_by_user_id = req.userId;
@@ -146,9 +170,40 @@ const update = async (req, res, next) => {
             where: { master_list_equipment_id }
         });
 
+        let calibration_due_date = req.body.calibration_valid_upto;
+        let calibration_remainder_date_1 = "";
+        let calibration_remainder_date_2 = "";
+
+        if (req.body.next_calibration_reminder === "1 Reminder 7 days before") {
+
+            let due_date_1 = new Date(calibration_due_date);
+            let diffDateInMS_1 = due_date_1.setDate(due_date_1.getDate() - 7);
+            req.body.calibration_remainder_date_1 = new Date(diffDateInMS_1);
+            req.body.calibration_remainder_date_2 = null;
+        }
+
+        if (req.body.next_calibration_reminder === "2 Reminders 15 days before") {
+
+            let due_date_1 = new Date(calibration_due_date);
+            let diffDateInMS_1 = due_date_1.setDate(due_date_1.getDate() - 15);
+            req.body.calibration_remainder_date_1 = new Date(diffDateInMS_1);
+
+            let due_date_2 = new Date(calibration_due_date);
+            let diffDateInMS_2 = due_date_2.setDate(due_date_2.getDate() - 7);
+            req.body.calibration_remainder_date_2 = new Date(diffDateInMS_2);
+        }
+
+        // return res.json({
+        //     calibration_valid_upto: req.body.calibration_valid_upto,
+        //     calibration_remainder_date_1: req.body.calibration_remainder_date_1,
+        //     calibration_remainder_date_2: req.body.calibration_remainder_date_2
+        // })
+
         req.body.updated_timestamp = Date.now();
         req.body.updated_by_login_name = fetchCreater.name;
         req.body.updated_by_user_id = req.userId;
+
+        // return res.json(req.body);
 
         if (result) {
             await MasterListEquipment.update(
