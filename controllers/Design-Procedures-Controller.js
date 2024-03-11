@@ -245,11 +245,20 @@ const update = async (req, res, next) => {
                 header_types, header_texts, second_row_headers, cell_texts
             } = mainArray[i];
 
-            const response = await Dynamicdesign.update(
-                { rows, columns, header_types, header_texts, second_row_headers, cell_texts },
-                { where: { design_procedure_id } }
-            );
-            console.log({ log: `${design_procedure_id} is updated ${response}` });
+            if (design_procedure_id) {
+                const response = await Dynamicdesign.update(
+                    { rows, columns, header_types, header_texts, second_row_headers, cell_texts },
+                    { where: { design_procedure_id } }
+                );
+                console.log({ log: `${design_procedure_id} is updated ${response}` });
+            } else {
+                mainArray[i].master_design_procedure_id = master_design_procedure_id;
+                mainArray[i].unique_id = new Date().getTime();
+                mainArray[i].calibration_procedure = calibration_procedure;
+
+                const newTableDesign = new Dynamicdesign(mainArray[i]);
+                await newTableDesign.save();
+            }
         }
 
         return res.json({
