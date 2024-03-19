@@ -33,6 +33,10 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         allowNull: false,
       },
+      table_type: {
+        type: DataTypes.STRING,
+        allowNull: false
+      },
 
       rows: {
         type: DataTypes.STRING

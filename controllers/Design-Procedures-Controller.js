@@ -34,9 +34,7 @@ const create = async (req, res, next) => {
             for (let i = 0; i < mainArray?.length; i++) {
 
                 mainArray[i].master_design_procedure_id = await result.master_design_procedure_id;
-                mainArray[i].unique_id = new Date().getTime();
                 mainArray[i].calibration_procedure = calibration_procedure;
-
                 const newTableDesign = new Dynamicdesign(mainArray[i]);
                 await newTableDesign.save();
             }
@@ -104,15 +102,12 @@ const list = async (req, res, next) => {
         });
 
         if (existingResultMaster) {
-
             return res.json({
                 definedProcedures: definedProcedures,
                 existingResultMaster,
                 is_exist: true
             });
-
         } else {
-
             return res.json({
                 definedProcedures: definedProcedures,
                 is_exist: false
@@ -246,14 +241,19 @@ const update = async (req, res, next) => {
             } = mainArray[i];
 
             if (design_procedure_id) {
-                const response = await Dynamicdesign.update(
-                    { rows, columns, header_types, header_texts, second_row_headers, cell_texts },
-                    { where: { design_procedure_id } }
-                );
-                console.log({ log: `${design_procedure_id} is updated ${response}` });
+                if (mainArray[i]?.delete) {
+                    await Dynamicdesign.destroy({
+                        where: { design_procedure_id }
+                    });
+                } else {
+                    const response = await Dynamicdesign.update(
+                        { rows, columns, header_types, header_texts, second_row_headers, cell_texts },
+                        { where: { design_procedure_id } }
+                    );
+                    console.log({ log: `${design_procedure_id} is updated ${response}` });
+                }
             } else {
                 mainArray[i].master_design_procedure_id = master_design_procedure_id;
-                mainArray[i].unique_id = new Date().getTime();
                 mainArray[i].calibration_procedure = calibration_procedure;
 
                 const newTableDesign = new Dynamicdesign(mainArray[i]);
@@ -266,7 +266,6 @@ const update = async (req, res, next) => {
             mainArray,
             masterTableUpdate
         });
-
     } catch (err) {
         console.log(err)
         res.status(404);

@@ -28,6 +28,10 @@ module.exports = {
         type: Sequelize.STRING,
         allowNull: false,
       },
+      table_type: {
+        type: Sequelize.STRING,
+        allowNull: false
+      },
 
       rows: {
         type: Sequelize.STRING

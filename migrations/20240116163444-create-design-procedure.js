@@ -3,6 +3,7 @@
 module.exports = {
   async up(queryInterface, Sequelize) {
     await queryInterface.createTable('design_procedures', {
+
       design_procedure_id: {
         allowNull: false,
         autoIncrement: true,
@@ -25,6 +26,10 @@ module.exports = {
       unique_id: {
         type: Sequelize.STRING,
         allowNull: false,
+      },
+      table_type: {
+        type: Sequelize.STRING,
+        allowNull: false
       },
 
       rows: {

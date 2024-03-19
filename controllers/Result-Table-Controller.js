@@ -66,7 +66,6 @@ const create = async (req, res, next) => {
                 for (let i = 0; i < mainArray?.length; i++) {
 
                     mainArray[i].master_result_table_id = await result.master_result_table_id;
-                    mainArray[i].unique_id = new Date().getTime();
 
                     const newTableDesign = new Dynamicdesign(mainArray[i]);
                     await newTableDesign.save();

@@ -43,6 +43,10 @@ const resultTableRoutes = require('./result-table-routes');
 
 const generateCertificateRoutes = require('./generate-certificate-routes');
 
+const bulkUpdateRoutes = require("./bulk-update-routes");
+
+const ulrNoGenerationRoutes = require('./ulr-no-generation');
+
 const testRoutes = require("./test-route");
 
 const Authorization = require("../middleware/check-auth");
@@ -78,7 +82,6 @@ router.use("/api/delivery-challan", Authorization, deliveryChallanRoute); // ***
 router.use("/api/srf-search", Authorization, srfSearchRoutes);
 
 router.use("/api/srf-status", Authorization, srfStatushRoutes);
-router.use("/api/srf-status", Authorization, srfStatushRoutes);
 
 router.use("/api/master-list-equipments", Authorization, masterListEquipmentsRoutes);
 
@@ -100,6 +103,12 @@ router.use("/api/result-tables", resultTableRoutes);
 
 // Routes for Dynamic Certificate
 router.use("/api/generate-certificate", generateCertificateRoutes);
+
+// New Bulk Update
+router.use("/api/bulk-update", Authorization, bulkUpdateRoutes);
+
+// URL Numbers Generation
+router.use("/api/ulr-no-generation", ulrNoGenerationRoutes);
 
 router.use("/api/test", testRoutes);
 

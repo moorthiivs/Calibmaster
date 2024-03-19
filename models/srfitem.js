@@ -17,7 +17,6 @@ module.exports = (sequelize, DataTypes) => {
 
   srfitem.init(
     {
-
       srf_item_id: {
         type: DataTypes.BIGINT,
         autoIncrement: true,

@@ -87,7 +87,6 @@ const listInstrumentTypes = async (req, res, next) => {
             return errorHandler(error, req, res, next);
         }
 
-
         let instrumentTypesList = await db.sequelize.query(
             `SELECT 
 

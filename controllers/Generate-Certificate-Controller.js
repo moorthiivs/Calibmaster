@@ -208,12 +208,15 @@ const generate = async (req, res, next) => {
                 ['fromId', 'ASC'],
             ],
         });
+        // return res.json(tableDesignArr);
 
         const bigEyeObj = [];
 
         for (let x = 0; x < tableDesignArr.length; x++) {
 
             const Columns = tableDesignArr[x].columns;
+            const table_type = tableDesignArr[x].table_type;
+
             const FirstHeaderTexts = tableDesignArr[x].header_texts;
             const secondHeaderTexts = tableDesignArr[x].second_row_headers;
 
@@ -225,31 +228,55 @@ const generate = async (req, res, next) => {
                 widthsArr.push(60);
             }
 
-            for (let i = 0; i < cellTexts.length; i++) {
-                for (let j = 0; j < headerTypes.length; j++) {
-                    if (headerTypes[j] == "Formula") {
-                        const mainObj = cellTexts[i][j];
-                        const textObj = { text: mainObj.val }
-                        Object.assign(mainObj, textObj);
+            if (table_type === "vertical") {
+
+                for (let i = 0; i < cellTexts.length; i++) {
+                    for (let j = 0; j < headerTypes.length; j++) {
+                        if (headerTypes[j] == "Formula") {
+                            const mainObj = cellTexts[i][j];
+                            const textObj = { text: mainObj.val }
+                            Object.assign(mainObj, textObj);
+                        }
                     }
                 }
+
+                cellTexts.unshift(FirstHeaderTexts, secondHeaderTexts);
+
+                const eachObj = {
+                    style: 'eachTableStyle',
+                    color: '#444',
+                    table: {
+                        widths: widthsArr,
+                        headerRows: 2,
+                        keepWithHeaderRows: 1,
+                        body: cellTexts
+                    }
+                }
+                bigEyeObj.push(eachObj);
+            } else {
+
+                const verticalTable = [];
+
+                for (let i = 0; i < cellTexts.length; i++) {
+                    const element = cellTexts[i];
+                    const halfBeforeTheUnwantedElement = element.slice(0, 2);
+                    const halfAfterTheUnwantedElement = element.slice(3)
+                    const copyWithoutThirdElement = halfBeforeTheUnwantedElement.concat(halfAfterTheUnwantedElement);
+                    verticalTable.push(copyWithoutThirdElement);
+                }
+
+                const eachObj = {
+                    style: 'eachTableStyle',
+                    color: '#444',
+                    table: {
+                        widths: widthsArr,
+                        headerRows: 2,
+                        keepWithHeaderRows: 1,
+                        body: verticalTable
+                    }
+                }
+                bigEyeObj.push(eachObj);
             }
-
-            cellTexts.unshift(FirstHeaderTexts, secondHeaderTexts);
-
-            const eachObj = {
-                style: 'eachTableStyle',
-                color: '#444',
-                table: {
-                    widths: widthsArr,
-                    headerRows: 2,
-                    keepWithHeaderRows: 1,
-                    body: cellTexts
-                },
-                // pageBreak: "after"
-            }
-
-            bigEyeObj.push(eachObj);
         }
         // return res.json(bigEyeObj);
 
