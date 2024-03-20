@@ -408,7 +408,7 @@ const generate = async (req, res, next) => {
                                 { text: `DATE OF ISSUE: ${date_of_issue}` },
                             ],
                             [
-                                { text: `ULR NUMBER: ${ulr_number}` },
+                                { text: `ULR NUMBER: ${item?.url_number}` },
                                 { text: `RECEIVED DATE: ${received_date}` },
                             ],
                             [
