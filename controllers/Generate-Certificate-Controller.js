@@ -224,9 +224,6 @@ const generate = async (req, res, next) => {
             const cellTexts = tableDesignArr[x].cell_texts;
 
             const widthsArr = [];
-            for (let i = 0; i < Columns; i++) {
-                widthsArr.push(60);
-            }
 
             if (table_type === "vertical") {
 
@@ -241,6 +238,10 @@ const generate = async (req, res, next) => {
                 }
 
                 cellTexts.unshift(FirstHeaderTexts, secondHeaderTexts);
+
+                for (let i = 0; i < Columns; i++) {
+                    widthsArr.push(60);
+                }
 
                 const eachObj = {
                     style: 'eachTableStyle',
@@ -263,6 +264,10 @@ const generate = async (req, res, next) => {
                     const halfAfterTheUnwantedElement = element.slice(3)
                     const copyWithoutThirdElement = halfBeforeTheUnwantedElement.concat(halfAfterTheUnwantedElement);
                     verticalTable.push(copyWithoutThirdElement);
+                }
+
+                for (let i = 0; i < Columns; i++) {
+                    widthsArr.push("*");
                 }
 
                 const eachObj = {
@@ -613,10 +618,11 @@ const generate = async (req, res, next) => {
                     alignment: 'center'
                 },
                 eachTableStyle: {
-                    margin: [0, 0, 0, 10]
+                    margin: [0, 0, 0, 10],
+                    fontSize: 10,
                 }
             }
-        }
+        };
 
         const pdfDocGenerator = pdfMake.createPdf(docDefinition, {});
 

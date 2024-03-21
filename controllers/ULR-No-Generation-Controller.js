@@ -81,6 +81,28 @@ const create = async (req, res, next) => {
     }
 }
 
+const fetchULR = async (req, res, next) => {
+
+    try {
+        const { lab_id } = req.params;
+
+        const data = await ULRSetup.findAll({
+            where: {
+                lab_id,
+            }
+        });
+
+        return res.status(200).json({ msg: 'Fetched all ULR successful;y', data });
+    } catch (err) {
+        console.log(err);
+        let action = "Something went wrong";
+        const error = new Error(action);
+        error.code = 500;
+        error.path = "fetch-ulr";
+        return errorHandler(error, req, res, next);
+    }
+}
+
 const ulrSetUp = async (req, res, next) => {
 
     try {
@@ -88,13 +110,15 @@ const ulrSetUp = async (req, res, next) => {
         const { lab_id } = req.params;
 
         const currentYear = setDate.getFullYear() % 100;
-        const retrievedData = await ULRSetup.findAll({
+
+        const retrievedData = await ULRSetup.findOne({
             where: {
                 lab_id,
                 currentYear: currentYear - 1
             }
         });
-        const currentYearData = await ULRSetup.findAll({
+
+        const currentYearData = await ULRSetup.findOne({
             where: {
                 lab_id,
                 currentYear: currentYear,
@@ -102,7 +126,7 @@ const ulrSetUp = async (req, res, next) => {
             }
         });
 
-        return res.send({ prevYearData: retrievedData, currentYearData: currentYearData });
+        return res.status(200).json({ prevYearData: retrievedData, currentYearData: currentYearData });
     } catch (err) {
         console.log(err);
         return res.status(500).json({ error: err.message || "Internal Server Error" });
@@ -177,55 +201,32 @@ const nextYearUlr = async (req, res, next) => {
 
     try {
 
-        const { lab_id } = req.body;
+        const {
+            lab_id,
+            accreditationNumber, currentYear, location, runningNumber, accreditedScope,
+            effectiveStartDateString, effectiveEndDateString
+        } = req.body;
 
-        let currentYear = setDate.getFullYear() % 100 + 1;
+        const thisYear = setDate.getFullYear() % 100 + 1;
 
-        if (setDate.getMonth() == 1) {
-            currentYear = setDate.getFullYear() % 100;
-        }
-
-        const previousYearData = await ULRSetup.findAll({
-            where: {
-                lab_id,
-                currentYear: currentYear - 1
-            }
-        });
-
-        let accreditationNumber = ""
-        if (previousYearData.length > 0) {
-            accreditationNumber = previousYearData[0].dataValues.accreditationNumber;
-        }
-
-        if (previousYearData) {
-            for (const record of previousYearData) {
-                await record.update({
-                    lab_id,
-                    effectiveFlag: "N",
-                });
-            }
-        }
-
-        const location = 0;
-        const runningNumber = "00000001";
-        const effectiveFlag = "Y";
-        const accreditedScope = "F";
-        const effectiveStartDate = `01-Jan-${currentYear}`;
-        const effectiveEndDate = `31-Dec-${currentYear}`;
+        await ULRSetup.update(
+            { effectiveFlag: 'N' },
+            { where: { lab_id, currentYear: thisYear - 1 } }
+        );
 
         const newData = await ULRSetup.create({
             lab_id,
             accreditationNumber,
             currentYear,
             location,
-            runningNumber,
+            runningNumber: "00000001",
             accreditedScope,
-            effectiveStartDate,
-            effectiveEndDate,
-            effectiveFlag,
+            effectiveStartDate: effectiveStartDateString,
+            effectiveEndDate: effectiveEndDateString,
+            effectiveFlag: "Y",
         });
 
-        return res.status(200).json(newData);
+        return res.status(201).json(newData);
     } catch (err) {
         console.log(err);
         return res.status(500).json({ error: err.message || "Internal Server Error" });
@@ -240,8 +241,13 @@ const generateULRNumber = async (ulrcount, lab_id) => {
         let ulrArray = [];
         let latestRunningNumber = undefined;
 
+        const this_Year = setDate.getFullYear() % 100;
+
         const accreditationDetail = await ULRSetup.findOne({
-            where: { lab_id }
+            where: {
+                lab_id,
+                currentYear: this_Year
+            }
         });
         const { currentYear, location } = accreditationDetail
 
@@ -314,6 +320,7 @@ const updateULRNumber = async (req, res, next) => {
 }
 
 exports.create = create;
+exports.fetchULR = fetchULR;
 exports.ulrSetUp = ulrSetUp;
 exports.getUlr = getUlr;
 exports.nextYearUlr = nextYearUlr;
