@@ -143,13 +143,13 @@ const updateCalibrationStatus = async (req, res, next) => {
     try {
         // *** frequency_in_months from srf_lists table ***
         let srfResult = await SRF.findOne({
-            attributes: ['reminder_frequency'],
+            // attributes: ['reminder_frequency'],
             where: { srf_id: srf_id }
         });
 
         let { reminder_frequency } = srfResult;
 
-        if (reminder_frequency == null) {
+        if (reminder_frequency == null || reminder_frequency == "") {
             reminder_frequency = 0
         }
 

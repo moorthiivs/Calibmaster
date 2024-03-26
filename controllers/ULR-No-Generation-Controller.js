@@ -219,7 +219,7 @@ const nextYearUlr = async (req, res, next) => {
             accreditationNumber,
             currentYear,
             location,
-            runningNumber: "00000001",
+            runningNumber: "00000000",
             accreditedScope,
             effectiveStartDate: effectiveStartDateString,
             effectiveEndDate: effectiveEndDateString,
@@ -285,7 +285,6 @@ const generateULRNumber = async (ulrcount, lab_id) => {
         return ulrArray;
     } catch (err) {
         console.log(err);
-        return res.status(500).json({ error: err.message || "Internal Server Error" });
     }
 }
 

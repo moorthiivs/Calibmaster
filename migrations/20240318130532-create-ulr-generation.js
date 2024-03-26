@@ -35,7 +35,7 @@ module.exports = {
       },
       accreditedScope: {
         type: Sequelize.STRING,
-        allowNull: false,
+        allowNull: true,
       },
       effectiveStartDate: {
         type: Sequelize.STRING,

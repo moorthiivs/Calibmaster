@@ -41,7 +41,7 @@ module.exports = (sequelize, DataTypes) => {
       },
       accreditedScope: {
         type: DataTypes.STRING,
-        allowNull: false,
+        allowNull: true,
       },
       effectiveStartDate: {
         type: DataTypes.STRING,
