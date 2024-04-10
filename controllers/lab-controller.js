@@ -587,10 +587,91 @@ const getAllLabs = async (req, res, next) => {
     error.path = "/api/lab/listing";
     return errorHandler(error, req, res, next);
   }
-}
+};
+
+const fetchLabSmtpConfig = async (req, res, next) => {
+
+  const { labId } = req.body;
+
+  if (!labId) {
+    const error = new Error("lab id is required");
+    error.code = 500;
+    error.path = "---";
+    return errorHandler(error, req, res, next);
+  }
+
+  try {
+
+    let lab = await Lab.findOne(
+      {
+        where: { lab_id: labId },
+        attributes: {
+          exclude: ['brand_logo', 'other_logo1_image', 'other_logo2_image']
+        }
+      }
+    );
+
+    return res.status(200).json({
+      status: "SUCCESS",
+      code: 200,
+      message: "Lab Fetched Successfully!!",
+      data: lab
+    });
+
+  } catch (err) {
+    const error = new Error("Failded to fetch Lab");
+    error.code = 500;
+    error.path = "---";
+    return errorHandler(error, req, res, next);
+  }
+};
+
+const updateLabSMTPConfig = async (req, res, next) => {
+
+  try {
+
+    const {
+      lab_id, email_smtp_server_host, email_smtp_server_port, sender_email, sender_password
+    } = req.body;
+
+    if (!lab_id) {
+      const error = new Error("Lab Id is required");
+      error.code = 500;
+      error.path = "---";
+      return errorHandler(error, req, res, next);
+    };
+
+    if (!email_smtp_server_host || !email_smtp_server_port || !sender_email || !sender_password) {
+      const error = new Error("All SMTP Fields are required");
+      error.code = 500;
+      error.path = "---";
+      return errorHandler(error, req, res, next);
+    };
+
+    const result = await Lab.update(
+      { email_smtp_server_host, email_smtp_server_port, sender_email, sender_password },
+      { where: { lab_id } }
+    );
+
+    return res.status(200).json({
+      success: true,
+      msg: "SMTP Configuration updated successfully!!!",
+      result
+    });
+
+  } catch (err) {
+    const error = new Error("Failded to Update Lab SMTP");
+    error.code = 500;
+    error.path = "---";
+    return errorHandler(error, req, res, next);
+  }
+};
+
 
 exports.addlab = addlab;
 exports.fetchLab = fetchLab;
 exports.testmailhandler = testmailhandler;
 exports.emailconfigHandler = emailconfigHandler;
 exports.getAllLabs = getAllLabs;
+exports.fetchLabSmtpConfig = fetchLabSmtpConfig;
+exports.updateLabSMTPConfig = updateLabSMTPConfig;
