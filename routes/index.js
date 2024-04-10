@@ -1,4 +1,5 @@
 const express = require("express");
+const path = require("path");
 
 const router = express.Router();
 
@@ -113,7 +114,8 @@ router.use("/api/ulr-no-generation", ulrNoGenerationRoutes);
 router.use("/api/test", testRoutes);
 
 router.get("/*", (req, res) => {
-    res.sendFile(__dirname + "../public/index.html");
+    const frontendPath = path.join(__dirname + "../../public/index.html");
+    res.sendFile(frontendPath);
 });
 
 module.exports = router;
