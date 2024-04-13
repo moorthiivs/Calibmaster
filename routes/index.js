@@ -48,6 +48,8 @@ const bulkUpdateRoutes = require("./bulk-update-routes");
 
 const ulrNoGenerationRoutes = require('./ulr-no-generation');
 
+const uncertaintyMasterParametersRoutes = require("./uncertainty-master-parameters-routes");
+
 const testRoutes = require("./test-route");
 
 const Authorization = require("../middleware/check-auth");
@@ -110,6 +112,9 @@ router.use("/api/bulk-update", Authorization, bulkUpdateRoutes);
 
 // URL Numbers Generation
 router.use("/api/ulr-no-generation", ulrNoGenerationRoutes);
+
+// Uncertainty Master ParametersRoutes Routes
+router.use("/api/uncertainty-master-parameters", Authorization, uncertaintyMasterParametersRoutes);
 
 router.use("/api/test", testRoutes);
 
