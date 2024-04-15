@@ -80,6 +80,11 @@ module.exports = {
         allowNull: false
       },
 
+      uncertainty_master_parameter: {
+        type: Sequelize.JSON,
+        allowNull: false
+      },
+
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE

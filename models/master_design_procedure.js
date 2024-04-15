@@ -74,6 +74,11 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.ARRAY(DataTypes.STRING),
         allowNull: false
       },
+
+      uncertainty_master_parameter: {
+        type: DataTypes.JSON,
+        allowNull: false
+      },
     },
     {
       sequelize,
