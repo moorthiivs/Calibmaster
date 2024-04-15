@@ -44,4 +44,4 @@ npx sequelize-cli db:migrate:undo:all --to 20240118105454-create-master-result-t
 
 npx sequelize-cli db:migrate
 
-npx sequelize-cli db:migrate:undo:all --to 20231123100539-create-master-list-equipment.js
+npx sequelize-cli db:migrate:undo:all --to 20240413064101-create-uncertainty-master-parameter.js

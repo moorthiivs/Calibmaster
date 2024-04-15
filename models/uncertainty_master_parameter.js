@@ -27,6 +27,10 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         allowNull: false
       },
+      unique_id: {
+        type: DataTypes.STRING,
+        allowNull: false
+      },
       description: {
         type: DataTypes.STRING(1000),
         allowNull: false

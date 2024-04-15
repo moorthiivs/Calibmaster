@@ -27,9 +27,10 @@ const create = async (req, res, next) => {
 
             const error_msg = error?.details[0]?.message;
 
-            return res.status(500).json(error);
+            return res.status(500).json(error_msg);
         }
         else {
+            req.body.unique_id = new Date().getTime();
             req.body.status = "Active";
             const query = await UncertaintyMasterParameter.create(req.body);
             return res.status(201).json({
