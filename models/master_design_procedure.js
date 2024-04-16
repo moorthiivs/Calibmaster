@@ -97,6 +97,24 @@ module.exports = (sequelize, DataTypes) => {
       foreignKey: "instrument_type_id",
     });
 
+    master_design_procedure.hasMany(models.procedure_uncertainties, {
+      as: "procedure_uncertainties",
+      constrains: true,
+      onDelete: "CASCADE",
+      foreignKey: "master_design_procedure_id"
+    });
+
+    // master_design_procedure.belongsToMany(models.uncertainty_master_parameter, {
+    //   through: models.procedure_uncertainties,
+    //   as: "uncertainty_master_parameter",
+    //   foreignKey: "master_design_procedure_id"
+    // })
+
+    // master_design_procedure.belongsToMany(models.uncertainty_master_parameter, {
+    //   through: models.procedure_uncertainties,
+    //   as: 'uncertainty_master_parameter',
+    //   foreignKey: 'master_design_procedure_id'
+    // });
   };
 
   return master_design_procedure;

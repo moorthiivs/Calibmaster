@@ -49,3 +49,9 @@ npx sequelize-cli db:migrate:undo:all --to 20240413064101-create-uncertainty-mas
 ===================================================================================
 
 npx sequelize-cli migration:create --name modify_master_design_procedures_add_new_fields
+
+===================================================================================
+
+npx sequelize-cli model:generate --name procedure_uncertainties --attributes firstName:string
+
+npx sequelize-cli db:migrate:undo:all --to 20240416122053-create-procedure-uncertainties.js

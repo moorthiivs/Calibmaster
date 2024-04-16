@@ -16,4 +16,11 @@ router.post("/view-defined-procedure", DesignProceduresController.viewDefinedPro
 
 router.post("/update", DesignProceduresController.update);
 
+// *** Test Routes ***
+router.post("/create_procedure_uncertainties", DesignProceduresController.create_procedure_uncertainties);
+
+router.post("/find_uncertainty_master_parameters", DesignProceduresController.find_uncertainty_master_parameters);
+
+router.post("/edit_uncertainty_master_parameters", DesignProceduresController.edit_uncertainty_master_parameters);
+
 module.exports = router;

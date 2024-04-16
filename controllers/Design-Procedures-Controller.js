@@ -4,6 +4,9 @@ const Dynamicdesign = require("../models").design_procedure;
 const MasterResultTable = require("../models").master_result_table;
 const resultTable = require("../models").result_table;
 
+const UncertaintyMasterParameter = require("../models").uncertainty_master_parameter;
+const procedureUncertainties = require("../models").procedure_uncertainties;
+
 const { errorHandler } = require("../helpers/error-handler");
 
 const create = async (req, res, next) => {
@@ -273,11 +276,71 @@ const update = async (req, res, next) => {
     }
 }
 
+const create_procedure_uncertainties = async (req, res, next) => {
+
+    try {
+
+        const query_1 = new procedureUncertainties({
+            master_design_procedure_id: 1,
+            uncertainty_master_parameter_id: 1
+        });
+
+        const query_2 = new procedureUncertainties({
+            master_design_procedure_id: 1,
+            uncertainty_master_parameter_id: 2
+        });
+
+        return res.json({ query_1, query_2 })
+
+    } catch (error) {
+        console.log(error);
+    }
+}
+
+const find_uncertainty_master_parameters = async (req, res, next) => {
+
+    try {
+        const result = await MasterTable.findOne({
+            include: "procedure_uncertainties"
+        });
+
+        const { procedure_uncertainties } = result;
+
+        const uncertainty_master_parameter_id_array = [];
+
+        procedure_uncertainties.map((item) => {
+            uncertainty_master_parameter_id_array.push(item.uncertainty_master_parameter_id);
+        });
+
+        const uncertainty_master_parameter_query = await UncertaintyMasterParameter.findAll({
+            where: {
+                uncertainty_master_parameter_id: uncertainty_master_parameter_id_array
+            },
+        });
+
+        return res.json(uncertainty_master_parameter_query);
+    } catch (error) {
+        console.log(error);
+    }
+}
+
+const edit_uncertainty_master_parameters = async (req, res, next) => {
+
+    try {
+
+    } catch (error) {
+        console.log(error);
+    }
+}
+
 module.exports = {
     create,
     findAllList,
     list,
     fetch,
     viewDefinedProcedures,
-    update
+    update,
+    create_procedure_uncertainties,
+    find_uncertainty_master_parameters,
+    edit_uncertainty_master_parameters
 }
