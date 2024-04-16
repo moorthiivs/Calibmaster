@@ -14,9 +14,8 @@ const create = async (req, res, next) => {
             lab_id, instrument_type_id, mainArray,
             calibration_procedure, ref_std,
             validity, traceability,
-            temperature, humidity, atmospheric_pressure, master_list_equipments, remarks, uncertainty_master_parameter
+            temperature, humidity, atmospheric_pressure, master_list_equipments, remarks
         } = req.body;
-
 
         // TODO: Create Parent-Table Id
         const newMasterTable = new MasterTable({
@@ -26,7 +25,7 @@ const create = async (req, res, next) => {
             calibration_procedure, ref_std,
             validity, traceability,
             temperature, humidity, atmospheric_pressure,
-            master_list_equipments, remarks, uncertainty_master_parameter
+            master_list_equipments, remarks
         });
         const result = await newMasterTable.save();
 
@@ -220,14 +219,14 @@ const update = async (req, res, next) => {
             calibration_procedure, ref_std,
             validity, traceability,
             temperature, humidity, atmospheric_pressure,
-            mainArray, master_list_equipments, remarks, uncertainty_master_parameter
+            mainArray, master_list_equipments, remarks
         } = req.body;
 
         const masterTableUpdate = await MasterTable.update(
             {
                 calibration_procedure, ref_std, instrument_type_id,
                 validity, traceability,
-                temperature, humidity, atmospheric_pressure, master_list_equipments, remarks, uncertainty_master_parameter
+                temperature, humidity, atmospheric_pressure, master_list_equipments, remarks
             },
             { where: { master_design_procedure_id, lab_id } }
         );
