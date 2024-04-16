@@ -328,6 +328,32 @@ const edit_uncertainty_master_parameters = async (req, res, next) => {
 
     try {
 
+        // *** 1st Delete rows with master_design_procedure_id ***
+        // const delete_query = await procedureUncertainties.destroy({
+        //     where: {
+        //         master_design_procedure_id: 1
+        //     }
+        // });
+        // return res.json(delete_query);
+
+
+        // *** 2nd Add New Records with master_design_procedure_id, uncertainty_master_parameter_id ***
+        const master_design_procedure_id = 1;
+
+        const data = [
+            { uncertainty_master_parameter_id: 1 },
+            { uncertainty_master_parameter_id: 2 }
+        ];
+
+        data?.map((item) => {
+            item.master_design_procedure_id = master_design_procedure_id;
+            return item;
+        })
+
+        const insert_query = await procedureUncertainties.bulkCreate(data);
+
+        return res.json(insert_query);
+
     } catch (error) {
         console.log(error);
     }
