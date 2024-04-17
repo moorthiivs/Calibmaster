@@ -17,7 +17,8 @@ const create = async (req, res, next) => {
             lab_id, instrument_type_id, mainArray,
             calibration_procedure, ref_std,
             validity, traceability,
-            temperature, humidity, atmospheric_pressure, master_list_equipments, remarks
+            temperature, humidity, atmospheric_pressure, master_list_equipments, remarks,
+            uncertainty_master_parameters
         } = req.body;
 
         // TODO: Create Parent-Table Id
@@ -33,6 +34,14 @@ const create = async (req, res, next) => {
         const result = await newMasterTable.save();
 
         if (result) {
+
+            uncertainty_master_parameters?.map((item) => {
+                item.master_design_procedure_id = result?.master_design_procedure_id;
+                return item;
+            });
+
+            const procedure_uncertainties_insert_query = await procedureUncertainties.bulkCreate(uncertainty_master_parameters);
+
             for (let i = 0; i < mainArray?.length; i++) {
 
                 mainArray[i].master_design_procedure_id = await result.master_design_procedure_id;
@@ -40,7 +49,7 @@ const create = async (req, res, next) => {
                 const newTableDesign = new Dynamicdesign(mainArray[i]);
                 await newTableDesign.save();
             }
-            return res.json(result);
+            return res.json({ result, procedure_uncertainties_insert_query });
         } else {
             return res.json({ msg: false });
         }
@@ -80,16 +89,18 @@ const list = async (req, res, next) => {
 
     try {
 
-        const {
-            lab_id, instrument_type_id,
-            srf_id, srf_item_id,
-        } = req.body;
+        const { lab_id, instrument_type_id, srf_id, srf_item_id } = req.body;
+
+        if (!lab_id || !instrument_type_id || !srf_id || !srf_item_id) {
+            let action = "All fields are required";
+            const error = new Error(action);
+            error.code = 500;
+            error.path = "--";
+            return errorHandler(error, req, res, next);
+        }
 
         const existingResultMaster = await MasterResultTable.findOne({
-            where: {
-                srf_id, srf_item_id,
-                lab_id
-            },
+            where: { srf_id, srf_item_id, lab_id },
         });
 
         const definedProcedures = await MasterTable.findAll({
@@ -193,7 +204,22 @@ const viewDefinedProcedures = async (req, res, next) => {
             where: {
                 lab_id,
                 master_design_procedure_id
-            }
+            },
+            include: "procedure_uncertainties"
+        });
+
+        const { procedure_uncertainties } = masterTable;
+
+        const uncertainty_master_parameter_id_array = [];
+
+        procedure_uncertainties.map((item) => {
+            uncertainty_master_parameter_id_array.push(item.uncertainty_master_parameter_id);
+        });
+
+        const uncertainty_master_parameter_query = await UncertaintyMasterParameter.findAll({
+            where: {
+                uncertainty_master_parameter_id: uncertainty_master_parameter_id_array
+            },
         });
 
         const tableDesign = await Dynamicdesign.findAll({
@@ -203,7 +229,12 @@ const viewDefinedProcedures = async (req, res, next) => {
             ],
         });
 
-        return res.json({ masterTable, tableDesign, ifExistResultMasterTable: false });
+        return res.json({
+            masterTable,
+            tableDesign,
+            ifExistResultMasterTable: false,
+            uncertainty_master_parameter_query
+        });
 
     } catch (err) {
         console.log(err)
@@ -222,7 +253,7 @@ const update = async (req, res, next) => {
             calibration_procedure, ref_std,
             validity, traceability,
             temperature, humidity, atmospheric_pressure,
-            mainArray, master_list_equipments, remarks
+            mainArray, master_list_equipments, remarks, uncertainty_master_parameters
         } = req.body;
 
         const masterTableUpdate = await MasterTable.update(
@@ -263,10 +294,24 @@ const update = async (req, res, next) => {
             }
         }
 
+        // *** 1st Delete rows with master_design_procedure_id ***
+        await procedureUncertainties.destroy({
+            where: { master_design_procedure_id: master_design_procedure_id }
+        });
+
+        // *** 2nd Add New Records with master_design_procedure_id, uncertainty_master_parameter_id ***
+        uncertainty_master_parameters?.map((item) => {
+            item.master_design_procedure_id = master_design_procedure_id;
+            return item;
+        });
+
+        const procedure_uncertainties_insert_query = await procedureUncertainties.bulkCreate(uncertainty_master_parameters);
+
         return res.json({
             msg: "Dynamic Tables Updated Successfully",
             mainArray,
-            masterTableUpdate
+            masterTableUpdate,
+            procedure_uncertainties_insert_query
         });
     } catch (err) {
         console.log(err)
@@ -276,6 +321,7 @@ const update = async (req, res, next) => {
     }
 }
 
+// ! Test Controllers
 const create_procedure_uncertainties = async (req, res, next) => {
 
     try {
@@ -348,7 +394,7 @@ const edit_uncertainty_master_parameters = async (req, res, next) => {
         data?.map((item) => {
             item.master_design_procedure_id = master_design_procedure_id;
             return item;
-        })
+        });
 
         const insert_query = await procedureUncertainties.bulkCreate(data);
 
