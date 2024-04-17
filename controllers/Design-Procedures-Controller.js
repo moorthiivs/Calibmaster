@@ -173,7 +173,22 @@ const fetch = async (req, res, next) => {
                 where: {
                     lab_id,
                     master_design_procedure_id
-                }
+                },
+                include: "procedure_uncertainties"
+            });
+
+            const { procedure_uncertainties } = masterTable;
+
+            const uncertainty_master_parameter_id_array = [];
+
+            procedure_uncertainties.map((item) => {
+                uncertainty_master_parameter_id_array.push(item.uncertainty_master_parameter_id);
+            });
+
+            const uncertainty_master_parameter_query = await UncertaintyMasterParameter.findAll({
+                where: {
+                    uncertainty_master_parameter_id: uncertainty_master_parameter_id_array
+                },
             });
 
             const tableDesign = await Dynamicdesign.findAll({
@@ -183,7 +198,11 @@ const fetch = async (req, res, next) => {
                 ],
             });
 
-            return res.json({ masterTable, tableDesign, ifExistResultMasterTable: false });
+            return res.json({
+                masterTable, tableDesign,
+                uncertainty_master_parameter_query,
+                ifExistResultMasterTable: false
+            });
         }
     } catch (err) {
         console.log(err)
