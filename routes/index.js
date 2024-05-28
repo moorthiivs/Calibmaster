@@ -24,7 +24,7 @@ const calibrationDateRoutes = require("./calibation-routes");
 const mailRoutes = require("./mail-routes");
 const excelRoutes = require("./excel-routes");
 
-const challanRoute = require("./challan-route");
+// const challanRoute = require("./challan-route");
 const deliveryChallanRoute = require("./delivery-challan-routes");
 
 const srfSearchRoutes = require("./srf-search-routes");
@@ -32,7 +32,7 @@ const srfStatushRoutes = require("./srf-status-routes");
 
 const masterListEquipmentsRoutes = require("./master-list-equipments-routes");
 
-const calibrationCertificateRoutes = require("./calibration-certificate");
+// const calibrationCertificateRoutes = require("./calibration-certificate");
 const calibrationsCertificateRoutes = require("./calibrations-certificate");
 
 const cmsRoutes = require('./cms-routes');
@@ -79,7 +79,7 @@ router.use("/api/mail", Authorization, mailRoutes);
 
 router.use("/api/excel", Authorization, excelRoutes);
 
-router.use("/api/pdf", Authorization, challanRoute);
+// router.use("/api/pdf", Authorization, challanRoute);
 router.use("/api/delivery-challan", Authorization, deliveryChallanRoute); // *** Modified API for Delivery-Challan
 
 router.use("/api/srf-search", Authorization, srfSearchRoutes);
@@ -88,7 +88,7 @@ router.use("/api/srf-status", Authorization, srfStatushRoutes);
 
 router.use("/api/master-list-equipments", Authorization, masterListEquipmentsRoutes);
 
-router.use("/api/calibration-certificate", Authorization, calibrationCertificateRoutes); // ! Currently Muted
+// router.use("/api/calibration-certificate", Authorization, calibrationCertificateRoutes); // ! Currently Muted
 router.use("/api/calibrations-certificate", calibrationsCertificateRoutes); // *** Modified API for Calibration Certificates
 
 router.use("/api/cms-setting", cmsRoutes);

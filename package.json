@@ -35,7 +35,6 @@
     "pdf-creator-node": "^2.3.5",
     "pdfmake": "^0.2.8",
     "pg": "^8.8.0",
-    "puppeteer": "^18.1.0",
     "request": "^2.88.2",
     "sequelize": "^6.25.3",
     "winston": "^3.7.2"

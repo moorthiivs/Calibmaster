@@ -1,5 +1,5 @@
 // *** Import 3rd Party Packages ***
-const puppeteer = require('puppeteer');
+// const puppeteer = require('puppeteer');
 const path = require('path');
 const ejs = require('ejs');
 const fs = require('fs');

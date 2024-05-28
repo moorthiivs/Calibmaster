@@ -15,7 +15,7 @@ const ExcelJS = require("exceljs");
 const fs = require('fs');
 const nodePath = require('path');
 const ejs = require('ejs');
-const pdf = require('html-pdf');
+
 const { sendMailHandler } = require("../helpers/mailSend");
 const { errorHandler } = require("../helpers/error-handler");
 
