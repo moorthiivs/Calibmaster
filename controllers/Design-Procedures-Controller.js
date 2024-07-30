@@ -35,21 +35,21 @@ const create = async (req, res, next) => {
 
         if (result) {
 
-            uncertainty_master_parameters?.map((item) => {
-                item.master_design_procedure_id = result?.master_design_procedure_id;
-                return item;
-            });
-
-            const procedure_uncertainties_insert_query = await procedureUncertainties.bulkCreate(uncertainty_master_parameters);
+            // uncertainty_master_parameters?.map((item) => {
+            //     item.master_design_procedure_id = result?.master_design_procedure_id;
+            //     return item;
+            // });
+            // const procedure_uncertainties_insert_query = await procedureUncertainties.bulkCreate(uncertainty_master_parameters);
 
             for (let i = 0; i < mainArray?.length; i++) {
 
                 mainArray[i].master_design_procedure_id = await result.master_design_procedure_id;
                 mainArray[i].calibration_procedure = calibration_procedure;
-                const newTableDesign = new Dynamicdesign(mainArray[i]);
-                await newTableDesign.save();
+                // mainArray[i].cell_texts = ["a", "b", "c"];
             }
-            return res.json({ result, procedure_uncertainties_insert_query });
+            await Dynamicdesign.bulkCreate(mainArray);
+
+            return res.json(mainArray);
         } else {
             return res.json({ msg: false });
         }

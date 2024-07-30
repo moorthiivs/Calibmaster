@@ -53,7 +53,7 @@ module.exports = {
         allowNull: false
       },
       cell_texts: {
-        type: Sequelize.ARRAY(Sequelize.ARRAY(Sequelize.STRING)),
+        type: Sequelize.JSON,
         allowNull: false
       },
 

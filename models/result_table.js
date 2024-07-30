@@ -54,7 +54,7 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.ARRAY(DataTypes.STRING),
       },
       cell_texts: {
-        type: DataTypes.ARRAY(DataTypes.ARRAY(DataTypes.JSON))
+        type: DataTypes.JSON
       }
     },
     {

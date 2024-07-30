@@ -52,7 +52,7 @@ module.exports = {
         allowNull: false
       },
       cell_texts: {
-        type: Sequelize.ARRAY(Sequelize.ARRAY(Sequelize.JSON)),
+        type: Sequelize.JSON,
         allowNull: false
       },
 
