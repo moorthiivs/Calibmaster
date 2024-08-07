@@ -32,6 +32,8 @@ const create = async (req, res, next) => {
                 { where: { lab_id, srf_id, srf_item_id, } }
             );
 
+            // return res.json(mainArray);
+
             for (let i = 0; i < mainArray.length; i++) {
 
                 const {
