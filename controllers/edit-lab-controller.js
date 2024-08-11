@@ -72,11 +72,16 @@ const editLab = async (req, res, next) => {
 
         MainLogo,
         secondLogo,
-        thirdLogo
+        thirdLogo,
+
+        sealLogo,
+
+        nabl_qr_Code_logo_1, nableURL_1,
+        nabl_qr_Code_logo_2, nableURL_2
 
     } = req.body;
 
-    // checking non required for values
+    // *** checking non required for values ***
     address2 = (address2 != "") ? address2 : null;
     address3 = (address3 != "") ? address3 : null;
     symbol = (symbol) ? symbol : null;
@@ -85,7 +90,7 @@ const editLab = async (req, res, next) => {
     sender_email = (sender_email != "") ? sender_email : null;
     sender_password = (sender_password != "") ? sender_password : null;
 
-    //Checking lab in Database
+    // *** Checking lab in Database ***
     let existingLab = await Lab.findOne(
         { where: { lab_id: labId, rstatus: 1 } }
     );
@@ -98,7 +103,7 @@ const editLab = async (req, res, next) => {
         return errorHandler(error, req, res, next);
     }
 
-    // Check if contact_mail is already associated with any lab or not
+    // *** Check if contact_mail is already associated with any lab or not ***
     if (contact_email != null) {
         if (existingLab.contact_email != contact_email) {
 
@@ -135,7 +140,7 @@ const editLab = async (req, res, next) => {
         return response;
     }
 
-    // Check if main logo is available or not in request
+    // *** Check if main logo is available or not in request ***
     let mainLogoImgFileName;
     let buff1 = "";
     if (MainLogo) {
@@ -157,7 +162,7 @@ const editLab = async (req, res, next) => {
         brand_logo_mime_type = brand_logo_mime_type ? brand_logo_mime_type : existingLab.brand_logo_mime_type;
     }
 
-    // Check if 2nd logo is available or not in request
+    // *** Check if 2nd logo is available or not in request ***
     let secondLogoImgFileName;
     let buff2 = "";
     if (secondLogo) {
@@ -179,7 +184,7 @@ const editLab = async (req, res, next) => {
         other_logo1_image_mime_type = other_logo1_image_mime_type ? other_logo1_image_mime_type : existingLab.other_logo1_image_mime_type;
     }
 
-    // Check if 3rd logo is available or not in request
+    // *** Check if 3rd logo is available or not in request ***
     let thirdLogoImgFileName;
     let buff3 = "";
     if (thirdLogo) {
@@ -199,6 +204,60 @@ const editLab = async (req, res, next) => {
         thirdLogoImgFileName = existingLab.other_logo2_image_filename;
         buff3 = existingLab.other_logo2_image;
         other_logo2_image_mime_type = other_logo2_image_mime_type ? other_logo2_image_mime_type : existingLab.other_logo2_image_mime_type;
+    }
+
+    // *** Seal Logo ***
+    let sealLogoImgFileName;
+    if (sealLogo) {
+        const sealLogoDecodeImg = decodeBase64Image(sealLogo);
+        const imageBuffer = sealLogoDecodeImg.data;
+        const fileExtension = sealLogoDecodeImg.type.slice(6);
+        sealLogoImgFileName = Math.floor(Math.random() * 9999999) + "." + fileExtension;
+
+        try {
+            fs.writeFileSync("public/images/" + sealLogoImgFileName, imageBuffer, 'utf8');
+        }
+        catch (err) {
+            console.error(err)
+        }
+    } else {
+        sealLogoImgFileName = existingLab.seal_image_filename;
+    }
+
+    // *** QR CODE Logo-1 ***
+    let qr_codo_logo_1;
+    if (nabl_qr_Code_logo_1) {
+        const decodeImage = decodeBase64Image(nabl_qr_Code_logo_1);
+        const imageBuffer = decodeImage.data;
+        const fileExtension = decodeImage.type.slice(6);
+        qr_codo_logo_1 = Math.floor(Math.random() * 9999999) + "." + fileExtension;
+
+        try {
+            fs.writeFileSync("public/images/" + qr_codo_logo_1, imageBuffer, 'utf8');
+        }
+        catch (err) {
+            console.error(err)
+        }
+    } else {
+        qr_codo_logo_1 = existingLab.certificate_accreditation_qr_code_logo_1;
+    }
+
+    // *** QR CODE Logo-2 ***
+    let qr_codo_logo_2;
+    if (nabl_qr_Code_logo_2) {
+        const decodeImage = decodeBase64Image(nabl_qr_Code_logo_2);
+        const imageBuffer = decodeImage.data;
+        const fileExtension = decodeImage.type.slice(6);
+        qr_codo_logo_2 = Math.floor(Math.random() * 9999999) + "." + fileExtension;
+
+        try {
+            fs.writeFileSync("public/images/" + qr_codo_logo_2, imageBuffer, 'utf8');
+        }
+        catch (err) {
+            console.error(err)
+        }
+    } else {
+        qr_codo_logo_2 = existingLab.scope_accreditation_qr_code_logo_2;
     }
 
     const fetchCreater = await User.findOne({
@@ -247,13 +306,20 @@ const editLab = async (req, res, next) => {
                 other_logo2_image_mime_type,
                 other_logo2_image: buff3,
 
+                seal_image_filename: sealLogoImgFileName,
+
+                certificate_accreditation_qr_code_logo_1: qr_codo_logo_1,
+                certificate_accreditation_url_1: nableURL_1,
+
+                scope_accreditation_qr_code_logo_2: qr_codo_logo_2,
+                scope_accreditation_url_2: nableURL_2,
+
                 updated_timestamp: Date.now(),
                 updated_by_login_name: fetchCreater.name,
                 updated_by_user_id: req.userId
             },
             { where: { lab_id: labId } }
-        )
-
+        );
         return res.status(200).json({ msg: true, code: 200, updatedLab });
     } catch (err) {
         let action = "Something went wrong";
@@ -262,7 +328,6 @@ const editLab = async (req, res, next) => {
         error.path = "/api/lab/edit-lab";
         return errorHandler(error, req, res, next);
     }
-
 };
 
 exports.editLab = editLab;

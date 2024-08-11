@@ -18,4 +18,8 @@ router.post("/testmail", labController.testmailhandler);
 
 router.post("/emailconfig", labController.emailconfigHandler);
 
+router.post("/fetch-lab-smtp-config", labController.fetchLabSmtpConfig);
+
+router.post("/update-lab-smtp-config", labController.updateLabSMTPConfig);
+
 module.exports = router;

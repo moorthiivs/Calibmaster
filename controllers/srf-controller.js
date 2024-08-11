@@ -15,7 +15,7 @@ const ExcelJS = require("exceljs");
 const fs = require('fs');
 const nodePath = require('path');
 const ejs = require('ejs');
-const pdf = require('html-pdf');
+
 const { sendMailHandler } = require("../helpers/mailSend");
 const { errorHandler } = require("../helpers/error-handler");
 
@@ -1504,7 +1504,7 @@ const getsrfbyId = async (req, res, next) => {
       where: { srf_id: req.body.srfId, rstatus: 1 },
       include: ["intrument_type", "srf"],
       order: [
-        ['srf_item_no', 'ASC'],
+        ['srf_item_id', 'ASC'],
       ]
     });
 
@@ -1554,7 +1554,10 @@ const getSrfItems = async (req, res, next) => {
   try {
     let items = await Item.findAll({
       where: { lab_id: labId, rstatus: 1 },
-      include: ["intrument_type", "srf"],
+      include: [
+        { model: instrument_type, as: "intrument_type" },
+        { model: SRF, as: "srf", include: "customer" }
+      ],
       order: [["srf_item_id", "ASC"]]
     });
 
@@ -1766,7 +1769,7 @@ const updateDCInfo = async (req, res, next) => {
     error.path = path;
     return errorHandler(error, req, res, next);
   }
-  ////console.log(req.body);
+
   let ids = [];
   req.body.items.map((v, i) => {
     ids.push(v.id);
@@ -1828,7 +1831,7 @@ const updateDCInfo = async (req, res, next) => {
       attributes: {
         exclude: ["createdAt", "updatedAt"],
       },
-      order: [["sno", "ASC"]],
+      order: [["srf_item_id", "ASC"]],
     });
   } catch (err) {
     isError = true;
@@ -1910,7 +1913,7 @@ const updateCalInfo = async (req, res, next) => {
         where: {
           srf_item_id: id,
           rstatus: "1",
-          status: "Calibrated",
+          // status: "Calibrated",
         },
       });
 
@@ -1983,9 +1986,7 @@ const updateCalInfo = async (req, res, next) => {
     }
 
     await Item.update(
-      {
-        calibration_due_date
-      },
+      { calibration_due_date },
       { where: { srf_item_id: id } }
     )
   } catch (err) {
@@ -2015,6 +2016,7 @@ const updateCalInfo = async (req, res, next) => {
   let createResponse = "";
   let calibration_remainder_date_1;
   let calibration_remainder_date_2;
+
   if (frequency_days == 1) {
 
     let due_date_1 = new Date(calibration_due_date);
@@ -2056,6 +2058,7 @@ const updateCalInfo = async (req, res, next) => {
     items = await Item.findAll({
       where: { srf_id: srfId, rstatus: 1 },
       include: ["intrument_type"],
+      order: [["srf_item_id", "ASC"]]
     });
   } catch (err) {
     isError = true;
@@ -2071,13 +2074,12 @@ const updateCalInfo = async (req, res, next) => {
   if (isError == false) {
     let message = `${ip} ${userId} ${sessionId} ${code} ${path} - ${action}`;
     logger.info(message);
-    res.status(code).json({
+
+    return res.status(code).json({
       status: "SUCCESS",
       code: code,
       message: "SRF Item Updated Successfully",
-      data: {
-        items,
-      },
+      data: { items },
     });
   }
 };
@@ -2273,7 +2275,7 @@ const updatePaymentInfo = async (req, res, next) => {
   const sessionId = req.sessionId;
   let isError = false;
   const department = req.department;
-  ////console.log(req.body);
+
   if (
     !req.body ||
     !req.body.items ||
@@ -2300,7 +2302,7 @@ const updatePaymentInfo = async (req, res, next) => {
     error.path = path;
     return errorHandler(error, req, res, next);
   }
-  ////console.log(req.body);
+
   let ids = [];
   req.body.items.map((v, i) => {
     ids.push(v.id);
@@ -2340,7 +2342,7 @@ const updatePaymentInfo = async (req, res, next) => {
       attributes: {
         exclude: ["createdAt", "updatedAt"],
       },
-      order: [["sno", "ASC"]],
+      order: [["srf_item_id", "ASC"]]
     });
   } catch (err) {
     isError = true;
@@ -2402,7 +2404,7 @@ const getfilteredSRFItems = async (req, res, next) => {
       attributes: {
         exclude: ["createdAt", "updatedAt"],
       },
-      order: [["sno", "ASC"]],
+      order: [["srf_item_id", "ASC"]]
     });
   } catch (err) {
     isError = true;
@@ -2443,7 +2445,8 @@ const fetchSrfItem = async (req, res, next) => {
   try {
     let items = await Item.findOne({
       where: { srf_item_id },
-      include: ["intrument_type", "srf"]
+      include: ["intrument_type", "srf"],
+      order: [["srf_item_id", "ASC"]]
     });
 
     return res.status(200).json({

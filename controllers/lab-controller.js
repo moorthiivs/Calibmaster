@@ -74,8 +74,12 @@ const addlab = async (req, res, next) => {
 
     MainLogo,
     secondLogo,
-    thirdLogo
+    thirdLogo,
 
+    sealLogo,
+
+    nabl_qr_Code_logo_1, nableURL_1,
+    nabl_qr_Code_logo_2, nableURL_2
   } = req.body;
 
   // checking non required for values
@@ -101,6 +105,7 @@ const addlab = async (req, res, next) => {
     return response;
   }
 
+  // *** Brand Logo ***
   let mainLogoImgFileName;
   let buff1 = "";
   if (MainLogo) {
@@ -120,6 +125,7 @@ const addlab = async (req, res, next) => {
     mainLogoImgFileName = "";
   }
 
+  // *** Other Brand Logo 1 ***
   let secondLogoImgFileName;
   let buff2 = "";
   if (secondLogo) {
@@ -139,6 +145,7 @@ const addlab = async (req, res, next) => {
     secondLogoImgFileName = "";
   }
 
+  // *** Other Brand Logo 2 ***
   let thirdLogoImgFileName;
   let buff3 = "";
   if (thirdLogo) {
@@ -156,6 +163,60 @@ const addlab = async (req, res, next) => {
     }
   } else {
     thirdLogoImgFileName = "";
+  }
+
+  // *** Seal Logo ***
+  let sealLogoImgFileName;
+  if (sealLogo) {
+    const sealLogoDecodeImg = decodeBase64Image(sealLogo);
+    const imageBuffer = sealLogoDecodeImg.data;
+    const fileExtension = sealLogoDecodeImg.type.slice(6);
+    sealLogoImgFileName = Math.floor(Math.random() * 9999999) + "." + fileExtension;
+
+    try {
+      fs.writeFileSync("public/images/" + sealLogoImgFileName, imageBuffer, 'utf8');
+    }
+    catch (err) {
+      console.error(err)
+    }
+  } else {
+    sealLogoImgFileName = "";
+  }
+
+  // *** QR CODE Logo-1 ***
+  let qr_codo_logo_1;
+  if (nabl_qr_Code_logo_1) {
+    const decodeImage = decodeBase64Image(nabl_qr_Code_logo_1);
+    const imageBuffer = decodeImage.data;
+    const fileExtension = decodeImage.type.slice(6);
+    qr_codo_logo_1 = Math.floor(Math.random() * 9999999) + "." + fileExtension;
+
+    try {
+      fs.writeFileSync("public/images/" + qr_codo_logo_1, imageBuffer, 'utf8');
+    }
+    catch (err) {
+      console.error(err)
+    }
+  } else {
+    qr_codo_logo_1 = "";
+  }
+
+  // *** QR CODE Logo-2 ***
+  let qr_codo_logo_2;
+  if (nabl_qr_Code_logo_2) {
+    const decodeImage = decodeBase64Image(nabl_qr_Code_logo_2);
+    const imageBuffer = decodeImage.data;
+    const fileExtension = decodeImage.type.slice(6);
+    qr_codo_logo_2 = Math.floor(Math.random() * 9999999) + "." + fileExtension;
+
+    try {
+      fs.writeFileSync("public/images/" + qr_codo_logo_2, imageBuffer, 'utf8');
+    }
+    catch (err) {
+      console.error(err)
+    }
+  } else {
+    qr_codo_logo_2 = "";
   }
 
   try {
@@ -218,7 +279,6 @@ const addlab = async (req, res, next) => {
         error.code = 500;
         return errorHandler(error, req, res, next);
       }
-      console.log(response);
     });
 
     const newLab = new Lab({
@@ -260,8 +320,16 @@ const addlab = async (req, res, next) => {
       other_logo2_image_mime_type,
       other_logo2_image: buff3,
 
+      seal_image_filename: sealLogoImgFileName,
+
       rstatus: 1,
       lab_active_flag: 1,
+
+      certificate_accreditation_qr_code_logo_1: qr_codo_logo_1,
+      certificate_accreditation_url_1: nableURL_1,
+
+      scope_accreditation_qr_code_logo_2: qr_codo_logo_2,
+      scope_accreditation_url_2: nableURL_2,
 
       created_timestamp: Date.now(),
       created_by_login_name: fetchCreater.name,
@@ -519,10 +587,91 @@ const getAllLabs = async (req, res, next) => {
     error.path = "/api/lab/listing";
     return errorHandler(error, req, res, next);
   }
-}
+};
+
+const fetchLabSmtpConfig = async (req, res, next) => {
+
+  const { labId } = req.body;
+
+  if (!labId) {
+    const error = new Error("lab id is required");
+    error.code = 500;
+    error.path = "---";
+    return errorHandler(error, req, res, next);
+  }
+
+  try {
+
+    let lab = await Lab.findOne(
+      {
+        where: { lab_id: labId },
+        attributes: {
+          exclude: ['brand_logo', 'other_logo1_image', 'other_logo2_image']
+        }
+      }
+    );
+
+    return res.status(200).json({
+      status: "SUCCESS",
+      code: 200,
+      message: "Lab Fetched Successfully!!",
+      data: lab
+    });
+
+  } catch (err) {
+    const error = new Error("Failded to fetch Lab");
+    error.code = 500;
+    error.path = "---";
+    return errorHandler(error, req, res, next);
+  }
+};
+
+const updateLabSMTPConfig = async (req, res, next) => {
+
+  try {
+
+    const {
+      lab_id, email_smtp_server_host, email_smtp_server_port, sender_email, sender_password
+    } = req.body;
+
+    if (!lab_id) {
+      const error = new Error("Lab Id is required");
+      error.code = 500;
+      error.path = "---";
+      return errorHandler(error, req, res, next);
+    };
+
+    if (!email_smtp_server_host || !email_smtp_server_port || !sender_email || !sender_password) {
+      const error = new Error("All SMTP Fields are required");
+      error.code = 500;
+      error.path = "---";
+      return errorHandler(error, req, res, next);
+    };
+
+    const result = await Lab.update(
+      { email_smtp_server_host, email_smtp_server_port, sender_email, sender_password },
+      { where: { lab_id } }
+    );
+
+    return res.status(200).json({
+      success: true,
+      msg: "SMTP Configuration updated successfully!!!",
+      result
+    });
+
+  } catch (err) {
+    const error = new Error("Failded to Update Lab SMTP");
+    error.code = 500;
+    error.path = "---";
+    return errorHandler(error, req, res, next);
+  }
+};
+
 
 exports.addlab = addlab;
 exports.fetchLab = fetchLab;
 exports.testmailhandler = testmailhandler;
 exports.emailconfigHandler = emailconfigHandler;
 exports.getAllLabs = getAllLabs;
+exports.fetchLabSmtpConfig = fetchLabSmtpConfig;
+exports.updateLabSMTPConfig = updateLabSMTPConfig;

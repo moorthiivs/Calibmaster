@@ -167,7 +167,7 @@ const listUom = async (req, res, next) => {
     try {
         let uomList = await uomModel.findAll({
             attributes: ['uom_id', 'uom_name', 'uom_kindofquantity', 'uom_printsysmbol', 'uom_casesensitive', 'uom_caseinsensitive'],
-            where: { 'created_by_user_id': req.userId },
+            // where: { 'created_by_user_id': req.userId },
             order: [
                 ['uom_id', 'DESC'],
             ]

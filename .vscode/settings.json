@@ -2,5 +2,7 @@
     "appService.zipIgnorePattern": [
         "node_modules{,/**}",
         ".vscode{,/**}"
-    ]
+    ],
+    "appService.defaultWebAppToDeploy": "/subscriptions/290cf19d-afcf-4071-b981-f288c633697a/resourceGroups/calibmaster-tcs-resourcegroup/providers/Microsoft.Web/sites/calibmaster-tcs",
+    "appService.deploySubpath": "."
 }

@@ -12,4 +12,6 @@ router.post("/find", masterListEquipmentController.find);
 
 router.post("/update", masterListEquipmentController.update);
 
+router.get("/email-remainder", masterListEquipmentController.emailRemainder);
+
 module.exports = router;

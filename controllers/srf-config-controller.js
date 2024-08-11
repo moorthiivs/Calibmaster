@@ -117,7 +117,6 @@ const editConfig = async (req, res, next) => {
                 where: { id: req.userId }
             });
 
-
             await EParameter.update(
                 {
                     issue_no, issue_date, amend_no, amend_date,

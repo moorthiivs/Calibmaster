@@ -2,6 +2,7 @@ const express = require("express");
 const multer = require("multer");
 
 const srfController = require("../controllers/srf-controller");
+const srfItemsDCController = require("../controllers/srf-items-dc-controller");
 
 const router = express.Router();
 
@@ -42,5 +43,10 @@ router.post("/getfilteredsrfitems", srfController.getfilteredSRFItems);
 router.post("/getSrfItems", srfController.getSrfItems);
 
 router.post("/fetchSrfItem", srfController.fetchSrfItem);
+
+// *** SRF-Item Update DC Status ***
+router.put("/update-srf-items-dc-status", srfItemsDCController.updateSRFItemsDCStatus);
+router.post("/get-srf-items-dc-status", srfItemsDCController.getSRFITEMDCStatus);
+router.post("/update-bulk-srf-items-dc-status", srfItemsDCController.updateBulkSRFItemsDCStatus);
 
 module.exports = router;

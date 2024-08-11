@@ -54,4 +54,12 @@ const testHandler = async (req, res, next) => {
     });
 };
 
+const requestHandler = async (req, res, next) => {
+
+  console.log(req);
+
+  return res.json({ data: req.url });
+};
+
 exports.testHandler = testHandler;
+exports.requestHandler = requestHandler;
