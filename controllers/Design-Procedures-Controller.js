@@ -289,7 +289,7 @@ const update = async (req, res, next) => {
             const {
                 design_procedure_id, fromId,
                 rows, columns,
-                header_types, header_texts, second_row_headers, cell_texts
+                header_types, header_texts, second_row_headers, cell_texts, print_on_certifcate
             } = mainArray[i];
 
             if (design_procedure_id) {
@@ -299,7 +299,7 @@ const update = async (req, res, next) => {
                     });
                 } else {
                     const response = await Dynamicdesign.update(
-                        { rows, columns, header_types, header_texts, second_row_headers, cell_texts },
+                        { rows, columns, header_types, header_texts, second_row_headers, cell_texts, print_on_certifcate },
                         { where: { design_procedure_id } }
                     );
                     console.log({ log: `${design_procedure_id} is updated ${response}` });
