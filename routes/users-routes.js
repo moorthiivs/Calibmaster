@@ -20,4 +20,10 @@ router.post("/deleteuser", Authorization, usersController.deleteuser);
 
 router.post("/reset-password", Authorization, usersController.resetPassword);
 
+router.get(
+  "/getuserbyLabid/:labId",
+  Authorization,
+  usersController.fetchUsersByLabId
+);
+
 module.exports = router;

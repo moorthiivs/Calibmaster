@@ -11,6 +11,7 @@ router.post("/new", labController.addlab);
 router.get("/listing", labController.getAllLabs);
 
 router.post("/fetchLab", labController.fetchLab);
+router.post("/fetchLabById", labController.fetchLabById)
 
 router.post("/edit-lab", editLabController.editLab);
 

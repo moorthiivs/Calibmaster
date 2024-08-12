@@ -7,6 +7,7 @@ const customerSchema = require("../schemas/customer");
 const customerContactSchema = require("../schemas/customer-contact");
 const config = require("../utils/config");
 var request = require("request");
+const { Company } = require("../models")
 
 const createCustomer = async (req, res, next) => {
 
@@ -390,7 +391,67 @@ const editCustomer = async (req, res, next) => {
     });
 }
 
+const fetchCustomer_Company = async (req, res, next) => {
+    try {
+        const labId = req.params.id
+
+        if (!labId) {
+            return res.status(400).json({ error: "Lab ID is required" })
+        }
+
+        // Fetch customer data
+        const customerData = await customer.findOne({
+            where: { lab_id: labId },
+            attributes: ["customer_id", "calibmaster_customer_id"],
+        })
+
+        if (!customerData) {
+            return res.status(404).json({ error: "Customer data not found" })
+        }
+
+        // Fetch company data
+        const companyData = await Company.findOne({
+            where: { labId: labId },
+            attributes: [
+                "id",
+                "companyname",
+                "email",
+                "address1",
+                "address2",
+                "address3",
+                "rstatus",
+                "labId",
+            ],
+        })
+
+        if (!companyData) {
+            return res.status(404).json({ error: "Company data not found" })
+        }
+
+        // Combine the data into the required format
+        const response = {
+            id: companyData.id,
+            companyname: companyData.companyname,
+            email: companyData.email,
+            address1: companyData.address1,
+            address2: companyData.address2,
+            address3: companyData.address3,
+            rstatus: companyData.rstatus,
+            labId: companyData.labId,
+            customer_id: customerData.customer_id,
+            calibmaster_customer_id: customerData.calibmaster_customer_id,
+        }
+
+        // Send the combined response
+        res.status(200).json(response)
+    } catch (error) {
+        next(error)
+    }
+}
+
+
 exports.createCustomer = createCustomer;
 exports.listCustomer = listCustomer;
 exports.fetchCustomer = fetchCustomer;
 exports.editCustomer = editCustomer;
+exports.fetchCustomer_Company = fetchCustomer_Company;

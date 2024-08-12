@@ -759,6 +759,47 @@ const resetPassword = async (req, res, next) => {
   }
 }
 
+const fetchUsersByLabId = async (req, res) => {
+  const { labId } = req.params
+  const token = req.headers.authorization?.split(" ")[1]
+
+  if (!labId) {
+    return res.status(400).json({ message: "Lab ID is required" })
+  }
+
+  if (!token) {
+    return res.status(401).json({ message: "Token is required" })
+  }
+
+  try {
+    let users = await User.findAll({
+      where: {
+        labId: labId,
+        calibmaster_client_id: { [Op.ne]: null },
+      },
+      // attributes: {
+      //   exclude: ["password"],
+      // },
+    })
+
+    if (users.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No users found for the given lab ID" })
+    } else {
+      return res.status(200).json({
+        status: "SUCCESS",
+        code: 200,
+        message: "Users Fetched Successfully!!",
+        data: users,
+      })
+    }
+  } catch (err) {
+    console.error("Error fetching users:", err)
+    return res.status(500).json({ message: "Failed to fetch users" })
+  }
+}
+
 exports.deleteuser = deleteuser;
 exports.updateuser = updateuser;
 exports.getuserbyid = getuserbyid;
@@ -766,3 +807,4 @@ exports.getAllUsers = getAllUsers;
 exports.adduser = adduser;
 exports.login = login;
 exports.resetPassword = resetPassword;
+exports.fetchUsersByLabId = fetchUsersByLabId
