@@ -14,4 +14,10 @@ router.get("/fetch-customer/:id", Authorization, customerController.fetchCustome
 
 router.post("/edit-customer", Authorization, customerController.editCustomer);
 
+router.get(
+  "/fetch_customer/:id",
+  Authorization,
+  customerController.fetchCustomer_Company
+)
+
 module.exports = router;
