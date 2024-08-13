@@ -7,6 +7,9 @@ const path = require('path');
 const imageDataURI = require('image-data-uri');
 const nodemailer = require("nodemailer");
 
+// *** Import Core Module From sequelize ***
+const { Op } = require("sequelize");
+
 // *** Import Models ***
 const Lab = require("../models").Lab;
 const SRF = require("../models").srf_list;
@@ -203,7 +206,10 @@ const generate = async (req, res, next) => {
 
         // *** Find Results ***
         const tableDesignArr = await resultTable.findAll({
-            where: { master_result_table_id: masterResult?.master_result_table_id },
+            where: {
+                master_result_table_id: masterResult?.master_result_table_id,
+                print_on_certifcate: 'YES'
+            },
             order: [
                 ['fromId', 'ASC'],
             ],
