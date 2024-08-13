@@ -61,7 +61,11 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.JSON,
         allowNull: false,
       },
-
+      print_on_certifcate: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        defaultValue: 'NO'
+      }
     },
     {
       sequelize,
