@@ -1,14 +1,16 @@
 {
-  "name": "backend",
-  "version": "1.0.0",
-  "description": "",
+  "name": "cm-backend",
+  "private": true,
+  "version": "4.0.1",
+  "type": "module",
+  "description": "Calibmaster Software",
+  "author": "iviewsense ltd,chennai",
+  "license": "proprietary",
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
     "dev": "nodemon app.js"
   },
-  "author": "",
-  "license": "ISC",
   "dependencies": {
     "ajv": "^8.11.0",
     "ajv-formats": "^2.1.1",
