@@ -667,6 +667,67 @@ const updateLabSMTPConfig = async (req, res, next) => {
   }
 };
 
+const errorHandlerFLab = (error, req, res, next) => {
+  console.error(`Error: ${error.message}`)
+  res.status(error.code || 500).json({
+    status: "FAIL",
+    code: error.code || 500,
+    message: error.message,
+    path: error.path,
+  })
+}
+
+const fetchLabById = async (req, res, next) => {
+  const { labId } = req.body
+
+  console.log("Received labId:", labId)
+
+  if (!labId) {
+    let action = "Lab ID is required"
+    const error = new Error(action)
+    error.code = 400
+    error.path = "/api/lab/fetchLabById"
+    return errorHandlerFLab(error, req, res, next)
+  }
+
+  try {
+    // Logging for debugging
+    console.log("Attempting to find lab with ID:", labId)
+
+    let lab = await Lab.findOne({
+      where: { lab_id: labId },
+      attributes: {
+        exclude: ["brand_logo", "other_logo1_image", "other_logo2_image"],
+      },
+    })
+
+    // Log the result
+    console.log("Lab found:", lab)
+
+    if (!lab) {
+      let action = "Lab not found"
+      const error = new Error(action)
+      error.code = 404 // Not found error code
+      error.path = "/api/lab/fetchLabById"
+      return errorHandlerFLab(error, req, res, next)
+    } else {
+      return res.status(200).json({
+        status: "SUCCESS",
+        code: 200,
+        message: "Lab Fetched Successfully!!",
+        data: lab,
+      })
+    }
+  } catch (err) {
+    console.error("Error fetching lab:", err) // Debugging log
+    let action = "Failed to fetch Lab"
+    const error = new Error(action)
+    error.code = 500
+    error.path = "/api/lab/fetchLabById"
+    return errorHandlerFLab(error, req, res, next)
+  }
+}
+
 
 exports.addlab = addlab;
 exports.fetchLab = fetchLab;
@@ -675,3 +736,4 @@ exports.emailconfigHandler = emailconfigHandler;
 exports.getAllLabs = getAllLabs;
 exports.fetchLabSmtpConfig = fetchLabSmtpConfig;
 exports.updateLabSMTPConfig = updateLabSMTPConfig;
+exports.fetchLabById = fetchLabById;
