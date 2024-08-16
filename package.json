@@ -2,7 +2,6 @@
   "name": "cm-backend",
   "private": true,
   "version": "4.0.1",
-  "type": "module",
   "description": "Calibmaster Software",
   "author": "iviewsense ltd,chennai",
   "license": "proprietary",

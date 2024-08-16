@@ -242,7 +242,11 @@ const generate = async (req, res, next) => {
             }
 
             for (let i = 0; i < Columns; i++) {
-                widthsArr.push(60);
+                if (Columns <= 10) {
+                    widthsArr.push(100);
+                } else {
+                    widthsArr.push(60);
+                }
             }
 
             const eachObj = {
@@ -594,7 +598,7 @@ const generate = async (req, res, next) => {
                 },
                 eachTableStyle: {
                     margin: [0, 10, 0, 10],
-                    fontSize: 10,
+                    fontSize: 10
                 }
             }
         };
