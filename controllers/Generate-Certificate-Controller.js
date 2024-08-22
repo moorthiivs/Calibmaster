@@ -663,7 +663,7 @@ const generate = async (req, res, next) => {
                 },
                 eachTableStyle: {
                     margin: [0, 10, 0, 10],
-                    fontSize: 10
+                    fontSize: 9
                 }
             }
         };
