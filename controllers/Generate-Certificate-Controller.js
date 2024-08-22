@@ -229,37 +229,82 @@ const generate = async (req, res, next) => {
             const headerTypes = tableDesignArr[x].header_types;
             const cellTexts = tableDesignArr[x].cell_texts;
 
-            const widthsArr = [];
+            // const widthsArr = [];
 
+            // const eachTableContainer = [];
+
+            // for (let i = 0; i < cellTexts?.length; i++) {
+            //     let eachRow = [];
+            //     for (const key in cellTexts[i]) {
+            //         eachRow.push({ text: cellTexts[i][key]?.val });
+            //     }
+            //     eachTableContainer.push(eachRow)
+            // }
+
+            // for (let i = 0; i < Columns; i++) {
+            //     if (Columns <= 10) {
+            //         widthsArr.push(100);
+            //     } else {
+            //         widthsArr.push(60);
+            //     }
+            // }
+
+            // const eachObj = {
+            //     style: 'eachTableStyle',
+            //     color: '#444',
+            //     table: {
+            //         widths: widthsArr,
+            //         headerRows: 2,
+            //         keepWithHeaderRows: 1,
+            //         body: eachTableContainer
+            //     }
+            // }
+            // bigEyeObj.push(eachObj);
+
+            // added newly
             const eachTableContainer = [];
 
             for (let i = 0; i < cellTexts?.length; i++) {
                 let eachRow = [];
                 for (const key in cellTexts[i]) {
-                    eachRow.push({ text: cellTexts[i][key]?.val });
+                    let cellValue = cellTexts[i][key]?.val;
+                    eachRow.push({ text: cellValue === '--' ? '' : cellValue });
                 }
                 eachTableContainer.push(eachRow)
             }
 
-            for (let i = 0; i < Columns; i++) {
-                if (Columns <= 10) {
-                    widthsArr.push(100);
-                } else {
+            let eachTable = []
+            let startingIndex = 0;
+            let endingIndex = 8;
+
+            for (let i = 1; i <= Math.ceil(Columns / 8); i++) {
+                endingIndex *= i;
+                let eachRow = []
+                eachTableContainer.map((row) => {
+                    eachRow.push(row.slice(startingIndex, endingIndex));
+                })
+                startingIndex += 8;
+                eachTable.push(eachRow)
+            }
+            eachTable.map((tableItem) => {
+
+                let widthsArr = []
+                for (let i = 0; i < tableItem[0].length; i++) {
                     widthsArr.push(60);
                 }
-            }
 
-            const eachObj = {
-                style: 'eachTableStyle',
-                color: '#444',
-                table: {
-                    widths: widthsArr,
-                    headerRows: 2,
-                    keepWithHeaderRows: 1,
-                    body: eachTableContainer
+                const eachObj = {
+                    style: 'eachTableStyle',
+                    color: '#444',
+                    table: {
+                        widths: widthsArr,
+                        headerRows: 2,
+                        keepWithHeaderRows: 1,
+                        body: tableItem
+                    }
                 }
-            }
-            bigEyeObj.push(eachObj);
+                bigEyeObj.push(eachObj);
+            })
             // bigEyeObj.push(cellTexts);
         }
         // return res.json(bigEyeObj);
@@ -424,6 +469,11 @@ const generate = async (req, res, next) => {
                                 { text: 'STANDARD DETAILS', alignment: 'center' }
                             ]
                         ]
+                    },
+                    layout: {
+                        hLineColor: function (i, node) {
+                            return (i === 0 || i === node.table.body.length) ? 'white' : 'black';
+                        },
                     }
                 },
                 {
@@ -468,6 +518,11 @@ const generate = async (req, res, next) => {
                                 { text: `CALIBRATION PROCEDURE & REF.STD: ${calibration_procedure} & ${ref_std}` }
                             ]
                         ]
+                    },
+                    layout: {
+                        hLineColor: function (i, node) {
+                            return (i === 0 || i === node.table.body.length) ? 'white' : 'black';
+                        },
                     }
                 },
                 {
@@ -492,6 +547,11 @@ const generate = async (req, res, next) => {
                                 { text: `TEMPERATURE (°C): ${temperature}` }
                             ]
                         ]
+                    },
+                    layout: {
+                        hLineColor: function (i, node) {
+                            return (i === 0 || i === node.table.body.length) ? 'white' : 'black';
+                        },
                     }
                 },
                 {
@@ -516,6 +576,11 @@ const generate = async (req, res, next) => {
                                 { text: 'CALIBRATION RESULT ( All Values are in mm ):' }
                             ]
                         ]
+                    },
+                    layout: {
+                        hLineColor: function (i, node) {
+                            return (i === 0) ? 'white' : 'black';
+                        },
                     }
                 },
                 bigEyeObj,
