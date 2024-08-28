@@ -267,8 +267,12 @@ const generate = async (req, res, next) => {
             for (let i = 0; i < cellTexts?.length; i++) {
                 let eachRow = [];
                 for (const key in cellTexts[i]) {
-                    let cellValue = cellTexts[i][key]?.val;
-                    eachRow.push({ text: cellValue === '--' ? '' : cellValue });
+                    let {val,constFormula} = cellTexts[i][key];
+                    const header=constFormula.split(/[\(\)]/);
+                    if(header[0].trim()==='HEADER')
+                        eachRow.push({ text: val, bold: true });
+                    else 
+                        eachRow.push({ text: val === '--' ? '' : val });
                 }
                 eachTableContainer.push(eachRow)
             }
@@ -298,7 +302,7 @@ const generate = async (req, res, next) => {
                     color: '#444',
                     table: {
                         widths: widthsArr,
-                        headerRows: 2,
+                        headerRows: 1,
                         keepWithHeaderRows: 1,
                         body: tableItem
                     }
