@@ -1,3 +1,4 @@
+var fs = require('fs');
 const MasterTable = require("../models").master_design_procedure;
 const Dynamicdesign = require("../models").design_procedure;
 
@@ -8,6 +9,38 @@ const UncertaintyMasterParameter = require("../models").uncertainty_master_param
 const procedureUncertainties = require("../models").procedure_uncertainties;
 
 const { errorHandler } = require("../helpers/error-handler");
+
+function decodeBase64Image(dataString) {
+    var matches = dataString.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/),
+        response = {};
+    if (matches.length !== 3) {
+        return new Error('Invalid input string');
+    }
+    response.type = matches[1];
+    response.data = Buffer.from(matches[2], 'base64');
+
+    return response;
+}
+
+function StoreProcedureImages(images, fromId) {
+    let imgFileNames = images.map((imageData) => {
+        try {
+            const isExists = fs.existsSync(`public/procedure_images/${imageData}`);
+            if (isExists) return imageData;
+            let imgFileName = '';
+            const DecodeImg = decodeBase64Image(imageData);
+            const imageBuffer = DecodeImg.data;
+            const fileExtension = DecodeImg.type.slice(6);
+            imgFileName = Math.floor(Math.random() * 9999999) + '-' + fromId + "." + fileExtension;
+            fs.writeFileSync("public/procedure_images/" + imgFileName, imageBuffer, 'utf8');
+            return imgFileName;
+        }
+        catch (err) {
+            console.error(err)
+        }
+    })
+    return imgFileNames;
+}
 
 const create = async (req, res, next) => {
 
@@ -46,6 +79,7 @@ const create = async (req, res, next) => {
                 mainArray[i].master_design_procedure_id = await result.master_design_procedure_id;
                 mainArray[i].calibration_procedure = calibration_procedure;
                 // mainArray[i].cell_texts = ["a", "b", "c"];
+                mainArray[i].procedure_image_filename = StoreProcedureImages(mainArray[i].procedure_image_filename, mainArray[i].fromId);
             }
             await Dynamicdesign.bulkCreate(mainArray);
 
@@ -286,11 +320,13 @@ const update = async (req, res, next) => {
 
         for (let i = 0; i < mainArray.length; i++) {
 
-            const {
+            let {
                 design_procedure_id, fromId,
                 rows, columns,
-                header_types, header_texts, second_row_headers, cell_texts, print_on_certifcate
+                header_types, header_texts, second_row_headers, cell_texts, print_on_certifcate, procedure_image_filename
             } = mainArray[i];
+
+            procedure_image_filename = StoreProcedureImages(procedure_image_filename, fromId);
 
             if (design_procedure_id) {
                 if (mainArray[i]?.delete) {
@@ -299,7 +335,7 @@ const update = async (req, res, next) => {
                     });
                 } else {
                     const response = await Dynamicdesign.update(
-                        { rows, columns, header_types, header_texts, second_row_headers, cell_texts, print_on_certifcate },
+                        { rows, columns, header_types, header_texts, second_row_headers, cell_texts, print_on_certifcate, procedure_image_filename },
                         { where: { design_procedure_id } }
                     );
                     console.log({ log: `${design_procedure_id} is updated ${response}` });
