@@ -228,6 +228,7 @@ const generate = async (req, res, next) => {
 
             const headerTypes = tableDesignArr[x].header_types;
             const cellTexts = tableDesignArr[x].cell_texts;
+            const procedureimages = tableDesignArr[x].procedure_image_filename;
 
             // const widthsArr = [];
 
@@ -262,16 +263,42 @@ const generate = async (req, res, next) => {
             // bigEyeObj.push(eachObj);
 
             // added newly
+            if (procedureimages.length) {
+                const imageBuffers = await Promise.all(procedureimages.map(async (image) => {
+                    const imagePath = path.resolve(__dirname, `../public/procedure_images/${image}`);
+                    return imageToBuffer(imagePath);
+                }));
+
+                const content = procedureimages.length === 1 ? {
+                    alignment: 'center',
+                    image: imageBuffers[0],
+                    fit: [150, 100],
+                    margin: [0, 20, 0, 20]
+                } : {
+                    columns: imageBuffers.map((imageData) => ({
+                        image: imageData,
+                        fit: [150, 100],
+                        alignment: 'center'
+                    })),
+                    columnGap: 10,
+                    alignment: 'center',
+                    margin: [0, 20, 0, 20]
+                };
+
+                bigEyeObj.push(content);
+            }
             const eachTableContainer = [];
 
             for (let i = 0; i < cellTexts?.length; i++) {
                 let eachRow = [];
                 for (const key in cellTexts[i]) {
-                    let {val,constFormula} = cellTexts[i][key];
-                    const header=constFormula.split(/[\(\)]/);
-                    if(header[0].trim()==='HEADER')
-                        eachRow.push({ text: val, bold: true });
-                    else 
+                    let { val, constFormula } = cellTexts[i][key];
+                    const textContent = constFormula.split(/[\(\)]/);
+                    if (textContent[0].trim() === 'HEADER')
+                        eachRow.push({ text: textContent[1], bold: true });
+                    else if (textContent[0].trim() === 'TEXT')
+                        eachRow.push({ text: textContent[1].trim() });
+                    else
                         eachRow.push({ text: val === '--' ? '' : val });
                 }
                 eachTableContainer.push(eachRow)
