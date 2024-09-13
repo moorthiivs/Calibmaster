@@ -68,7 +68,8 @@ module.exports = (sequelize, DataTypes) => {
       },
       procedure_image_filename: {
         type: DataTypes.ARRAY(DataTypes.STRING),
-        allowNull: false
+        allowNull: false,
+        defaultValue: []
       },
     },
     {
