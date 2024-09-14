@@ -269,13 +269,15 @@ const generate = async (req, res, next) => {
                     return imageToBuffer(imagePath);
                 }));
 
-                const content = procedureimages.length === 1 ? {
+                const validImageBuffers = imageBuffers.filter(buffer => buffer !== false);
+
+                const content = validImageBuffers.length === 1 ? {
                     alignment: 'center',
-                    image: imageBuffers[0],
+                    image: validImageBuffers[0],
                     fit: [150, 100],
                     margin: [0, 20, 0, 20]
                 } : {
-                    columns: imageBuffers.map((imageData) => ({
+                    columns: validImageBuffers.map((imageData) => ({
                         image: imageData,
                         fit: [150, 100],
                         alignment: 'center'
