@@ -14,6 +14,8 @@ router.post("/fetch", DesignProceduresController.fetch);
 
 router.post("/view-defined-procedure", DesignProceduresController.viewDefinedProcedures);
 
+router.post("/duplicate-defined-procedure", DesignProceduresController.duplicateDefinedProcedures);
+
 router.post("/update", DesignProceduresController.update);
 
 // *** Test Routes ***

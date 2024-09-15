@@ -460,12 +460,91 @@ const edit_uncertainty_master_parameters = async (req, res, next) => {
     }
 }
 
+const duplicateDefinedProcedures = async (req, res, next) => {
+
+    try {
+        const {
+            master_design_procedure_id, lab_id,
+        } = req.body;
+
+        const masterTable = await MasterTable.findOne({
+            where: {
+                lab_id,
+                master_design_procedure_id
+            },
+            include: "procedure_uncertainties"
+        });
+
+        const tableDesign = await Dynamicdesign.findAll({
+            where: { master_design_procedure_id },
+            order: [
+                ['fromId', 'ASC'],
+            ],
+        });
+
+        const { atmospheric_pressure, calibration_procedure, humidity, instrument_type_id, ref_std, remarks, temperature, traceability, validity, master_list_equipments } = masterTable;
+
+        const mainArray = tableDesign.map(tableData => {
+            const { fromId, rows, columns, header_types, header_texts, second_row_headers, cell_texts, table_type, print_on_certifcate, procedure_image_filename } = tableData;
+            return {
+                fromId,
+                rows,
+                columns,
+                header_types,
+                header_texts,
+                second_row_headers,
+                cell_texts,
+                table_type,
+                unique_id: new Date().getTime(),
+                print_on_certifcate,
+                procedure_image_filename
+            }
+        })
+
+        // TODO: Create Parent-Table Id
+        const newMasterTable = new MasterTable({
+            lab_id: lab_id,
+            instrument_type_id,
+            unique_id: new Date().getTime(),
+            calibration_procedure: `Copy of ${calibration_procedure}`,
+            ref_std,
+            validity,
+            traceability,
+            temperature, humidity,
+            atmospheric_pressure,
+            master_list_equipments,
+            remarks
+        });
+        const result = await newMasterTable.save();
+
+        if (result) {
+            for (let i = 0; i < mainArray?.length; i++) {
+
+                mainArray[i].master_design_procedure_id = await result.master_design_procedure_id;
+                mainArray[i].calibration_procedure = calibration_procedure;
+            }
+            await Dynamicdesign.bulkCreate(mainArray);
+
+            return res.json({ procedureName: calibration_procedure });
+        } else {
+            return res.json({ msg: false });
+        }
+    }
+    catch (err) {
+        console.log(err)
+        res.status(404);
+        const error = new Error("Internal Server Error");
+        next(errorHandler(error, req, res, next))
+    }
+}
+
 module.exports = {
     create,
     findAllList,
     list,
     fetch,
     viewDefinedProcedures,
+    duplicateDefinedProcedures,
     update,
     create_procedure_uncertainties,
     find_uncertainty_master_parameters,
