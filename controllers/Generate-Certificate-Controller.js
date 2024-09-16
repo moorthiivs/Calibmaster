@@ -297,9 +297,7 @@ const generate = async (req, res, next) => {
                     let { val, constFormula } = cellTexts[i][key];
                     const textContent = constFormula.split(/[\(\)]/);
                     if (textContent[0].trim() === 'HEADER')
-                        eachRow.push({ text: textContent[1], bold: true });
-                    else if (textContent[0].trim() === 'TEXT')
-                        eachRow.push({ text: textContent[1].trim() });
+                        eachRow.push({ text: val, bold: true });
                     else
                         eachRow.push({ text: val === '--' ? '' : val });
                 }
