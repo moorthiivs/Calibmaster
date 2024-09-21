@@ -14,7 +14,7 @@ var fs = require('fs');
 
 const editLab = async (req, res, next) => {
 
-    if (req.department != "root") {
+    if (req.department != "root" && req.department != "admin") {
         let action = "Unauthorized Access !!!";
         const error = new Error(action);
         error.code = 401;

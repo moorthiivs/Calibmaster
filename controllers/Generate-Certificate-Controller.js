@@ -397,66 +397,72 @@ const generate = async (req, res, next) => {
             pageSize: 'A4',
             pageOrientation: 'portrait',
             pageMargins: [20, 130, 20, 90],
-            header: [
-                {
-                    alignment: 'justify',
-                    columnGap: 0,
-                    columns: [
-                        {
-                            width: 80,
-                            image: labLogo_1_Buffer,
-                            margin: [15, 10, 0, 0]
-                        },
-                        [
-                            {
-                                text: `${lab.lab_name}`,
-                                alignment: 'center', fontSize: 18, bold: true,
-                                margin: [0, 10, 0, 0],
-                            },
-                            {
-                                text: `${lab.address1}, ${lab.state}, ${lab.city}-${lab.pincode},`,
-                                alignment: 'center', fontSize: 12,
-                                margin: [0, 5, 0, 0],
-                            },
-                            {
-                                text: `Mobile: ${lab.contact_number1}/ Website: ${lab.lab_website}`,
-                                alignment: 'center', fontSize: 12,
-                                margin: [0, 2, 0, 0],
-                            },
-                            {
-                                text: `Email: ${lab.contact_email}`,
-                                alignment: 'center', fontSize: 10,
-                                margin: [0, 2, 0, 0],
-                            },
-                            {
-                                text: 'CERTIFICATE OF CALIBRATION',
-                                alignment: 'center', fontSize: 18, bold: true,
-                                margin: [0, 5, 0, 0],
-                            }
-                        ],
-                        {
-                            width: 100,
-                            columns: [],
-                            margin: [0, 10, 0, 0]
-                        }
-                    ]
-                },
-            ],
-            footer: function (currentPage, pageCount) {
+            header: function (currentPage, pageCount) {
                 return [
                     {
-                        alignment: 'left',
-                        columnGap: 5,
+                        alignment: 'justify',
+                        columnGap: 0,
                         columns: [
-                            { text: footerLongText, width: 'auto' },
-                            lab_QR_LOGO_1_Buffer ? { image: lab_QR_LOGO_1_Buffer, width: 50, } : { text: '' },
-                            lab_QR_LOGO_2_Buffer ? { image: lab_QR_LOGO_2_Buffer, width: 50, } : { text: '' },
-                        ],
-                        margin: [10, 0, 10, 10]
+                            {
+                                width: 80,
+                                image: labLogo_1_Buffer,
+                                margin: [15, 10, 0, 0]
+                            },
+                            [
+                                {
+                                    text: `${lab.lab_name}`,
+                                    alignment: 'center', fontSize: 18, bold: true,
+                                    margin: [0, 10, 0, 0],
+                                },
+                                {
+                                    text: `${lab.address1}, ${lab.state}, ${lab.city}-${lab.pincode},`,
+                                    alignment: 'center', fontSize: 12,
+                                    margin: [0, 5, 0, 0],
+                                },
+                                {
+                                    text: `Mobile: ${lab.contact_number1}/ Website: ${lab.lab_website}`,
+                                    alignment: 'center', fontSize: 12,
+                                    margin: [0, 2, 0, 0],
+                                },
+                                {
+                                    text: `Email: ${lab.contact_email}`,
+                                    alignment: 'center', fontSize: 10,
+                                    margin: [0, 2, 0, 0],
+                                },
+                                {
+                                    text: 'CERTIFICATE OF CALIBRATION',
+                                    alignment: 'center', fontSize: 18, bold: true,
+                                    margin: [0, 5, 0, 0],
+                                }
+                            ],
+                            {
+                                width: 100,
+                                columns: [
+                                    {
+                                        text: `${currentPage} of ${pageCount}`,
+                                        alignment: 'right',
+                                        fontSize: 10,
+                                        margin: [0, 10, 15, 0]
+                                    }
+                                ],
+                                margin: [0, 10, 0, 0]
+                            }
+                        ]
                     },
-                    { text: currentPage.toString() + ' of ' + pageCount, alignment: 'center' }
                 ]
             },
+            footer: [
+                {
+                    alignment: 'left',
+                    columnGap: 5,
+                    columns: [
+                        { text: footerLongText, width: 'auto' },
+                        lab_QR_LOGO_1_Buffer ? { image: lab_QR_LOGO_1_Buffer, width: 50, } : { text: '' },
+                        lab_QR_LOGO_2_Buffer ? { image: lab_QR_LOGO_2_Buffer, width: 50, } : { text: '' },
+                    ],
+                    margin: [10, 0, 10, 10]
+                }
+            ],
             content: [
                 {
                     style: 'firstTable',
