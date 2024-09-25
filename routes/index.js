@@ -51,6 +51,7 @@ const ulrNoGenerationRoutes = require('./ulr-no-generation');
 const uncertaintyMasterParametersRoutes = require("./uncertainty-master-parameters-routes");
 
 const testRoutes = require("./test-route");
+const DueDateRoutes = require('./due-date-check');
 
 const Authorization = require("../middleware/check-auth");
 
@@ -117,6 +118,9 @@ router.use("/api/ulr-no-generation", ulrNoGenerationRoutes);
 router.use("/api/uncertainty-master-parameters", Authorization, uncertaintyMasterParametersRoutes);
 
 router.use("/api/test", testRoutes);
+
+// Routes for Calibration Due Date
+router.use("/api/due-date", Authorization, DueDateRoutes);
 
 router.get("/*", (req, res) => {
     const frontendPath = path.join(__dirname + "../../public/index.html");
