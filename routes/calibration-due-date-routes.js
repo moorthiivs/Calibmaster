@@ -1,6 +1,6 @@
 const express = require("express");
 
-const CalibrationDuedate = require("../controllers/calibration-due-date-check");
+const CalibrationDuedate = require("../controllers/calibration-due-date-controller");
 
 const router = express.Router();
 

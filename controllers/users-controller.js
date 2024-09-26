@@ -759,6 +759,64 @@ const resetPassword = async (req, res, next) => {
   }
 }
 
+const adminResetPassword = async (req, res, next) => {
+
+  const { password, currentPassword, email, labId } = req.body;
+
+  if (!password || !currentPassword || !email || !labId) {
+    let action = "All fields are required";
+    const error = new Error(action);
+    error.code = 500;
+    return errorHandler(error, req, res, next);
+  }
+
+  if (password.length < 8) {
+    let action = "Password must be at least 8 characters";
+    const error = new Error(action);
+    error.code = 500;
+    return errorHandler(error, req, res, next);
+  }
+  try {
+
+    const findUser = await User.findOne({
+      where: { email, labId }
+    });
+
+    // Check if user exist on database
+    if (!findUser) {
+      const error = new Error("User not found");
+      error.code = 500;
+      return errorHandler(error, req, res, next);
+    }
+
+    //Checking Password
+    let isValidPassword = await bcrypt.compare(currentPassword, findUser.dataValues.password);
+
+    // Check if user current password is Correct or not
+    if (!isValidPassword) {
+      const error = new Error("Incorrect password");
+      error.code = 500;
+      return errorHandler(error, req, res, next);
+    }
+
+    //Encrypting the password
+    let hashedPassword = await bcrypt.hash(password, 12);
+
+    await User.update({ password: hashedPassword }, { where: { id: findUser.dataValues.id } });
+
+    return res.status(200).json({
+      message: "Record updated successfully!!!"
+    });
+
+  } catch (err) {
+    console.log(err)
+    let action = "Something went wrong, please try again";
+    const error = new Error(action);
+    error.code = 500;
+    return errorHandler(error, req, res, next);
+  }
+}
+
 const fetchUsersByLabId = async (req, res) => {
   const { labId } = req.params
   const token = req.headers.authorization?.split(" ")[1]
@@ -807,4 +865,5 @@ exports.getAllUsers = getAllUsers;
 exports.adduser = adduser;
 exports.login = login;
 exports.resetPassword = resetPassword;
+exports.adminResetPassword = adminResetPassword;
 exports.fetchUsersByLabId = fetchUsersByLabId

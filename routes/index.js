@@ -51,7 +51,8 @@ const ulrNoGenerationRoutes = require('./ulr-no-generation');
 const uncertaintyMasterParametersRoutes = require("./uncertainty-master-parameters-routes");
 
 const testRoutes = require("./test-route");
-const DueDateRoutes = require('./due-date-check');
+
+const DueDateRoutes = require('./calibration-due-date-routes');
 
 const Authorization = require("../middleware/check-auth");
 

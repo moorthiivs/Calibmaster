@@ -20,6 +20,8 @@ router.post("/deleteuser", Authorization, usersController.deleteuser);
 
 router.post("/reset-password", Authorization, usersController.resetPassword);
 
+router.post("/admin-reset-password", Authorization, usersController.adminResetPassword);
+
 router.get(
   "/getuserbyLabid/:labId",
   Authorization,
