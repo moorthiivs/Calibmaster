@@ -1,4 +1,5 @@
 const jwt = require("jsonwebtoken");
+const nodemailer = require("nodemailer");
 const logger = require("../utils/logger");
 const { errorHandler } = require("../helpers/error-handler");
 const userSchema = require("../schemas/user");
@@ -9,6 +10,7 @@ const newUserSchema = require("../schemas/newuser");
 const userwopassSchema = require("../schemas/userwopass");
 const Lab = require("../models").Lab;
 const Op = require("sequelize").Op;
+const customer_contact = require("../models").customer_contact;
 var request = require("request");
 
 const login = async (req, res, next) => {
@@ -307,6 +309,56 @@ const adduser = async (req, res, next) => {
         return errorHandler(error, req, res, next);
       }
     });
+  }
+
+  try {
+    if (department == "Client") {
+      let getlabDetail = await Lab.findOne({
+        where: {
+          lab_id: labId
+        }
+      });
+      if (getlabDetail && getlabDetail?.email_smtp_server_host && getlabDetail?.email_smtp_server_port && getlabDetail?.sender_email && getlabDetail?.sender_password) {
+
+        let getcustomerDetail = await customer_contact.findOne({
+          where: {
+            customer_id: companyId
+          }
+        })
+
+        if (getcustomerDetail) {
+          let getReceiverEmail = getcustomerDetail.dataValues.contact_email;
+
+          const transporter = nodemailer.createTransport({
+            name: "CalibMaster",
+            host: getlabDetail?.email_smtp_server_host,
+            port: getlabDetail?.email_smtp_server_port,
+            secure: true,
+            auth: {
+              user: getlabDetail?.sender_email,
+              pass: getlabDetail?.sender_password
+            }
+          });
+
+          const info = await transporter.sendMail({
+            from: getlabDetail?.sender_email,
+            to: getReceiverEmail,
+            subject: "CalibMaster - Access ID",
+            html: `<p><b>Please find your credential to access the Customer Portal.</b><br><p>user ID - ${email}</p><p>Password - ${password}</p><p><a href="${config.CUSTOMER_PORTAL_SERVER}">Click here to access the Customer Portal</a></p></p>`,
+            priority: "high",
+          });
+        }
+      }
+    }
+  } catch (err) {
+    console.log(err);
+    isError = true;
+    code = 500;
+    action = "Error while sending client ID and Password";
+    const error = new Error(action);
+    error.code = code;
+    error.path = path;
+    return errorHandler(error, req, res, next);
   }
 
   //Retuning 200 response
