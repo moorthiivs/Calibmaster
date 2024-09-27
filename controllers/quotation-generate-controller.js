@@ -134,7 +134,7 @@ const createQuotation = async (req, res, next) => {
             "January", "February", "March", "April", "May", "June",
             "July", "August", "September", "October", "November", "December"
         ];
-        const { customer_Detail, customer_item_description, lab_id } = req.body;
+        const { customer_Detail, customer_item_description, lab_id, notes } = req.body;
 
         if (!lab_id) {
             const error = new Error("lab Details are required");
@@ -265,6 +265,7 @@ const createQuotation = async (req, res, next) => {
             currentQuotation.quotation_number = Quotation_Number;
             currentQuotation.quotation_items = customer_item_description;
             currentQuotation.other_charges = +otherCharges;
+            currentQuotation.notes = notes;
             currentQuotation.lab_id = lab_id;
 
             const newQuotation = new quotation_generation(currentQuotation);
@@ -307,12 +308,12 @@ const createQuotation = async (req, res, next) => {
             error.path = "/api/quotation/create-quotation";
             return errorHandler(error, req, res, next);
         }
-
+        const NotesArray = notes.map((data) => ({ text: data, fontSize: 8, margin: [0, 0, 0, 5] }))
         try {
             var docDefinition = {
                 pageSize: "A4",
                 pageOrientation: "portrait",
-                pageMargins: [20, 20, 20, 20],
+                pageMargins: [30, 20, 30, 20],
                 content: [
                     {
                         alignment: "justify",
@@ -372,7 +373,7 @@ const createQuotation = async (req, res, next) => {
                         style: "mainTable",
                         table: {
 
-                            widths: [30, 150, 90, 90, 25, 45, 60],
+                            widths: [30, 150, 80, 80, 25, 45, 60],
                             body: itemsArray
                         },
                         layout: {
@@ -383,7 +384,7 @@ const createQuotation = async (req, res, next) => {
                     },
                     {
                         table: {
-                            widths: [30, 150, 90, 90, 25, 45, 60],
+                            widths: [30, 150, 80, 80, 25, 45, 60],
                             body: [
                                 [{ text: "Basics", alignment: "right", bold: true, fontSize: 9, colSpan: 6 }, {}, {}, {}, {}, {}, { text: `${TotalPriceBasic}`, fontSize: 9, alignment: "center" }],
                                 [{ text: "other charges", alignment: "right", bold: true, fontSize: 9, colSpan: 6 }, {}, {}, {}, {}, {}, { text: `${otherCharges}`, fontSize: 9, alignment: "center" }],
@@ -393,22 +394,18 @@ const createQuotation = async (req, res, next) => {
                             ]
                         }
                     },
-                    {
+                    NotesArray.length > 0 ? {
                         margin: [20, 20, 0, 0],
                         columns: [
                             { width: 25, text: "Note:", color: "red", bold: true, fontSize: 9 },
                             {
                                 fontSize: 8,
-                                ol: [
-                                    { text: "Onsite Conveyance Charges Per Vist 1000/-", fontSize: 8, margin: [0, 0, 0, 5] },
-                                    { text: "Micro Meter Each Setting Rod 100/-Rs", fontSize: 8, margin: [0, 0, 0, 5] },
-                                    { text: "Calibartion Done Electronic Weighing Scale Up to 100 Kg", fontSize: 8, margin: [0, 0, 0, 5] },
-                                ]
+                                ol: NotesArray
                             }
                         ]
-                    },
+                    } : null,
                     { text: "", pageBreak: "before" },
-                    { text: "Terms and Conditions", bold: true, fontSize: 9, decoration: "underline", margin: [0, 20, 0, 0] },
+                    { text: "Terms and Conditions", bold: true, fontSize: 9, decoration: "underline", margin: [0, 20, 0, 20] },
                     { text: "General :", bold: true, fontSize: 9 },
                     {
                         fontSize: 8,
@@ -482,8 +479,6 @@ const createQuotation = async (req, res, next) => {
                                 text: `${existingLab.lab_website}`,
                                 link: `${existingLab.lab_website}`,
                                 fontSize: 9,
-                                color: "blue",
-                                decoration: "underline"
                             }
                         ]
                     }

@@ -53,6 +53,10 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.INTEGER,
             allowNull: false,
         },
+        notes: {
+            type: DataTypes.ARRAY(DataTypes.STRING),
+            allowNull: true
+        },
         quotation_filename: {
             type: DataTypes.STRING,
             allowNull: true

@@ -10,9 +10,9 @@ module.exports = {
      * Example:
      * await queryInterface.createTable('users', { id: Sequelize.INTEGER });
      */
-    if (!tableInfo.quotation_filename) {
-      await queryInterface.addColumn("quotation_generations", "quotation_filename", {
-        type: Sequelize.STRING,
+    if (!tableInfo.notes) {
+      await queryInterface.addColumn("quotation_generations", "notes", {
+        type: Sequelize.DataTypes.ARRAY(Sequelize.DataTypes.STRING),
         allowNull: true
       });
     }
@@ -25,6 +25,6 @@ module.exports = {
      * Example:
      * await queryInterface.dropTable('users');
      */
-    await queryInterface.removeColumn("quotation_generations", "quotation_filename");
+    await queryInterface.removeColumn("quotation_generations", "notes");
   }
 };
