@@ -173,7 +173,6 @@ const createQuotation = async (req, res, next) => {
             error.code = 500;
             return errorHandler(error, req, res, next);
         }
-        
         let existingQuotaionconfig;
 
         try {
@@ -208,13 +207,13 @@ const createQuotation = async (req, res, next) => {
 
         let itemsArray = [
             [
-                { text: "SL.No", alignment: "center", fontSize: 9, fillColor: '#A0DEFF' },
-                { text: "ITEM DESCRIPTION", fontSize: 9, alignment: "center", fillColor: '#A0DEFF' },
-                { text: "RANGE / MODEL", fontSize: 9, alignment: "center", fillColor: '#A0DEFF' },
-                { text: "REMARKS", fontSize: 9, alignment: "center", fillColor: '#A0DEFF' },
-                { text: "QTY", fontSize: 9, alignment: "center", fillColor: '#A0DEFF' },
-                { text: "UNIT PRICE", fontSize: 9, alignment: "center", fillColor: '#A0DEFF' },
-                { text: "TOTAL PRICE INR", fontSize: 9, alignment: "center", fillColor: '#A0DEFF' }
+                { text: "SL.No", alignment: "center", fontSize: 9, bold: true, fillColor: '#A0DEFF' },
+                { text: "ITEM DESCRIPTION", fontSize: 9, bold: true, alignment: "center", fillColor: '#A0DEFF' },
+                { text: "RANGE / MODEL", fontSize: 9, bold: true, alignment: "center", fillColor: '#A0DEFF' },
+                { text: "REMARKS", fontSize: 9, bold: true, alignment: "center", fillColor: '#A0DEFF' },
+                { text: "QTY", fontSize: 9, bold: true, alignment: "center", fillColor: '#A0DEFF' },
+                { text: "UNIT PRICE", fontSize: 9, bold: true, alignment: "center", fillColor: '#A0DEFF' },
+                { text: "TOTAL PRICE INR", fontSize: 9, bold: true, alignment: "center", fillColor: '#A0DEFF' }
             ]
         ]
 
@@ -375,6 +374,11 @@ const createQuotation = async (req, res, next) => {
 
                             widths: [30, 150, 90, 90, 25, 45, 60],
                             body: itemsArray
+                        },
+                        layout: {
+                            hLineColor: function (i, node) {
+                                return (i === 0) ? 'black' : (i === node.table.body.length) ? 'white' : 'black';
+                            },
                         }
                     },
                     {
@@ -506,6 +510,8 @@ const createQuotation = async (req, res, next) => {
                 const fileName = `quotation-${todayDate}.pdf`;
 
                 fs.writeFileSync(`./quotation/${fileName}`, buffer);
+
+                await quotation_generation.update({ quotation_filename: fileName }, { where: { quotation_detail_id: newQuotationResult.dataValues.quotation_detail_id } });
 
                 const transporter = nodemailer.createTransport({
                     name: "CalibMaster",
@@ -700,10 +706,14 @@ const fetch_quotation_customer_list = async (req, res, next) => {
             where: {
                 lab_id: lab_id
             },
+            attributes: ['customer_company_name', 'customer_name', 'customer_Contact_number', 'customer_email', 'quotation_number', 'quotation_filename'],
             include: [{
                 model: quotation_customer_contact,
                 as: "quotation_customer_contact",
-            }]
+            }],
+            order: [
+                ['quotation_detail_id', 'DESC']
+            ]
         });
 
     } catch (err) {
@@ -716,8 +726,27 @@ const fetch_quotation_customer_list = async (req, res, next) => {
 
 }
 
+const download = async (req, res, next) => {
+    console.log("34")
+    try {
+        const { filename } = req.body;
+
+        const docPath = path.join(__dirname, "..", "quotation", filename);
+
+        return res.sendFile(docPath);
+    } catch (err) {
+        console.log(err);
+        let action = "Failed to download quotation";
+        const error = new Error(action);
+        error.code = 500;
+        error.path = "Download Quotation";
+        return errorHandler(error, req, res, next);
+    }
+}
+
 exports.fetch_quotation_customer_list = fetch_quotation_customer_list;
 exports.fetch_quotation_config = fetch_quotation_config;
 exports.config_quotation = config_quotation;
 exports.createQuotation = createQuotation;
 exports.update_config_quotation = update_config_quotation;
+exports.download = download;

@@ -53,6 +53,10 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.INTEGER,
             allowNull: false,
         },
+        quotation_filename: {
+            type: DataTypes.STRING,
+            allowNull: true
+        },
     },
         {
             sequelize,
