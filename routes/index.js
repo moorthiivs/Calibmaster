@@ -54,6 +54,10 @@ const testRoutes = require("./test-route");
 
 const DueDateRoutes = require('./calibration-due-date-routes');
 
+const QuotationRoutes = require("./quotation-routes");
+
+const BankConfigRoutes = require("./bank-config-routes");
+
 const Authorization = require("../middleware/check-auth");
 
 //Routes of the APP
@@ -118,10 +122,17 @@ router.use("/api/ulr-no-generation", ulrNoGenerationRoutes);
 // Uncertainty Master ParametersRoutes Routes
 router.use("/api/uncertainty-master-parameters", Authorization, uncertaintyMasterParametersRoutes);
 
+// Test Routes
 router.use("/api/test", testRoutes);
 
 // Routes for Calibration Due Date
 router.use("/api/due-date", Authorization, DueDateRoutes);
+
+// Bank Details
+router.use("/api/bank-config-routes", Authorization, BankConfigRoutes);
+
+// Quotation part
+router.use("/api/quotation", Authorization, QuotationRoutes);
 
 router.get("/*", (req, res) => {
     const frontendPath = path.join(__dirname + "../../public/index.html");
