@@ -16,6 +16,7 @@
     "axios": "^1.6.5",
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.19.0",
+    "canvas": "^2.11.2",
     "cors": "^2.8.5",
     "crypto": "^1.0.1",
     "dotenv": "^16.3.1",
@@ -38,6 +39,7 @@
     "pg": "^8.8.0",
     "request": "^2.88.2",
     "sequelize": "^6.25.3",
+    "sharp": "^0.33.5",
     "winston": "^3.7.2"
   },
   "devDependencies": {
