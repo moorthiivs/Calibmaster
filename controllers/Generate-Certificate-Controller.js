@@ -7,6 +7,8 @@ const path = require('path');
 const imageDataURI = require('image-data-uri');
 const nodemailer = require("nodemailer");
 
+const { CUSTOMER_PORTAL_SERVER } = require("../utils/config");
+
 // *** Import Core Module From sequelize ***
 const { Op } = require("sequelize");
 
@@ -84,7 +86,7 @@ const generate = async (req, res, next) => {
 
     try {
 
-        const { lab_id, srf_id, srf_item_id } = req.body;
+        const { lab_id, srf_id, srf_item_id, customer_info } = req.body;
 
         const certificate_number = new Date().getTime();
 
@@ -180,7 +182,7 @@ const generate = async (req, res, next) => {
 
         // *** Create Format for Master list Equipments ***
         let masterListEquipment = await standard_details(masterResult?.master_list_equipments);
-        const { m_description, m_make, m_serial_no, m_certificate_no, m_validity, m_traceability } = masterListEquipment;
+        const { m_description, m_make, m_serial_no, m_certificate_no, m_validity, m_traceability, m_certificate_filename } = masterListEquipment;
         // return res.json(masterListEquipment);
 
         const masterDescription = m_description;
@@ -750,9 +752,13 @@ const generate = async (req, res, next) => {
             // return console.log(result);
 
             const pdfURL = path.join(__dirname, '../certificates', fileName);
+            const masterURL = path.join(__dirname, '../master_certificates', m_certificate_filename);
 
             const { msg, status } = await sendMail(srfItemsQuery, pdfURL);
             console.log({ msg, status });
+
+            // push generated certificate to customer portal
+            Customerportalcertificate(pdfURL, fileName, masterURL, m_certificate_filename, customer_info);
 
             res.set({
                 "Content-Type": "application/pdf",
@@ -807,6 +813,7 @@ const standard_details = async (master_list_equipments) => {
     let certificate_no = [];
     let validity = [];
     let traceability = [];
+    let certificate_filename = [];
 
     master_list_equipments?.map((eachItem) => {
         description?.push(eachItem.remark);
@@ -822,6 +829,7 @@ const standard_details = async (master_list_equipments) => {
         }
 
         traceability?.push(eachItem.traceability);
+        certificate_filename?.push(eachItem.mastercertificate_filename);
     });
 
     const m_description = description?.join("/");
@@ -830,8 +838,53 @@ const standard_details = async (master_list_equipments) => {
     const m_certificate_no = certificate_no?.join("/");
     const m_validity = validity?.join(",");
     const m_traceability = traceability?.join(",");
+    const m_certificate_filename = certificate_filename?.join(",");
 
-    return { m_description, m_make, m_serial_no, m_certificate_no, m_validity, m_traceability };
+    return { m_description, m_make, m_serial_no, m_certificate_no, m_validity, m_traceability, m_certificate_filename };
+}
+
+const convertFilepathtoBlob = async (filePath, originalFileName) => {
+    try {
+        const data = await fs.promises.readFile(filePath);
+        const extension = filePath.split('.').pop().toLowerCase();
+
+        const types = {
+            pdf: 'application/pdf',
+            jpg: 'image/jpeg',
+            jpeg: 'image/jpeg',
+            png: 'image/png',
+        };
+
+        if (!types[extension]) {
+            throw new Error(`Unsupported file type: ${extension}`);
+        }
+
+        const blob = new Blob([data], { type: types[extension] });
+        return new File([blob], originalFileName, { type: types[extension] });
+
+    } catch (err) {
+        console.error('Error reading file:', err);
+    }
+}
+
+const Customerportalcertificate = async (pdfURL, fileName, masterURL, m_certificate_filename, customer_info) => {
+    try {
+        const formData = new FormData();
+        formData.append('file', await convertFilepathtoBlob(pdfURL, fileName));
+        if (fs.existsSync(masterURL) && m_certificate_filename)
+            formData.append('masterfile', await convertFilepathtoBlob(masterURL, m_certificate_filename));
+
+        Object.entries(customer_info).forEach(([key, value]) => {
+            formData.append(key, value);
+        });
+
+        let response_2 = await fetch(CUSTOMER_PORTAL_SERVER + '/api/upload/create', { method: 'POST', body: formData });
+        response_2 = await response_2.json();
+    }
+    catch (err) {
+        console.error('path: Customer portal certificate', err)
+    }
+
 }
 
 exports.generate = generate;

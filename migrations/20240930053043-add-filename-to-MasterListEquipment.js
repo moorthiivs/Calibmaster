@@ -10,8 +10,8 @@ module.exports = {
      * Example:
      * await queryInterface.createTable('users', { id: Sequelize.INTEGER });
      */
-    if (!tableInfo.master_calibration_filename) {
-      await queryInterface.addColumn("MasterListEquipments", "master_calibration_filename", {
+    if (!tableInfo.mastercertificate_filename) {
+      await queryInterface.addColumn("MasterListEquipments", "mastercertificate_filename", {
         type: Sequelize.DataTypes.STRING,
         allowNull: true
       });
@@ -25,6 +25,6 @@ module.exports = {
      * Example:
      * await queryInterface.dropTable('users');
      */
-    await queryInterface.removeColumn("MasterListEquipments", "master_calibration_filename");
+    await queryInterface.removeColumn("MasterListEquipments", "mastercertificate_filename");
   }
 };

@@ -722,7 +722,7 @@ const fetch_quotation_customer_list = async (req, res, next) => {
 }
 
 const download = async (req, res, next) => {
-    console.log("34")
+
     try {
         const { filename } = req.body;
 

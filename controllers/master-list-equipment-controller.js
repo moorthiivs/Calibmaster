@@ -1,4 +1,5 @@
 var fs = require('fs');
+var path = require('path');
 const User = require("../models").User;
 const MasterListEquipment = require("../models").MasterListEquipment;
 
@@ -7,11 +8,16 @@ const { decodeBase64Image } = require("../helpers/image-decoded-handler");
 
 function StoreMasterCalibrationImage(imageData) {
     try {
+        const dirPath = path.join(__dirname, '../master_certificates');
+
+        if (!fs.existsSync(dirPath)) {
+            fs.mkdirSync(dirPath, { recursive: true });
+        }
         const DecodeImg = decodeBase64Image(imageData);
         const imageBuffer = DecodeImg.data;
         const fileExtension = DecodeImg.type.split('/')[1];
         const imgFileName = `${Math.floor(Math.random() * 9999999)}-master.${fileExtension}`;
-        const filePath = `public/master_calibration_files/${imgFileName}`;
+        const filePath = path.join(dirPath, imgFileName);
         fs.writeFileSync(filePath, imageBuffer);
 
         return imgFileName;
@@ -73,10 +79,10 @@ const create = async (req, res, next) => {
             req.body.updated_timestamp = Date.now();
             req.body.updated_by_login_name = fetchCreater.name;
             req.body.updated_by_user_id = req.userId;
-            req.body.master_calibration_filename = StoreMasterCalibrationImage(req.body.master_calibration);
+            req.body.mastercertificate_filename = StoreMasterCalibrationImage(req.body.master_calibration);
             delete req.body.master_calibration;
 
-            if (!req.body.master_calibration_filename) {
+            if (!req.body.mastercertificate_filename) {
                 let action = "master calibration file error";
                 const error = new Error(action);
                 error.code = 500;
@@ -231,9 +237,9 @@ const update = async (req, res, next) => {
         req.body.updated_by_user_id = req.userId;
 
         if (req.body.master_calibration) {
-            req.body.master_calibration_filename = StoreMasterCalibrationImage(req.body.master_calibration);
+            req.body.mastercertificate_filename = StoreMasterCalibrationImage(req.body.master_calibration);
         }
-        if (req.body.master_calibration && !req.body.master_calibration_filename) {
+        if (req.body.master_calibration && !req.body.mastercertificate_filename) {
             let action = "Master calibration file error";
             const error = new Error(action);
             error.code = 500;
@@ -364,8 +370,26 @@ const emailRemainder = async (req, res, next) => {
     }
 };
 
+const viewCertificate = async (req, res, next) => {
+
+    try {
+        const { filename } = req.body;
+        const docPath = path.join(__dirname, "..", "master_certificates", filename);
+
+        return res.sendFile(docPath);
+    } catch (err) {
+        console.log(err);
+        let action = "Failed to download master";
+        const error = new Error(action);
+        error.code = 500;
+        error.path = "Download Master";
+        return errorHandler(error, req, res, next);
+    }
+}
+
 exports.create = create;
 exports.list = list;
 exports.find = find;
 exports.update = update;
 exports.emailRemainder = emailRemainder;
+exports.viewCertificate = viewCertificate;

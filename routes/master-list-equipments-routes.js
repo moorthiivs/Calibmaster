@@ -14,4 +14,6 @@ router.post("/update", masterListEquipmentController.update);
 
 router.get("/email-remainder", masterListEquipmentController.emailRemainder);
 
+router.post("/view-certificate", masterListEquipmentController.viewCertificate);
+
 module.exports = router;

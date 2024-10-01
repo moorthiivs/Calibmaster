@@ -140,7 +140,7 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING(1000),
         allowNull: true,
       },
-      master_calibration_filename: {
+      mastercertificate_filename: {
         type: DataTypes.STRING,
         allowNull: true,
       },
