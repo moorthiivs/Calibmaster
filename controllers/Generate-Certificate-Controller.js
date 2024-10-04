@@ -129,7 +129,7 @@ const generate = async (req, res, next) => {
         }
 
         // ***  Set First table data *** 
-        const customer_address = `${item?.srf?.customer?.address1},\n ${item?.srf?.customer?.address2},\n ${item?.srf?.customer?.address3 ? `${item?.srf?.customer?.address3},\n ` : ''}${item?.srf?.customer?.city}, ${item?.srf?.customer?.state} - ${item?.srf?.customer?.pincode}`;
+        const customer_address = `${item?.srf?.customer?.address1}, ${item?.srf?.customer?.address2 ? `${item?.srf?.customer?.address2}, ` : ''} ${item?.srf?.customer?.address3 ? `${item?.srf?.customer?.address3}, ` : ''}${item?.srf?.customer?.city}, ${item?.srf?.customer?.state} - ${item?.srf?.customer?.pincode}`;
         const date_of_issue = (item?.srf?.issue_date) ? item?.srf?.issue_date : "--";
         const received_date = item?.srf?.customer_dc_date;
         let cal_date = item?.certificate_date;
@@ -417,7 +417,7 @@ const generate = async (req, res, next) => {
                                     margin: [0, 10, 0, 0],
                                 },
                                 {
-                                    text: `${lab.address1}, ${lab.address2}, ${lab.address3 ? `${lab.address3}, ` : ''}${lab.city}, ${lab.state} - ${lab.pincode}`,
+                                    text: `${lab.address1}, ${lab.address2 ? `${lab.address2}, ` : ''} ${lab.address3 ? `${lab.address3}, ` : ''}\n${lab.city}, ${lab.state} - ${lab.pincode}`,
                                     alignment: 'center', fontSize: 12,
                                     margin: [0, 5, 0, 0],
                                 },
