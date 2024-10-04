@@ -15,8 +15,6 @@ const ExcelJS = require("exceljs");
 const fs = require('fs');
 const nodePath = require('path');
 const ejs = require('ejs');
-const sharp = require("sharp");
-const { createCanvas, loadImage } = require("canvas");
 
 const { sendMailHandler } = require("../helpers/mailSend");
 const { errorHandler } = require("../helpers/error-handler");
@@ -2462,80 +2460,6 @@ const fetchSrfItem = async (req, res, next) => {
   }
 };
 
-const generateLableForDevice = async (req, res, next) => {
-  const {
-    customerName,
-    instrument,
-    make,
-    sr_no,
-    cal_date,
-    due_date,
-    labName,
-    labAddress,
-    labLogoPath,
-    contact,
-  } = req.body;
- 
-  try {      
-    const canvas = createCanvas(800, 500);
-    const ctx = canvas.getContext("2d");
- 
-    // Draw background
-    ctx.fillStyle = "white";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
- 
-    // Draw header
-    ctx.font = "bold 30px Arial";
-    ctx.fillStyle = "black";
-    ctx.fillText(`${labName}`, 200, 60);
-  
-    // Function to load and process an image using sharp
-    async function processImage(filePath) {
-      try {
-        // Convert the image to PNG format
-        const imageBuffer = await sharp(filePath).png().toBuffer();
-        // Load the PNG buffer with canvas
-        const img = await loadImage(imageBuffer);
-        ctx.drawImage(img, 20, 20, 100, 80);
-      } catch (error) {
-        console.error("Error loading or processing image:", error);
-      }
-    }
-  
-    // Process the logo image
-    const logoPath = nodePath.join(__dirname, `../public/images/${labLogoPath}`);
-    await processImage(logoPath);
-  
-    // Draw text
-    ctx.fillStyle = "black";
-    ctx.font = "20px Arial";
-    ctx.fillText(`Customer: ${customerName}`, 70, 140);
-    ctx.fillText(`Instrument: ${instrument}`, 70, 180);
-    ctx.fillText(`Make: ${make}`, 70, 220);
-    ctx.fillText(`Serial No: ${sr_no}`, 70, 260);
-    ctx.fillText(`Calibration Date: ${cal_date}`, 70, 300);
-    ctx.fillText(`Due Date: ${due_date}`, 70, 340);
-  
-    // Footer
-    ctx.font = "15px Arial";
-    ctx.fillText(`${labName}, ${labAddress}`, 50, 450);
-    ctx.fillText(
-      `Cell: ${contact}`,
-      50,
-      470
-    );
-    // Save the image
-    const buffer = canvas.toBuffer("image/png");
-    res.type("image/png");
-    res.send(buffer);
-  } catch (err) {
-    let action = "Internal Server Error!!" + err;
-    const error = new Error(action);
-    error.code = 500;
-    return errorHandler(error, req, res, next);
-  }
-};
-
 
 exports.getfilteredSRFItems = getfilteredSRFItems;
 exports.updatePaymentInfo = updatePaymentInfo;
@@ -2550,4 +2474,3 @@ exports.getSRFs = getSRFs;
 exports.addSRFHandler = addSRFHandler;
 exports.getSrfItems = getSrfItems;
 exports.fetchSrfItem = fetchSrfItem;
-exports.generateLableForDevice= generateLableForDevice;

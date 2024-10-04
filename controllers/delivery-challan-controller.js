@@ -183,8 +183,8 @@ const create = async (req, res, next) => {
                     [
                         { text: `${existingLab.address1}`, width: 100 },
                         { text: `${existingLab.address2}`, width: 100 },
-                        { text: `${existingLab.address3}`, width: 100 },
-                        { text: `${existingLab.city} - ${existingLab.pincode}`, width: 100 },
+                        existingLab.address3 && { text: `${existingLab.address3}`, width: 100 },
+                        { text: `${existingLab.city}, ${existingLab.state} - ${existingLab.pincode}`, width: 100 },
                         { text: `Telephone: ${existingLab.contact_number1}, email: ${existingLab.contact_email}`, width: 100 },
                     ],
                     {
@@ -205,7 +205,7 @@ const create = async (req, res, next) => {
                     widths: ['*', '*'],
                     body: [
                         [
-                            { rowSpan: 6, text: `To,\n M/s, ${srf?.contact_name}` },
+                            { rowSpan: 6, text: `To,\n M/s, ${srf?.contact_name} \n ${srf?.customer?.address1},\n${srf?.customer?.address2},\n${srf?.customer?.address3 ? `${srf?.customer?.address3},\n` : ''}${srf?.customer?.city}, ${srf?.customer?.state} - ${srf?.customer?.pincode}` },
                             { text: `DC No. ${srf?.customer_dc}` }
                         ],
                         ['', { text: `DC Date. ${srf?.customer_dc_date}` }],

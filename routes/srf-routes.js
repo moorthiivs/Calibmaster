@@ -21,7 +21,6 @@ router.post("/add", srfController.addSRFHandler);
 router.post("/getall", srfController.getSRFs);
 
 router.post("/getsrfbyid", srfController.getsrfbyId);
-router.post("/generatelabel", srfController.generateLableForDevice);
 
 router.post("/additemtosrf", srfController.addItemtoSRF);
 

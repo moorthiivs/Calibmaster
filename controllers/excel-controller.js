@@ -1724,7 +1724,7 @@ const downloadExcel = async (req, res, next) => {
             worksheet.getCell("B" + lastrow).value = element?.intrument_type?.instrument_full_name;
             worksheet.getCell("D" + lastrow).value = element?.make;
             worksheet.getCell("E" + lastrow).value = element?.model;
-            worksheet.getCell("F" + lastrow).value = element?.serial_no + " / " + element?.srf_item_id;
+            worksheet.getCell("F" + lastrow).value = element?.serial_no + " / " + element?.identification_details;
             worksheet.getCell("G" + lastrow).value = element?.status;
             worksheet.getCell("H" + lastrow).value = element?.remarks;
             //console.log(element);
