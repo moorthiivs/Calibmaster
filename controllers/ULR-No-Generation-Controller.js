@@ -214,6 +214,28 @@ const nextYearUlr = async (req, res, next) => {
             { where: { lab_id, currentYear: thisYear - 1 } }
         );
 
+        const ifExist = await ULRSetup.findOne({
+            where: {
+                lab_id,
+                currentYear: currentYear
+            }
+        });
+
+        if (ifExist) {
+            const updateData = await ULRSetup.update(
+                {
+                    accreditationNumber,
+                    location,
+                    accreditedScope,
+                    effectiveStartDate: effectiveStartDateString,
+                    effectiveEndDate: effectiveEndDateString,
+                    effectiveFlag: "Y",
+                },
+                { where: { lab_id, currentYear: currentYear } }
+            );
+            return res.status(201).json(updateData);
+        }
+
         const newData = await ULRSetup.create({
             lab_id,
             accreditationNumber,
