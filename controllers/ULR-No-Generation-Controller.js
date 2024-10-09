@@ -289,33 +289,38 @@ const generateULRNumber = async (ulrcount, lab_id) => {
 }
 
 const updateULRNumber = async (req, res, next) => {
+    try {
 
-    const { items, lab_id } = req.body;
+        const { items, lab_id } = req.body;
 
-    let idCollections = [];
+        let idCollections = [];
 
-    items?.map((v, i) => {
-        idCollections.push(v.srf_item_id);
-    });
-
-    const ulr_numbers = await generateULRNumber(items.length, lab_id);
-
-    const query = await Item.findAll({
-        where: { srf_item_id: idCollections }
-    });
-
-    for (let i = 0; i < query.length; i++) {
-        query[i].url_number = ulr_numbers[i];
-
-        await Item.update({ url_number: ulr_numbers[i] }, {
-            where: {
-                srf_item_id: query[i].srf_item_id,
-                rstatus: 1,
-            },
+        items?.map((v, i) => {
+            idCollections.push(v.srf_item_id);
         });
-    }
 
-    return res.json(ulr_numbers);
+        const ulr_numbers = await generateULRNumber(items.length, lab_id);
+
+        const query = await Item.findAll({
+            where: { srf_item_id: idCollections }
+        });
+
+        for (let i = 0; i < query.length; i++) {
+            query[i].url_number = ulr_numbers[i];
+
+            await Item.update({ url_number: ulr_numbers[i] }, {
+                where: {
+                    srf_item_id: query[i].srf_item_id,
+                    rstatus: 1,
+                },
+            });
+        }
+        return res.status(200).json(ulr_numbers);
+    }
+    catch (err) {
+        console.log(err);
+        return res.status(500).json({ error: err.message || "Internal Server Error" });
+    }
 }
 
 exports.create = create;

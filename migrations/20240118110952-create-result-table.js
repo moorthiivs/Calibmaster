@@ -55,7 +55,11 @@ module.exports = {
         type: Sequelize.JSON,
         allowNull: false
       },
-
+      print_on_certifcate: {
+        type: Sequelize.STRING,
+        allowNull: false,
+        defaultValue: 'NO'
+      },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE
