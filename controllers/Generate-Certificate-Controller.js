@@ -292,6 +292,7 @@ const generate = async (req, res, next) => {
                 bigEyeObj.push(content);
             }
             const eachTableContainer = [];
+            let eachTableHeader = 1;
 
             for (let i = 0; i < cellTexts?.length; i++) {
                 let eachRow = [];
@@ -302,6 +303,9 @@ const generate = async (req, res, next) => {
                         eachRow.push({ text: val, bold: true });
                     else
                         eachRow.push({ text: val === '--' ? '' : val });
+                    if (i === 0 && !(textContent[0].trim() === 'BLANK' || textContent[0].trim() === 'HEADER')) {
+                        eachTableHeader = 0;
+                    }
                 }
                 eachTableContainer.push(eachRow)
             }
@@ -310,7 +314,7 @@ const generate = async (req, res, next) => {
             let startingIndex = 0;
             let endingIndex = 8;
 
-            for (let i = 1; i <= Math.ceil(Columns / 8); i++) {
+            for (let i = 1; i <= Math.ceil(Columns / 8); i++) {  // Overflow the table columns are split 8 columns
                 endingIndex *= i;
                 let eachRow = []
                 eachTableContainer.map((row) => {
@@ -331,8 +335,8 @@ const generate = async (req, res, next) => {
                     color: '#444',
                     table: {
                         widths: widthsArr,
-                        headerRows: 1,
-                        keepWithHeaderRows: 1,
+                        headerRows: eachTableHeader,
+                        keepWithHeaderRows: eachTableHeader,
                         body: tableItem
                     }
                 }
