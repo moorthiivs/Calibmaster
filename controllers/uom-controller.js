@@ -22,6 +22,20 @@ const createUom = async (req, res, next) => {
     }
 
     try {
+
+        let duplicateUom = await uomModel.findAll({
+            where: {
+                uom_name: { [Op.iLike]: `${uom_name.trim()}` },
+            },
+        });
+
+        if (duplicateUom.length) {
+            let action = "UOM Name already exists";
+            const error = new Error(action);
+            error.code = 500;
+            return errorHandler(error, req, res, next);
+        }
+
         const fetchCreater = await User.findOne({
             where: { id: req.userId }
         });
@@ -117,6 +131,22 @@ const editUom = async (req, res, next) => {
     }
 
     try {
+        
+        let duplicateUom = await uomModel.findAll({
+            where: {
+                uom_name: { [Op.iLike]: `${uom_name.trim()}` },
+                uom_id: {
+                    [Op.not]: uom_id,
+                  },
+            },
+        });
+
+        if (duplicateUom.length) {
+            let action = "UOM Name already exists";
+            const error = new Error(action);
+            error.code = 500;
+            return errorHandler(error, req, res, next);
+        }
 
         const fetchCreater = await User.findOne({
             where: { id: req.userId }
