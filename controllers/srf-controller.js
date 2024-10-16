@@ -51,7 +51,6 @@ const addSRFHandler = async (req, res, next) => {
   currentSRF.contact_email = req.body.srf.contact_email;
 
   currentSRF.customer_dc_date = req.body.srf.customer_dc_date;
-  currentSRF.next_cal_due_require_flag = (req.body.srf.next_cal_due_require_flag) ? "YES" : "NO";
   currentSRF.statement_of_confirmity_flag = (req.body.srf.statement_of_confirmity_flag) ? "YES" : "NO";
   currentSRF.uncertainity_consider_flag = (req.body.srf.uncertainity_consider_flag) ? "YES" : "NO";
   currentSRF.customer_id = req.body.srf.CompanyId;
@@ -61,7 +60,6 @@ const addSRFHandler = async (req, res, next) => {
   currentSRF.send_srf_via_email = (req.body.srf.sendsrf) ? "YES" : "NO";
 
   currentSRF.agreed_completion_date = (req.body.srf.agreed_date) ? req.body.srf.agreed_date : null;
-  currentSRF.reminder_frequency = req.body.srf.frequency;
   currentSRF.statement_of_confirmity = req.body.srf.statement_of_confirmity;
 
   currentSRF.issue_no = req.body.srf.issue_no;
@@ -69,7 +67,6 @@ const addSRFHandler = async (req, res, next) => {
 
   currentSRF.amend_no = req.body.srf.amend_no;
   currentSRF.amend_date = (req.body.srf.amend_date) ? req.body.srf.amend_date : null;
-  currentSRF.frequency_days = (req.body.srf.frequency_days) ? req.body.srf.frequency_days : null;
 
   let sendsrf = req.body.srf.sendsrf;
 
