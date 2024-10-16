@@ -42,13 +42,6 @@ const schema = {
     agreed_completion_date: {
       type: ["string", "null"],
     },
-    next_cal_due_require_flag: {
-      type: "string",
-    },
-    reminder_frequency: {
-      type: ["string", "null"],
-    },
-
     statement_of_confirmity_flag: {
       type: "string",
     },
@@ -79,9 +72,6 @@ const schema = {
       type: "number",
     },
 
-    frequency_days: {
-      type: ["string", "null"],
-    },
   },
   required: [
     "srf_type",
@@ -94,7 +84,6 @@ const schema = {
 
     "customer_dc_date",
 
-    "next_cal_due_require_flag",
 
     "statement_of_confirmity_flag",
 

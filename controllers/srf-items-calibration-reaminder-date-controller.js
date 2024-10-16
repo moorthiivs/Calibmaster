@@ -31,18 +31,12 @@ const calculateCalibrationReminderDate = async (req, res) => {
         srf_item_id
     } = req.body;
 
-    let srfResult = await Srf.findOne({
-        attributes: ['reminder_frequency'],
-        where: { srf_id }
-    })
-
     let srfItemResult = await SrfItem.findOne({
-        attributes: ['calibration_due_date'],
+        attributes: ['calibration_due_date', ' reminder_frequency'],
         where: { srf_item_id }
     })
 
-    let { reminder_frequency } = srfResult;
-    let { calibration_due_date } = srfItemResult;
+    let { calibration_due_date, reminder_frequency } = srfItemResult;
 
     // *** add due_date + 1 day
     let due_date = new Date(calibration_due_date);
@@ -126,12 +120,13 @@ const updateCalibrationReminderDate = async (req, res) => {
 
     // *** SET Calibration Reaminder Date ***
     try {
-        let srfResult = await Srf.findOne({
+
+        let srfItemResult = await SrfItem.findOne({
             attributes: ['reminder_frequency'],
-            where: { srf_id }
+            where: { srf_item_id }
         });
 
-        let { reminder_frequency } = srfResult;
+        let { reminder_frequency } = srfItemResult;
 
         // *** add due_date + 1 day
         let due_date = new Date(calibration_due_date);

@@ -63,15 +63,6 @@ module.exports = {
         type: Sequelize.DATEONLY,
         allowNull: true,
       },
-      next_cal_due_require_flag: {
-        type: Sequelize.STRING,
-        allowNull: false,
-        defaultValue: 'No'
-      },
-      reminder_frequency: {
-        type: Sequelize.STRING,
-        allowNull: true,
-      },
 
       statement_of_confirmity_flag: {
         type: Sequelize.STRING(2500),

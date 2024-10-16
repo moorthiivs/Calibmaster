@@ -74,15 +74,6 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.DATEONLY,
         allowNull: true,
       },
-      next_cal_due_require_flag: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        defaultValue: 'No'
-      },
-      reminder_frequency: {
-        type: DataTypes.STRING,
-        allowNull: true,
-      },
 
       statement_of_confirmity_flag: {
         type: DataTypes.STRING(2500),
@@ -149,10 +140,6 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: true
       },
 
-      frequency_days: {
-        type: DataTypes.STRING,
-        allowNull: true
-      }
     },
     {
       sequelize,

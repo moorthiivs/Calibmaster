@@ -141,13 +141,13 @@ const updateCalibrationStatus = async (req, res, next) => {
 
     // TODO: calculate calibration_due_date = calibration_done_date + frequency_in_months [calculate in srf-items table]
     try {
-        // *** frequency_in_months from srf_lists table ***
-        let srfResult = await SRF.findOne({
-            // attributes: ['reminder_frequency'],
-            where: { srf_id: srf_id }
+        // *** frequency_in_months from srf_item table ***
+        let srfItemResult = await Item.findOne({
+            attributes: ['reminder_frequency'],
+            where: { srf_item_id: ids, rstatus: 1 }
         });
 
-        let { reminder_frequency } = srfResult;
+        let { reminder_frequency } = srfItemResult;
 
         if (reminder_frequency == null || reminder_frequency == "") {
             reminder_frequency = 0
@@ -155,7 +155,7 @@ const updateCalibrationStatus = async (req, res, next) => {
 
         let calibration_due_date;
 
-        if (mode == 1 || mode == 3) {
+        if ((mode == 1 || mode == 3) && reminder_frequency != 0) {
             const calibration_done_date = new Date(calibrationDoneDate);
             calibration_due_date = new Date(calibration_done_date.setMonth(calibration_done_date.getMonth() + parseInt(reminder_frequency)));
         }
@@ -174,17 +174,10 @@ const updateCalibrationStatus = async (req, res, next) => {
     // ! SET Calibration Reaminder Dates
     // TODO: Formula calibration_remainder_date = calibration_due_date - frequency_days [calculate in srf-items table]
 
-    // *** Getting frequency_days from srf_lists table ***
-    let srfResult = await SRF.findOne({
-        attributes: ['frequency_days'],
-        where: { srf_id: srf_id }
-    });
-    const { frequency_days } = srfResult;
-
-    // *** Getting calibration_due_date from srfitems table ***
+    // *** Getting calibration_due_date and frequency_days from srfitems table ***
     let srfItemResult = await Item.findAll({
         where: { srf_item_id: ids, rstatus: 1 },
-        attributes: ['srf_item_id', 'calibration_due_date']
+        attributes: ['srf_item_id', 'calibration_due_date', 'frequency_days']
     });
 
     let createResponse = "";
@@ -193,9 +186,9 @@ const updateCalibrationStatus = async (req, res, next) => {
 
     for (let i = 0; i < srfItemResult.length; i++) {
 
-        const { calibration_due_date } = srfItemResult[i];
+        const { calibration_due_date, frequency_days } = srfItemResult[i];
 
-        if (frequency_days == 1) {
+        if (frequency_days == 1 && calibration_due_date) {
 
             let due_date_1 = new Date(calibration_due_date);
             let diffDateInMS_1 = due_date_1.setDate(due_date_1.getDate() - 7);
@@ -207,7 +200,7 @@ const updateCalibrationStatus = async (req, res, next) => {
 
             createResponse = "1 remainder";
 
-        } else if (frequency_days == 2) {
+        } else if (frequency_days == 2 && calibration_due_date) {
 
             let due_date_1 = new Date(calibration_due_date);
             let diffDateInMS_1 = due_date_1.setDate(due_date_1.getDate() - 15);
