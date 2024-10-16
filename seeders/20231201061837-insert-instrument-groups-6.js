@@ -29,7 +29,7 @@ module.exports = {
         instrument_discipline_id: '6',
         group_details: 'Miscellaneous'
       }
-    ], {});
+    ], { ignoreDuplicates: true, });
   },
 
   async down(queryInterface, Sequelize) {

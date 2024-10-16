@@ -45,7 +45,7 @@ module.exports = {
         setting_description: "This setting is used to generating certificates pdf",
         setting_value: "NO"
       },
-    ]);
+    ], { ignoreDuplicates: true, });
   },
 
   async down(queryInterface, Sequelize) {

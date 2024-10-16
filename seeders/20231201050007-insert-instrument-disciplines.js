@@ -42,7 +42,7 @@ module.exports = {
         instrument_discipline_id: '7',
         instrument_discipline: 'MEDICAL DEVICES'
       }
-    ]);
+    ], { ignoreDuplicates: true, });
   },
 
   async down(queryInterface, Sequelize) {

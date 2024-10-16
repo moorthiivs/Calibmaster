@@ -30,7 +30,7 @@ module.exports = {
         group_details: 'Miscellaneous'
       }
 
-    ], {});
+    ], { ignoreDuplicates: true, });
   },
 
   async down(queryInterface, Sequelize) {

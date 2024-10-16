@@ -54,7 +54,7 @@ module.exports = {
         instrument_discipline_id: '1',
         group_details: 'Miscellaneous'
       }
-    ]);
+    ], { ignoreDuplicates: true, });
   },
 
   async down(queryInterface, Sequelize) {
