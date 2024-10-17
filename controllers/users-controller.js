@@ -75,7 +75,7 @@ const login = async (req, res, next) => {
   //console.log(existingUser.lab.dataValues.limageData);
 
   //If user not exists return Error Response
-  if (!existingUser) {
+  if (!existingUser || existingUser.dataValues.department == 'Client') {
     isError = true;
     code = 401;
     action = "Invalid Credentials!!";
