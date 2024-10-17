@@ -1320,13 +1320,14 @@ const downloadExcel = async (req, res, next) => {
     const col8 = worksheet.getColumn(8);
     col8.width = 25;
     const row2 = worksheet.getRow(2);
-    row2.getCell(1).value = lab.address1;
+    row2.getCell(1).value = 'Address :';
+    row2.getCell(2).value = lab.address1 && `${lab.address1},`;
     const row3 = worksheet.getRow(3);
-    row3.getCell(1).value = lab.address2;
+    row3.getCell(2).value = lab.address2 && `${lab.address2},`;
     const row4 = worksheet.getRow(4);
-    row4.getCell(1).value = lab.address3;
+    row4.getCell(2).value = lab.address3 && `${lab.address3}.`
     const row5 = worksheet.getRow(5);
-    row5.getCell(1).value = "Telephone: " + lab.contact_number1 + "; e-mail:" + lab.contact_email;
+    row5.getCell(1).value = "Telephone: " + lab.contact_number1 + ", E-mail: " + lab.contact_email;
 
     // add image to workbook by buffer
     let imgext = "png";
@@ -1345,14 +1346,14 @@ const downloadExcel = async (req, res, next) => {
         extension: imgext,
     });
     worksheet.addImage(imageId2, {
-        tl: { col: 5.8, row: 0.5 },
-        br: { col: 7.9, row: 4.5 },
+        tl: { col: 6.2, row: 0.5 },
+        br: { col: 8.3, row: 4.5 },
     });
-    let inddate = new Date();
-    inddate.setHours(inddate.getHours() + 6);
-    worksheet.getCell("A1").value = inddate.toISOString();
+    const inddate = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
+    worksheet.mergeCells("A1:C1");
+    worksheet.getCell("A1").value = `Generate Date: ${inddate}`;
 
-    worksheet.mergeCells("A7:H7");
+    worksheet.mergeCells("A7:I7");
     worksheet.getCell("A7").value = "SERVICE REQUEST FORM";
     worksheet.getCell("A7").style.alignment = {
         vertical: "middle",
@@ -1373,11 +1374,12 @@ const downloadExcel = async (req, res, next) => {
     worksheet.getCell("A8").border = {
         left: { style: "thin" },
     };
-    worksheet.getCell("H8").border = {
+    worksheet.mergeCells("H8:I8");
+    worksheet.getCell("I8").border = {
         right: { style: "thin" },
     };
     worksheet.getCell("H8").value = srf.srf_date.split("-").reverse().join("-");
-    worksheet.mergeCells("A9:H9");
+    worksheet.mergeCells("A9:I9");
     worksheet.getCell("A9").border = {
         top: { style: "thin" },
         left: { style: "thin" },
@@ -1396,7 +1398,7 @@ const downloadExcel = async (req, res, next) => {
     worksheet.getCell("A10").border = {
         left: { style: "thin" },
     };
-    worksheet.getCell("H10").border = {
+    worksheet.getCell("I10").border = {
         right: { style: "thin" },
     };
     worksheet.getCell("E10").border = {
@@ -1434,7 +1436,7 @@ const downloadExcel = async (req, res, next) => {
         horizontal: "right",
     };
     worksheet.getCell("F11").value = "DC No:";
-    worksheet.mergeCells("G11:H11");
+    worksheet.mergeCells("G11:I11");
     worksheet.getCell("G11").border = {
         right: { style: "thin" },
     };
@@ -1449,7 +1451,7 @@ const downloadExcel = async (req, res, next) => {
     worksheet.getCell("F12").border = {
         left: { style: "thin" },
     };
-    worksheet.mergeCells("G12:H12");
+    worksheet.mergeCells("G12:I12");
     worksheet.getCell("G12").border = {
         right: { style: "thin" },
     };
@@ -1467,7 +1469,7 @@ const downloadExcel = async (req, res, next) => {
     worksheet.getCell("F13").border = {
         left: { style: "thin" },
     };
-    worksheet.mergeCells("G13:H13");
+    worksheet.mergeCells("G13:I13");
     worksheet.getCell("G13").border = {
         right: { style: "thin" },
     };
@@ -1482,7 +1484,7 @@ const downloadExcel = async (req, res, next) => {
     worksheet.getCell("F14").border = {
         left: { style: "thin" },
     };
-    worksheet.mergeCells("G14:H14");
+    worksheet.mergeCells("G14:I14");
     worksheet.getCell("G14").border = {
         right: { style: "thin" },
     };
@@ -1511,7 +1513,7 @@ const downloadExcel = async (req, res, next) => {
         left: { style: "thin" },
         bottom: { style: "thin" },
     };
-    worksheet.mergeCells("G15:H15");
+    worksheet.mergeCells("G15:I15");
     worksheet.getCell("G15").border = {
         right: { style: "thin" },
         bottom: { style: "thin" },
@@ -1527,7 +1529,7 @@ const downloadExcel = async (req, res, next) => {
     worksheet.getCell("F16").border = {
         left: { style: "thin" },
     };
-    worksheet.getCell("H16").border = {
+    worksheet.getCell("I16").border = {
         right: { style: "thin" },
     };
     worksheet.getCell("A17").border = {
@@ -1540,7 +1542,7 @@ const downloadExcel = async (req, res, next) => {
     };
     worksheet.getCell("F17").font = { name: "Calibri", size: 12 };
     worksheet.getCell("F17").value = "3.1. Customers are requested to refer the SRF No. as ";
-    worksheet.getCell("H17").border = {
+    worksheet.getCell("I17").border = {
         right: { style: "thin" },
     };
     worksheet.getCell("A18").border = {
@@ -1554,7 +1556,7 @@ const downloadExcel = async (req, res, next) => {
     worksheet.getCell("F18").font = { name: "Calibri", size: 12 };
     worksheet.getCell("F18").value =
         "        mentioned above for all clarification / correspondance . ";
-    worksheet.getCell("H18").border = {
+    worksheet.getCell("I18").border = {
         right: { style: "thin" },
     };
     worksheet.getCell("A19").border = {
@@ -1568,7 +1570,7 @@ const downloadExcel = async (req, res, next) => {
 
     worksheet.getCell("F19").font = { name: "Calibri", size: 12 };
     worksheet.getCell("F19").value = "3.2 " + srf?.contact_name + " is not responsible for the equipments which are not";
-    worksheet.getCell("H19").border = {
+    worksheet.getCell("I19").border = {
         right: { style: "thin" },
     };
     worksheet.getCell("A20").border = {
@@ -1582,10 +1584,10 @@ const downloadExcel = async (req, res, next) => {
     worksheet.getCell("F20").font = { name: "Calibri", size: 12 };
     worksheet.getCell("F20").value =
         "collected after 30 days from the date of agreed date  of completion.";
-    worksheet.getCell("H20").border = {
+    worksheet.getCell("I20").border = {
         right: { style: "thin" },
     };
-    worksheet.mergeCells("A21:H21");
+    worksheet.mergeCells("A21:I21");
     worksheet.getCell("A21").border = {
         right: { style: "thin" },
         left: { style: "thin" },
@@ -1641,10 +1643,17 @@ const downloadExcel = async (req, res, next) => {
     worksheet.getCell("H22").border = {
         left: { style: "thin" },
         bottom: { style: "thin" },
-        right: { style: "thin" },
     };
     worksheet.getCell("H22").font = { name: "Calibri", size: 13, bold: true };
     worksheet.getCell("H22").value = "Calibration Points Required/ Remarks";
+    worksheet.getCell("I22").border = {
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+        right: { style: "thin" },
+    };
+    worksheet.getCell("I22").font = { name: "Calibri", size: 13, bold: true };
+    worksheet.getColumn("I").width = 20;
+    worksheet.getCell("I22").value = "Frequency (months)";
 
     (i = 1), (lastrow = 22);
     for (let j = 0; j < 25; j++) {
@@ -1682,6 +1691,10 @@ const downloadExcel = async (req, res, next) => {
             vertical: "middle",
             horizontal: "center",
         };
+        worksheet.getCell("I" + lastrow).style.alignment = {
+            vertical: "middle",
+            horizontal: "center",
+        };
         worksheet.getCell("A" + lastrow).font = { name: "Calibri", size: 12 };
         worksheet.mergeCells("B" + lastrow + ":" + "C" + lastrow);
         worksheet.getCell("B" + lastrow).font = { name: "Calibri", size: 12 };
@@ -1713,6 +1726,11 @@ const downloadExcel = async (req, res, next) => {
         worksheet.getCell("H" + lastrow).border = {
             left: { style: "thin" },
             bottom: { style: "thin" },
+        };
+        worksheet.getCell("I" + lastrow).font = { name: "Calibri", size: 12 };
+        worksheet.getCell("I" + lastrow).border = {
+            left: { style: "thin" },
+            bottom: { style: "thin" },
             right: { style: "thin" },
         };
     }
@@ -1727,11 +1745,11 @@ const downloadExcel = async (req, res, next) => {
             worksheet.getCell("F" + lastrow).value = element?.serial_no + " / " + element?.identification_details;
             worksheet.getCell("G" + lastrow).value = element?.status;
             worksheet.getCell("H" + lastrow).value = element?.remarks;
-            //console.log(element);
+            worksheet.getCell("I" + lastrow).value = Number(element?.reminder_frequency) || '';
             i = i + 1;
         }
     });
-    worksheet.mergeCells("A48:H48");
+    worksheet.mergeCells("A48:I48");
     worksheet.getCell("A48").font = { name: "Calibri", size: 12, bold: true };
     worksheet.getCell("A48").border = {
         left: { style: "thin" },
@@ -1743,37 +1761,17 @@ const downloadExcel = async (req, res, next) => {
     } else {
         worksheet.getCell("A48").value = "5.0.   Agreed Date of Completion.: ";
     }
-    worksheet.mergeCells("A49:H49");
+    worksheet.mergeCells("A49:I49");
     worksheet.getCell("A49").font = { name: "Calibri", size: 12, bold: true };
     worksheet.getCell("A49").border = {
         left: { style: "thin" },
         bottom: { style: "thin" },
         right: { style: "thin" },
     };
-    let nextcalflag,
-        calfreq = srf.reminder_frequency != "0" ? srf.reminder_frequency + " months" : "------";
-    if (srf.next_cal_due_require_flag) {
-        nextcalflag = "Yes";
-    } else {
-        nextcalflag = "No";
-    }
-    worksheet.getCell("A49").value =
-        "6.0.   Next Calibration Due Date require in certificate:" +
-        nextcalflag +
-        "          ,                           If Yes mention  Frequency :" +
-        calfreq;
-    srf;
-    worksheet.mergeCells("A50:H50");
+    worksheet.getCell("A49").value = "6.0 Decision Rule:";
+    worksheet.mergeCells("A50:I50");
     worksheet.getCell("A50").font = { name: "Calibri", size: 12, bold: true };
     worksheet.getCell("A50").border = {
-        left: { style: "thin" },
-        bottom: { style: "thin" },
-        right: { style: "thin" },
-    };
-    worksheet.getCell("A50").value = "7.0 Decision Rule:";
-    worksheet.mergeCells("A51:H51");
-    worksheet.getCell("A51").font = { name: "Calibri", size: 12, bold: true };
-    worksheet.getCell("A51").border = {
         left: { style: "thin" },
         bottom: { style: "thin" },
         right: { style: "thin" },
@@ -1784,75 +1782,70 @@ const downloadExcel = async (req, res, next) => {
     } else {
         sofc = "No";
     }
-    worksheet.getCell("A51").value =
+    worksheet.getCell("A50").value =
         "        Statement of confirmity require:        " + sofc;
-    worksheet.mergeCells("A52:H52");
+    worksheet.mergeCells("A51:I51");
+    worksheet.getCell("A51").font = { name: "Calibri", size: 12, bold: true };
+    worksheet.getCell("A51").border = {
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+        right: { style: "thin" },
+    };
+    worksheet.getCell("A51").value = "         If Yes please specify:";
+    worksheet.mergeCells("A52:I52");
     worksheet.getCell("A52").font = { name: "Calibri", size: 12, bold: true };
     worksheet.getCell("A52").border = {
         left: { style: "thin" },
         bottom: { style: "thin" },
         right: { style: "thin" },
     };
-    worksheet.getCell("A52").value = "         If Yes please specify:";
-    worksheet.mergeCells("A53:H53");
-    worksheet.getCell("A53").font = { name: "Calibri", size: 12, bold: true };
-    worksheet.getCell("A53").border = {
-        left: { style: "thin" },
-        bottom: { style: "thin" },
-        right: { style: "thin" },
-    };
-    worksheet.getCell("A53").value =
+    worksheet.getCell("A52").value =
         "Uncertainty should be consider for the declaration of statement of the confirmity:  " +
         srf.uncertainity_consider_flag;
+    worksheet.getCell("A53").border = {
+        left: { style: "thin" },
+    };
+    worksheet.getCell("I53").border = {
+        right: { style: "thin" },
+    };
     worksheet.getCell("A54").border = {
         left: { style: "thin" },
     };
-    worksheet.getCell("H54").border = {
+    worksheet.getCell("I54").border = {
         right: { style: "thin" },
     };
+    worksheet.getCell("A54").font = { name: "Calibri", size: 12, bold: true };
+    worksheet.getCell("G54").font = { name: "Calibri", size: 12, bold: true };
+    worksheet.getCell("A54").value = "Name & Signature of the Customer :";
+    worksheet.getCell("G54").value = "Name & Signature of the CSD :";
     worksheet.getCell("A55").border = {
         left: { style: "thin" },
     };
-    worksheet.getCell("H55").border = {
+    worksheet.getCell("I55").border = {
         right: { style: "thin" },
     };
-    worksheet.getCell("A55").font = { name: "Calibri", size: 12, bold: true };
-    worksheet.getCell("F55").font = { name: "Calibri", size: 12, bold: true };
-    worksheet.getCell("A55").value = "Name & Signature of the Customer :";
-    worksheet.getCell("F55").value = "Signature of the CSD :";
+
     worksheet.getCell("A56").border = {
         left: { style: "thin" },
     };
-    worksheet.getCell("H56").border = {
+    worksheet.getCell("I56").border = {
         right: { style: "thin" },
     };
-
-    worksheet.getCell("F55").font = { name: "Calibri", size: 12, bold: true };
-
-    worksheet.getCell("F55").value = "Collected By :";
+    worksheet.mergeCells("A57:C57");
+    worksheet.mergeCells("D57:I57");
+    worksheet.getCell("A57").font = { name: "Calibri", size: 12, bold: true };
+    worksheet.getCell("D57").font = { name: "Calibri", size: 12, bold: true };
     worksheet.getCell("A57").border = {
         left: { style: "thin" },
+        top: { style: "thin" },
+        bottom: { style: "thin" },
     };
-    worksheet.getCell("H57").border = {
-        right: { style: "thin" },
-    };
-    worksheet.mergeCells("A58:C58");
-    worksheet.mergeCells("D58:F58");
-    worksheet.mergeCells("G58:H58");
-    worksheet.getCell("A58").font = { name: "Calibri", size: 12, bold: true };
-    worksheet.getCell("D58").font = { name: "Calibri", size: 12, bold: true };
-    worksheet.getCell("G58").font = { name: "Calibri", size: 12, bold: true };
-    worksheet.getCell("A58").border = {
+    worksheet.getCell("D57").border = {
         left: { style: "thin" },
         top: { style: "thin" },
         bottom: { style: "thin" },
     };
-    worksheet.getCell("D58").border = {
-        left: { style: "thin" },
-        top: { style: "thin" },
-        bottom: { style: "thin" },
-    };
-    worksheet.getCell("H58").border = {
+    worksheet.getCell("I57").border = {
         right: { style: "thin" },
         top: { style: "thin" },
         bottom: { style: "thin" },
@@ -1874,17 +1867,16 @@ const downloadExcel = async (req, res, next) => {
     } else {
         issdate = "";
     }
-    worksheet.getCell("A58").value = "Invoice No." + invno;
-    worksheet.getCell("D58").value = "Invoice Date.";
-    worksheet.getCell("G58").value = "Amount : Rs.";
+    worksheet.getCell("A57").value = "Invoice No." + invno;
+    worksheet.getCell("D57").value = "Invoice Date.";
 
-    worksheet.mergeCells("A59:C59");
-    worksheet.getCell("A59").font = { name: "Calibri", size: 12 };
-    worksheet.getCell("A59").value = "Issue No. :  " + issno;
-    worksheet.getCell("D59").font = { name: "Calibri", size: 12 };
-    worksheet.getCell("D59").value = "Amend No. :  ";
-    worksheet.getCell("E59").font = { name: "Calibri", size: 12 };
-    worksheet.getCell("E59").value = srf?.amend_no;
+    worksheet.mergeCells("A58:C58");
+    worksheet.getCell("A58").font = { name: "Calibri", size: 12 };
+    worksheet.getCell("A58").value = "Issue No. :  " + issno;
+    worksheet.getCell("D58").font = { name: "Calibri", size: 12 };
+    worksheet.getCell("D58").value = "Amend No. :  ";
+    worksheet.getCell("E58").font = { name: "Calibri", size: 12 };
+    worksheet.getCell("E58").value = srf?.amend_no;
     let pageno = 1;
     let pages;
     if (items.length <= 25) {
@@ -1896,8 +1888,36 @@ const downloadExcel = async (req, res, next) => {
     } else if (items.length >= 86 && items.length <= 115) {
         pages = 4;
     }
-    worksheet.getCell("F59").font = { name: "Calibri", size: 12 };
-    worksheet.getCell("F59").value = "Page No.:" + pageno + "/" + pages;
+    worksheet.getCell("F58").font = { name: "Calibri", size: 12 };
+    worksheet.getCell("F58").value = "Page No.:" + pageno + "/" + pages;
+    worksheet.getCell("A58").border = {
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+    };
+    worksheet.getCell("D58").border = {
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+    };
+    worksheet.getCell("E58").border = {
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+    };
+    worksheet.getCell("F58").border = {
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+    };
+    worksheet.mergeCells("G58:I59");
+    worksheet.getCell("I58").border = {
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+        right: { style: "thin" },
+    };
+    worksheet.getCell("G58").font = { name: "Calibri", size: 16, bold: true };
+    worksheet.getCell("G58").value = lab.name;
+    worksheet.getCell("G58").style.alignment = {
+        vertical: "middle",
+        horizontal: "center",
+    };
     worksheet.getCell("A59").border = {
         left: { style: "thin" },
         bottom: { style: "thin" },
@@ -1914,44 +1934,16 @@ const downloadExcel = async (req, res, next) => {
         left: { style: "thin" },
         bottom: { style: "thin" },
     };
-    worksheet.mergeCells("G59:H60");
-    worksheet.getCell("H59").border = {
-        left: { style: "thin" },
-        bottom: { style: "thin" },
-        right: { style: "thin" },
-    };
-    worksheet.getCell("G59").font = { name: "Calibri", size: 16, bold: true };
-    worksheet.getCell("G59").value = lab.name;
-    worksheet.getCell("G59").style.alignment = {
-        vertical: "middle",
-        horizontal: "center",
-    };
-    worksheet.getCell("A60").border = {
-        left: { style: "thin" },
-        bottom: { style: "thin" },
-    };
-    worksheet.getCell("D60").border = {
-        left: { style: "thin" },
-        bottom: { style: "thin" },
-    };
-    worksheet.getCell("E60").border = {
-        left: { style: "thin" },
-        bottom: { style: "thin" },
-    };
-    worksheet.getCell("F60").border = {
-        left: { style: "thin" },
-        bottom: { style: "thin" },
-    };
-    worksheet.mergeCells("A60:C60");
-    worksheet.getCell("A60").font = { name: "Calibri", size: 12 };
+    worksheet.mergeCells("A59:C59");
+    worksheet.getCell("A59").font = { name: "Calibri", size: 12 };
 
-    worksheet.getCell("A60").value = "Issue Date. :  " + issdate;
-    worksheet.getCell("D60").font = { name: "Calibri", size: 12 };
-    worksheet.getCell("D60").value = "Amend Date. :  ";
-    worksheet.getCell("E60").font = { name: "Calibri", size: 12 };
-    worksheet.getCell("E60").value = srf?.amend_date?.split("-")?.reverse()?.join("-");
-    worksheet.getCell("F60").font = { name: "Calibri", size: 12 };
-    //worksheet.getCell("F60").value = "TC-FFC-001";
+    worksheet.getCell("A59").value = "Issue Date. :  " + issdate;
+    worksheet.getCell("D59").font = { name: "Calibri", size: 12 };
+    worksheet.getCell("D59").value = "Amend Date. :  ";
+    worksheet.getCell("E59").font = { name: "Calibri", size: 12 };
+    worksheet.getCell("E59").value = srf?.amend_date?.split("-")?.reverse()?.join("-");
+    worksheet.getCell("F59").font = { name: "Calibri", size: 12 };
+    //worksheet.getCell("F59").value = "TC-FFC-001";
     //page 2
     if (items.lenght > 25) {
         worksheet.mergeCells("A62:H62");
