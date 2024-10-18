@@ -13,16 +13,18 @@ module.exports = {
 
       // Update records in srfitems based on srf_lists data
       for (const record of records) {
-        await queryInterface.bulkUpdate(
-          'srfitems',
-          {
-            frequency_days: record.frequency_days,
-            reminder_frequency: record.reminder_frequency
-          },
-          {
-            srf_id: record.srf_id
-          }
-        );
+        if (record.reminder_frequency) {
+          await queryInterface.bulkUpdate(
+            'srfitems',
+            {
+              frequency_days: record.frequency_days,
+              reminder_frequency: record.reminder_frequency
+            },
+            {
+              srf_id: record.srf_id
+            }
+          );
+        }
       }
     }
     /**
