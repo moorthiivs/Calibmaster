@@ -2436,7 +2436,7 @@ const fetchSrfItem = async (req, res, next) => {
   //Getting SRF Items
   try {
     let items = await Item.findOne({
-      where: { srf_item_id },
+      where: { srf_item_id, rstatus: 1 },
       include: ["intrument_type", "srf"],
       order: [["srf_item_id", "ASC"]]
     });
