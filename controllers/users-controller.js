@@ -413,7 +413,7 @@ const getAllUsers = async (req, res, next) => {
     users = await User.findAll({
       where: {
         department: { [Op.ne]: "admin" },
-        rstatus: 1,
+        // rstatus: 1,
         labId: labId,
       },
       attributes: { exclude: ["password", "createdAt", "updatedAt"] },
@@ -652,6 +652,107 @@ const updateuser = async (req, res, next) => {
       code: code,
       data: users,
       message: "User updated Successfully!!",
+    });
+  }
+};
+
+const enableuser = async (req, res, next) => {
+  const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+  let code = 200;
+  const path = "/api/users/enableuserbyid";
+  let action = "enable User by Id!!";
+  let sessionId = req.sessionId;
+  let userId = req.userId;
+  let isError = false;
+  //Checking Admin User If not return Error Response
+  const isadmin = req.department == "admin";
+  if (!isadmin) {
+    isError = true;
+    code = 401;
+    action = "Unauthorized Usage!!";
+    const error = new Error(action);
+    error.code = code;
+    error.path = path;
+    return errorHandler(error, req, res, next);
+  }
+
+  if (!req.body.userId && !req.body.labId) {
+    isError = true;
+    code = 400;
+    action = "Invalid Request Params!!";
+    const error = new Error(action);
+    error.code = code;
+    error.path = path;
+    return errorHandler(error, req, res, next);
+  }
+  //Checking user in Database
+  let existingUser;
+  try {
+    existingUser = await User.findOne({
+      where: { id: req.body.userId, rstatus: 0, labId: req.body.labId },
+    });
+  } catch (err) {
+    isError = true;
+    code = 500;
+    action = "Internal Server Error!!";
+    const error = new Error(action);
+    error.code = code;
+    error.path = path;
+    return errorHandler(error, req, res, next);
+  }
+  //If user not exists return Error Response
+  if (!existingUser) {
+    isError = true;
+    code = 401;
+    action = "User not Exists!!";
+    const error = new Error(action);
+    error.code = code;
+    error.path = path;
+    return errorHandler(error, req, res, next);
+  }
+
+  try {
+    existingUser.update({ rstatus: 1 });
+  } catch (err) {
+    isError = true;
+    code = 500;
+    action = "Internal Server Error!!" + err;
+    const error = new Error(action);
+    error.code = code;
+    error.path = path;
+    return errorHandler(error, req, res, next);
+  }
+  let users;
+  //Getting All Users
+  try {
+    users = await User.findAll({
+      where: {
+        department: { [Op.ne]: "admin" },
+        id: { [Op.ne]: existingUser.id },
+        rstatus: 1,
+        labId: req.body.labId,
+      },
+      attributes: { exclude: ["password", "createdAt", "updatedAt"] },
+      order: [["id", "ASC"]],
+    });
+  } catch (err) {
+    isError = true;
+    code = 500;
+    action = "Internal Server Error!!";
+    const error = new Error(action);
+    error.code = code;
+    error.path = path;
+    return errorHandler(error, req, res, next);
+  }
+  //Retuning 200 response
+  if (isError == false) {
+    let message = `${ip} ${userId} ${sessionId} ${code} ${path} - ${action}`;
+    logger.info(message);
+    res.status(code).json({
+      status: "SUCCESS",
+      code: code,
+      data: users,
+      message: "User deleted Successfully!!",
     });
   }
 };
@@ -910,6 +1011,7 @@ const fetchUsersByLabId = async (req, res) => {
   }
 }
 
+exports.enableuser = enableuser;
 exports.deleteuser = deleteuser;
 exports.updateuser = updateuser;
 exports.getuserbyid = getuserbyid;
