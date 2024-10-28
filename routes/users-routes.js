@@ -22,6 +22,8 @@ router.post("/reset-password", Authorization, usersController.resetPassword);
 
 router.post("/admin-reset-password", Authorization, usersController.adminResetPassword);
 
+router.post("/enableuser", Authorization, usersController.enableuser)
+
 router.get(
   "/getuserbyLabid/:labId",
   Authorization,
