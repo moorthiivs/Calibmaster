@@ -169,7 +169,7 @@ const createQuotation = async (req, res, next) => {
         }
 
         if (!existingLab?.email_smtp_server_host && !existingLab?.email_smtp_server_port && !existingLab?.sender_email && !existingLab?.sender_password) {
-            const error = new Error("SMTP server not found. Check your configuration");
+            const error = new Error("SMTP server not found. Please check your configuration");
             error.code = 500;
             return errorHandler(error, req, res, next);
         }
@@ -182,7 +182,7 @@ const createQuotation = async (req, res, next) => {
                 }
             })
             if (!existingQuotaionconfig) {
-                const error = new Error("Failed to find existing Lab Quotation Configuration");
+                const error = new Error("Quotation configuration not found. Please check your quotation configuration");
                 error.code = 500;
                 return errorHandler(error, req, res, next);
             }
