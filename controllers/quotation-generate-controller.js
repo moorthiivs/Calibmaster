@@ -1,7 +1,7 @@
 var fs = require("fs")
 var pdfMake = require("pdfmake/build/pdfmake");
 var pdfFonts = require("pdfmake/build/vfs_fonts");
-pdfMake.vfs = pdfFonts.pdfMake.vfs;
+pdfMake.vfs = pdfFonts.pdfMake || {};
 const imageDataURI = require('image-data-uri');
 const nodemailer = require("nodemailer");
 const path = require('path');
