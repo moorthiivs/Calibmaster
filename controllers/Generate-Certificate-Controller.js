@@ -809,6 +809,30 @@ const download = async (req, res, next) => {
     }
 }
 
+const verify_certificate = async (req, res, next) => {
+
+    try {
+        const { srf_item_id } = req.body;
+
+        // ***  Query Certificate by srf_item_id ***
+        let certificate = await Certificate.findOne({
+            where: { srfitemId: srf_item_id },
+            order: [['createdAt', 'DESC']]
+        });
+
+        const check = certificate?.fileName ? true : false;
+
+        return res.json({ check });
+    } catch (err) {
+        console.log(err);
+        let action = "Failed to verify certificate";
+        const error = new Error(action);
+        error.code = 500;
+        error.path = "Verify Certificate";
+        return errorHandler(error, req, res, next);
+    }
+}
+
 const standard_details = async (master_list_equipments) => {
 
     let description = [];
@@ -893,4 +917,5 @@ const Customerportalcertificate = async (pdfURL, fileName, masterURL, m_certific
 
 exports.generate = generate;
 exports.download = download;
+exports.verify_certificate = verify_certificate;
 exports.standard_details = standard_details;

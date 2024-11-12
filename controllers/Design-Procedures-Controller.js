@@ -333,9 +333,10 @@ const update = async (req, res, next) => {
                     await Dynamicdesign.destroy({
                         where: { design_procedure_id }
                     });
+                    console.log({ log: `${design_procedure_id} is deleted` });
                 } else {
                     const response = await Dynamicdesign.update(
-                        { rows, columns, header_types, header_texts, second_row_headers, cell_texts, print_on_certifcate, procedure_image_filename },
+                        { fromId, rows, columns, header_types, header_texts, second_row_headers, cell_texts, print_on_certifcate, procedure_image_filename },
                         { where: { design_procedure_id } }
                     );
                     console.log({ log: `${design_procedure_id} is updated ${response}` });
