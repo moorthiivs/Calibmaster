@@ -1,6 +1,7 @@
 const SRF = require("../models").srf_list;
 const Item = require("../models").srfitem;
 const { errorHandler } = require("../helpers/error-handler");
+const { generate } = require("./Generate-Certificate-Controller");
 
 const updateServiceDoneDate = async (req, res, next) => {
 
@@ -113,6 +114,24 @@ const updateCalibrationStatus = async (req, res, next) => {
 
     let ids = [];
     req?.body?.items?.map((v, i) => {
+        const body = {
+            lab_id: v?.lab_id,
+            srf_id: v?.srf_id,
+            srf_item_id: v?.srf_item_id,
+            customer_info: {
+                "srfId": v?.srf_id,
+                "srfNo": v?.srf?.srf_number,
+                "name": v?.intrument_type?.instrument_full_name,
+                "make": v?.make,
+                "model": v?.model,
+                "serialno": v?.serial_no,
+                "idno": v?.identification_details,
+                "companyId": v?.srf?.customer_id
+            },
+            skip_response: true
+        }
+        req.body = body;
+        if (mode === 2) generate(req, res, next);
         ids?.push(v.srf_item_id);
     });
 
@@ -245,6 +264,24 @@ const updateReportGenerationStatus = async (req, res, next) => {
 
     let ids = [];
     req?.body?.items?.map((v, i) => {
+        const body = {
+            lab_id: v?.lab_id,
+            srf_id: v?.srf_id,
+            srf_item_id: v?.srf_item_id,
+            customer_info: {
+                "srfId": v?.srf_id,
+                "srfNo": v?.srf?.srf_number,
+                "name": v?.intrument_type?.instrument_full_name,
+                "make": v?.make,
+                "model": v?.model,
+                "serialno": v?.serial_no,
+                "idno": v?.identification_details,
+                "companyId": v?.srf?.customer_id
+            },
+            skip_response: true
+        }
+        req.body = body;
+        generate(req, res, next);
         ids?.push(v.srf_item_id);
     });
 

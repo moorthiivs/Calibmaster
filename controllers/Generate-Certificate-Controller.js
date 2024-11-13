@@ -88,6 +88,8 @@ const generate = async (req, res, next) => {
 
         const { lab_id, srf_id, srf_item_id, customer_info } = req.body;
 
+        const skip_response = req.body?.skip_response || false;
+
         const certificate_number = new Date().getTime();
 
         // ***  Query SRF-Items by srf_item_id *** 
@@ -125,7 +127,7 @@ const generate = async (req, res, next) => {
             let action = "SRF-Item is not available";
             const error = new Error(action);
             error.code = 501;
-            return errorHandler(error, req, res, next);
+            return skip_response || errorHandler(error, req, res, next);
         }
 
         // ***  Set First table data *** 
@@ -169,7 +171,7 @@ const generate = async (req, res, next) => {
             let action = "Master Result is not available";
             const error = new Error(action);
             error.code = 501;
-            return errorHandler(error, req, res, next);
+            return skip_response || errorHandler(error, req, res, next);
         }
 
         // *** Set standards details table data *** 
@@ -759,11 +761,13 @@ const generate = async (req, res, next) => {
             const masterURL = path.join(__dirname, '../master_certificates', m_certificate_filename);
 
             const { msg, status } = await sendMail(srfItemsQuery, pdfURL);
-            console.log({ msg, status });
+            // console.log({ msg, status });
 
             // push generated certificate to customer portal
             Customerportalcertificate(pdfURL, fileName, masterURL, m_certificate_filename, customer_info);
 
+            if (skip_response) return;
+            
             res.set({
                 "Content-Type": "application/pdf",
                 "Content-Length": buffer.length
@@ -777,7 +781,7 @@ const generate = async (req, res, next) => {
         const error = new Error(action);
         error.code = 500;
         error.path = "Certificate Create Error";
-        return errorHandler(error, req, res, next);
+        return skip_response || errorHandler(error, req, res, next);
     }
 }
 
