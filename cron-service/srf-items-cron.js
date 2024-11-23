@@ -65,7 +65,7 @@ const sendMail = async (eachData, calibration_remainder) => {
 
 const sendNotificationMail_1 = async (req, res) => {
     try {
-        cron.schedule('0 * * * *', async function () {
+        cron.schedule('0 0 * * *', async function () { // run every day at 12:00 AM
             try {
                 let srfItems = await Item.findAll({
                     attributes: [
@@ -103,10 +103,12 @@ const sendNotificationMail_1 = async (req, res) => {
 
                 srfItems.map(async (eachRow) => {
 
-                    if (eachRow?.calibration_remainder_date_1) {
+                    const { email_smtp_server_host, email_smtp_server_port, sender_password, sender_email } = eachRow?.lab;
+
+                    if (eachRow?.calibration_remainder_date_1 && email_smtp_server_host && email_smtp_server_port && sender_password && sender_email) {
 
                         // *** Reaminder Date in yyyy--mm-dd format ***
-                        rDate = new Date(eachRow?.calibration_remainder_date_1);
+                        const rDate = new Date(eachRow?.calibration_remainder_date_1);
                         let rDay = rDate.getDate();
                         let rMonth = rDate.getMonth() + 1;
                         let rYear = rDate.getFullYear();
@@ -120,7 +122,6 @@ const sendNotificationMail_1 = async (req, res) => {
                         let currentDate = `${year}-${month}-${day}`;
 
                         let status;
-                        console.log(currentDate, reaminderDate);
 
                         if (currentDate === reaminderDate) {
                             status = "Today send the mail to contact person";
@@ -142,8 +143,7 @@ const sendNotificationMail_1 = async (req, res) => {
                     }
                 });
 
-                console.log(responseArr);
-                let data = `Cron Job attempt on calibration_remainder_date_1 ${new Date()} \n`;
+                let data = `Cron Job attempt on SRF calibration_remainder_date_1 at ${new Date()} \n`;
 
                 fs.appendFile("cronLogger.txt", data, function (err) {
                     if (err) throw err;
@@ -159,7 +159,7 @@ const sendNotificationMail_1 = async (req, res) => {
 
 const sendNotificationMail_2 = async (req, res) => {
     try {
-        cron.schedule('0 * * * *', async function () {
+        cron.schedule('0 0 * * *', async function () {
             try {
                 let srfItems = await Item.findAll({
                     attributes: [
@@ -197,10 +197,12 @@ const sendNotificationMail_2 = async (req, res) => {
 
                 srfItems.map(async (eachRow) => {
 
-                    if (eachRow?.calibration_remainder_date_2) {
+                    const { email_smtp_server_host, email_smtp_server_port, sender_password, sender_email } = eachRow?.lab;
+
+                    if (eachRow?.calibration_remainder_date_2 && email_smtp_server_host && email_smtp_server_port && sender_password && sender_email) {
 
                         // *** Reaminder Date in yyyy--mm-dd format ***
-                        rDate = new Date(eachRow?.calibration_remainder_date_2);
+                        const rDate = new Date(eachRow?.calibration_remainder_date_2);
                         let rDay = rDate.getDate();
                         let rMonth = rDate.getMonth() + 1;
                         let rYear = rDate.getFullYear();
@@ -235,7 +237,7 @@ const sendNotificationMail_2 = async (req, res) => {
                     }
                 });
 
-                let data = `Cron Job attempt on calibration_remainder_date_2 at ${new Date()} \n`;
+                let data = `Cron Job attempt on SRF calibration_remainder_date_2 at ${new Date()} \n`;
 
                 fs.appendFile("cronLogger.txt", data, function (err) {
                     if (err) throw err;

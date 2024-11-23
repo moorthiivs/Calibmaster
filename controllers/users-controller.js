@@ -39,7 +39,7 @@ const login = async (req, res, next) => {
   try {
     if (email != "root@iviewsense.com") {
       existingUser = await User.findOne({
-        where: { email: email, rstatus: 1 },
+        where: { email: email },
         include: [
           {
             model: Lab,
@@ -111,6 +111,18 @@ const login = async (req, res, next) => {
     error.path = path;
     return errorHandler(error, req, res, next);
   }
+
+  // If User account disabled return Error Response
+  if (existingUser?.rstatus == 0) {
+    isError = true;
+    code = 401;
+    action = "Your account has been disabled. Please contact the admin!!";
+    const error = new Error(action);
+    error.code = code;
+    error.path = path;
+    return errorHandler(error, req, res, next);
+  }
+
   let token;
   let userId = existingUser.id;
 

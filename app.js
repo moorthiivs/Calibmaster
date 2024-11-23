@@ -11,9 +11,9 @@ const masterEquipmentsCronservices = require('./cron-service/master-equipments-c
 const app = express();
 
 // Cron Job Run
-// srfItemsCronservices.sendNotificationMail_1();
-// srfItemsCronservices.sendNotificationMail_2();
-// masterEquipmentsCronservices.emailRemainder_1();
+srfItemsCronservices.sendNotificationMail_1();
+srfItemsCronservices.sendNotificationMail_2();
+masterEquipmentsCronservices.emailRemainder_1();
 masterEquipmentsCronservices.emailRemainder_2();
 
 const whitelist = ["http://localhost:5173"];
