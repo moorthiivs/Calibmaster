@@ -33,6 +33,10 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       allowNull: true
     },
+    companyId: {
+      type: DataTypes.INTEGER,
+      allowNull: true
+    }
   });
 
   User.associate = function (models) {

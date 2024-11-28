@@ -19,7 +19,6 @@ module.exports = {
       } catch (err) {
         logger.error("Admin Password Encryption Failed!!");
       }
-      //console.log(hashedPassword);
       const adminUser = new User({
         id: 0,
         name: "Super User",
@@ -27,7 +26,6 @@ module.exports = {
         password: hashedPassword,
         department: "root",
         rstatus: 1,
-        //labId: 1,
       });
       try {
         const result1 = await adminUser.save();

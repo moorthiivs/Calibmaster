@@ -16,7 +16,7 @@ module.exports = {
     await queryInterface.sequelize.query(`
       UPDATE "design_procedures"
       SET "new_fromId" = CAST("fromId" AS INTEGER)
-      WHERE "fromId" ~ '^[0-9]+$'; -- Only update numeric 'fromId' values
+      WHERE "fromId"::TEXT ~ '^[0-9]+$'; -- Only update numeric 'fromId' values
     `);
 
     if (tableDesc.fromId) {

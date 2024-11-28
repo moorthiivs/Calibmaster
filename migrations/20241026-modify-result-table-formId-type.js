@@ -13,7 +13,7 @@ module.exports = {
     await queryInterface.sequelize.query(`
       UPDATE "result_tables"
       SET "new_fromId" = CAST("fromId" AS INTEGER)
-      WHERE "fromId" ~ '^[0-9]+$'; -- Only update numeric 'fromId' values
+      WHERE "fromId"::TEXT ~ '^[0-9]+$'; -- Only update numeric 'fromId' values
     `);
     await queryInterface.removeColumn('result_tables', 'fromId');
 
@@ -45,4 +45,4 @@ module.exports = {
       }
     }
   }
-}
+};
