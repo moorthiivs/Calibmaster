@@ -345,7 +345,7 @@ const adduser = async (req, res, next) => {
             }
           });
 
-          const mail_content = `< !DOCTYPE html>
+          const mail_content = `
             <html lang="en">
               <head>
                 <meta charset="UTF-8">
@@ -354,10 +354,10 @@ const adduser = async (req, res, next) => {
                     <style>
                       body {
                         font - family: 'Arial', sans-serif;
-                      background-color: #f8f9fa;
-                      margin: 0;
-                      padding: 0;
-                      color: #333;
+                        background-color: #f8f9fa;
+                        margin: 0;
+                        padding: 0;
+                        color: #333;
                       }
                       .margin-zero{
                         margin: 0;
@@ -368,17 +368,15 @@ const adduser = async (req, res, next) => {
                     <div class="mail-container">
                       <p>Dear ${getcustomerDetail?.dataValues?.contact_fullname || 'Customer'},</p>
 
-                      <p><b>Please find your credentials to access the Customer Portal below:</b></p>
+                      <p>Please find your credentials to access the Customer Portal below:</p>
 
-                      <p class="margin-zero"><b>User ID:</b> ${email}</p>
-                      <p class="margin-zero"><b>Password:</b> ${password}</p>
+                      <p class="margin-zero"><b>User ID:</b> ${email}<br /><b>Password:</b> ${password}</p>
 
                       <p><a href="${config.CUSTOMER_PORTAL_SERVER}" style="color: #007bff; text-decoration: none;">Click here to access the Customer Portal</a></p>
 
                       <p>If you experience any issues or need assistance, feel free to reach out to our lab team.</p>
 
-                      <p class="margin-zero">Best regards,</p>
-                      <p class="margin-zero">${getlabDetail?.lab_name}</p>
+                      <p class="margin-zero">Best regards,<br />${getlabDetail?.lab_name}</p>
                       <div>
                       </body>
                     </html>`;
@@ -1027,43 +1025,41 @@ const resetPassword = async (req, res, next) => {
               }
             });
 
-            const mail_content = `< !DOCTYPE html>
-              <html lang="en">
-                <head>
-                  <meta charset="UTF-8">
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                      <title>Access Credentials for Customer Portal</title>
-                      <style>
-                        body {
-                          font - family: 'Arial', sans-serif;
-                        background-color: #f8f9fa;
-                        margin: 0;
-                        padding: 0;
-                        color: #333;
+            const mail_content = `
+                    <html lang="en">
+                      <head>
+                        <meta charset="UTF-8">
+                          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                            <title>Access Credentials for Customer Portal</title>
+                            <style>
+                              body {
+                                font - family: 'Arial', sans-serif;
+                              background-color: #f8f9fa;
+                              margin: 0;
+                              padding: 0;
+                              color: #333;
                         }
-                        .margin-zero{
-                          margin: 0;
+                              .margin-zero{
+                                margin: 0;
                         }
-                      </style>
-                    </head>
-                    <body>
-                      <div class="mail-container">
-                        <p>Dear ${getcustomerDetail?.dataValues?.contact_fullname || 'Customer'},</p>
+                            </style>
+                          </head>
+                          <body>
+                            <div class="mail-container">
+                              <p>Dear ${getcustomerDetail?.dataValues?.contact_fullname || 'Customer'},</p>
 
-                        <p><b>Your password has been successfully reset by an Lab. Please find your new credentials below to access the Customer Portal:</b></p>
+                              <p>Your password has been successfully reset by an Lab. Please find your new credentials below to access the Customer Portal:</p>
 
-                        <p class="margin-zero"><b>User ID:</b> ${findUser?.email}</p>
-                        <p class="margin-zero"><b>Password:</b> ${password}</p>
-  
-                        <p><a href="${config.CUSTOMER_PORTAL_SERVER}" style="color: #007bff; text-decoration: none;">Click here to access the Customer Portal</a></p>
+                              <p class="margin-zero"><b>User ID:</b> ${findUser?.email} <br /><b>Password:</b> ${password}</p>
 
-                        <p>If you experience any issues or need assistance, feel free to reach out to our lab team.</p>
+                              <p><a href="${config.CUSTOMER_PORTAL_SERVER}" style="color: #007bff; text-decoration: none;">Click here to access the Customer Portal</a></p>
 
-                        <p class="margin-zero">Best regards,</p>
-                        <p class="margin-zero">${getlabDetail?.lab_name}</p>
-                        <div>
-                        </body>
-                      </html>`;
+                              <p>If you experience any issues or need assistance, feel free to reach out to our lab team.</p>
+
+                              <p class="margin-zero">Best regards,<br />${getlabDetail?.lab_name}</p>
+                              <div>
+                              </body>
+                            </html>`;
 
             const info = await transporter.sendMail({
               from: getlabDetail?.sender_email,
