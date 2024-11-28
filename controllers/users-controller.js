@@ -282,7 +282,8 @@ const adduser = async (req, res, next) => {
       department,
       rstatus: 1,
       labId,
-      calibmaster_client_id
+      calibmaster_client_id,
+      companyId
     });
     const result = await newUser.save();
   } catch (err) {
@@ -309,16 +310,8 @@ const adduser = async (req, res, next) => {
       },
     };
     request(clientServerOptions, function (error, response) {
-      console.log("Error: ", error);
-      console.log("Response:", response);
       if (error) {
-        isError = true;
-        code = 500;
-        action = "Error while adding user in Certifymaster";
-        const error = new Error(action);
-        error.code = code;
-        error.path = path;
-        return errorHandler(error, req, res, next);
+        console.log(error);
       }
     });
   }
@@ -352,12 +345,53 @@ const adduser = async (req, res, next) => {
             }
           });
 
+          const mail_content = `< !DOCTYPE html>
+            <html lang="en">
+              <head>
+                <meta charset="UTF-8">
+                  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Access Credentials for Customer Portal</title>
+                    <style>
+                      body {
+                        font - family: 'Arial', sans-serif;
+                      background-color: #f8f9fa;
+                      margin: 0;
+                      padding: 0;
+                      color: #333;
+                      }
+                      .margin-zero{
+                        margin: 0;
+                      }
+                    </style>
+                  </head>
+                  <body>
+                    <div class="mail-container">
+                      <p>Dear ${getcustomerDetail?.dataValues?.contact_fullname || 'Customer'},</p>
+
+                      <p><b>Please find your credentials to access the Customer Portal below:</b></p>
+
+                      <p class="margin-zero"><b>User ID:</b> ${email}</p>
+                      <p class="margin-zero"><b>Password:</b> ${password}</p>
+
+                      <p><a href="${config.CUSTOMER_PORTAL_SERVER}" style="color: #007bff; text-decoration: none;">Click here to access the Customer Portal</a></p>
+
+                      <p>If you experience any issues or need assistance, feel free to reach out to our lab team.</p>
+
+                      <p class="margin-zero">Best regards,</p>
+                      <p class="margin-zero">${getlabDetail?.lab_name}</p>
+                      <div>
+                      </body>
+                    </html>`;
+
           const info = await transporter.sendMail({
             from: getlabDetail?.sender_email,
             to: getReceiverEmail,
-            subject: "CalibMaster - Access ID",
-            html: `<p><b>Please find your credential to access the Customer Portal.</b><br><p>user ID - ${email}</p><p>Password - ${password}</p><p><a href="${config.CUSTOMER_PORTAL_SERVER}">Click here to access the Customer Portal</a></p></p>`,
-            priority: "high",
+            subject: "Important: Customer Portal - Access ID",
+            html: mail_content,
+            headers: {
+              'X-Priority': '1',
+              'Importance': 'high',
+            }
           });
         }
       }
@@ -499,7 +533,7 @@ const getuserbyid = async (req, res, next) => {
   //Getting User by Id
   try {
     user = await User.findOne({
-      where: { id: req.body.userId, rstatus: 1 },
+      where: { id: req.body.userId },
       attributes: { exclude: ["password", "createdAt", "updatedAt"] },
     });
   } catch (err) {
@@ -734,6 +768,26 @@ const enableuser = async (req, res, next) => {
     error.path = path;
     return errorHandler(error, req, res, next);
   }
+
+  // To update CUSTOMER_PORTAL_SERVER
+  const { calibmaster_client_id, department } = existingUser;
+
+  if (department == 'Client') {
+    var clientServerOptions = {
+      uri: config.CUSTOMER_PORTAL_SERVER + "/api/users/enable-disable-user",
+      body: JSON.stringify({ calibmaster_client_id, enable_disable: 1 }),
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    };
+    request(clientServerOptions, function (error, response) {
+      if (error) {
+        console.log(error);
+      }
+    });
+  }
+
   let users;
   //Getting All Users
   try {
@@ -769,11 +823,11 @@ const enableuser = async (req, res, next) => {
   }
 };
 
-const deleteuser = async (req, res, next) => {
+const disableuser = async (req, res, next) => {
   const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
   let code = 200;
-  const path = "/api/users/deleteuserbyid";
-  let action = "Delete User by Id!!";
+  const path = "/api/users/disableuserbyid";
+  let action = "Disable User by Id!!";
   let sessionId = req.sessionId;
   let userId = req.userId;
   let isError = false;
@@ -835,6 +889,26 @@ const deleteuser = async (req, res, next) => {
     error.path = path;
     return errorHandler(error, req, res, next);
   }
+
+  // To update CUSTOMER_PORTAL_SERVER
+  const { calibmaster_client_id, department } = existingUser;
+
+  if (department == 'Client') {
+    var clientServerOptions = {
+      uri: config.CUSTOMER_PORTAL_SERVER + "/api/users/enable-disable-user",
+      body: JSON.stringify({ calibmaster_client_id, enable_disable: 0 }),
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    };
+    request(clientServerOptions, function (error, response) {
+      if (error) {
+        console.log(error);
+      }
+    });
+  }
+
   let users;
   //Getting All Users
   try {
@@ -872,12 +946,19 @@ const deleteuser = async (req, res, next) => {
 
 const resetPassword = async (req, res, next) => {
 
+  const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+  let code = 200;
+  const path = "/api/users/reset-password";
+  let action = "Reset Password by UserId!!";
+  let sessionId = req.sessionId;
+
   const { password, confirmPassword, userId } = req.body;
 
   if (!password || !confirmPassword || !userId) {
     let action = "All fields are required";
     const error = new Error(action);
     error.code = 500;
+    error.path = path;
     return errorHandler(error, req, res, next);
   }
 
@@ -885,6 +966,7 @@ const resetPassword = async (req, res, next) => {
     let action = "Password must be at least 8 characters";
     const error = new Error(action);
     error.code = 500;
+    error.path = path;
     return errorHandler(error, req, res, next);
   }
 
@@ -892,6 +974,7 @@ const resetPassword = async (req, res, next) => {
     let action = "Password and confirm password must be same";
     const error = new Error(action);
     error.code = 500;
+    error.path = path;
     return errorHandler(error, req, res, next);
   }
 
@@ -904,6 +987,7 @@ const resetPassword = async (req, res, next) => {
     if (!findUser) {
       const error = new Error("User not found");
       error.code = 500;
+      error.path = path;
       return errorHandler(error, req, res, next);
     }
 
@@ -911,6 +995,101 @@ const resetPassword = async (req, res, next) => {
     let hashedPassword = await bcrypt.hash(password, 12);
 
     let response = await User.update({ password: hashedPassword }, { where: { id: userId } });
+
+    if (findUser?.department == "Client" && findUser?.companyId) {
+
+      try {
+        let getlabDetail = await Lab.findOne({
+          where: {
+            lab_id: findUser?.labId
+          }
+        });
+
+        if (getlabDetail && getlabDetail?.email_smtp_server_host && getlabDetail?.email_smtp_server_port && getlabDetail?.sender_email && getlabDetail?.sender_password) {
+
+          let getcustomerDetail = await customer_contact.findOne({
+            where: {
+              customer_id: findUser?.companyId
+            }
+          })
+
+          if (getcustomerDetail) {
+            let getReceiverEmail = getcustomerDetail.dataValues.contact_email;
+
+            const transporter = nodemailer.createTransport({
+              name: "CalibMaster",
+              host: getlabDetail?.email_smtp_server_host,
+              port: getlabDetail?.email_smtp_server_port,
+              secure: true,
+              auth: {
+                user: getlabDetail?.sender_email,
+                pass: getlabDetail?.sender_password
+              }
+            });
+
+            const mail_content = `< !DOCTYPE html>
+              <html lang="en">
+                <head>
+                  <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                      <title>Access Credentials for Customer Portal</title>
+                      <style>
+                        body {
+                          font - family: 'Arial', sans-serif;
+                        background-color: #f8f9fa;
+                        margin: 0;
+                        padding: 0;
+                        color: #333;
+                        }
+                        .margin-zero{
+                          margin: 0;
+                        }
+                      </style>
+                    </head>
+                    <body>
+                      <div class="mail-container">
+                        <p>Dear ${getcustomerDetail?.dataValues?.contact_fullname || 'Customer'},</p>
+
+                        <p><b>Your password has been successfully reset by an Lab. Please find your new credentials below to access the Customer Portal:</b></p>
+
+                        <p class="margin-zero"><b>User ID:</b> ${findUser?.email}</p>
+                        <p class="margin-zero"><b>Password:</b> ${password}</p>
+  
+                        <p><a href="${config.CUSTOMER_PORTAL_SERVER}" style="color: #007bff; text-decoration: none;">Click here to access the Customer Portal</a></p>
+
+                        <p>If you experience any issues or need assistance, feel free to reach out to our lab team.</p>
+
+                        <p class="margin-zero">Best regards,</p>
+                        <p class="margin-zero">${getlabDetail?.lab_name}</p>
+                        <div>
+                        </body>
+                      </html>`;
+
+            const info = await transporter.sendMail({
+              from: getlabDetail?.sender_email,
+              to: getReceiverEmail,
+              subject: "Important: Customer Portal - Your Password Has Been Reset",
+              html: mail_content,
+              headers: {
+                'X-Priority': '1',
+                'Importance': 'high',
+              }
+            });
+          }
+        }
+      } catch (err) {
+        console.log(err);
+        code = 500;
+        action = "Error while sending reset password to Client";
+        const error = new Error(action);
+        error.code = code;
+        error.path = path;
+        return errorHandler(error, req, res, next);
+      }
+    }
+
+    let message = `${ip} ${userId} ${sessionId} ${code} ${path} - ${action}`;
+    logger.info(message);
 
     return res.status(200).json({
       msg: response, message: "Record updated successfully!!!"
@@ -920,11 +1099,19 @@ const resetPassword = async (req, res, next) => {
     let action = "Something went wrong, please try again";
     const error = new Error(action);
     error.code = 500;
+    error.path = path;
     return errorHandler(error, req, res, next);
   }
 }
 
 const adminResetPassword = async (req, res, next) => {
+
+  const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+  let code = 200;
+  const path = "/api/users/admin-reset-password";
+  let action = "Admin Reset Password by Email!!";
+  let sessionId = req.sessionId;
+  let userId = req.userId;
 
   const { password, currentPassword, email, labId } = req.body;
 
@@ -932,6 +1119,7 @@ const adminResetPassword = async (req, res, next) => {
     let action = "All fields are required";
     const error = new Error(action);
     error.code = 500;
+    error.path = path;
     return errorHandler(error, req, res, next);
   }
 
@@ -939,6 +1127,7 @@ const adminResetPassword = async (req, res, next) => {
     let action = "Password must be at least 8 characters";
     const error = new Error(action);
     error.code = 500;
+    error.path = path;
     return errorHandler(error, req, res, next);
   }
   try {
@@ -951,6 +1140,7 @@ const adminResetPassword = async (req, res, next) => {
     if (!findUser) {
       const error = new Error("User not found");
       error.code = 500;
+      error.path = path;
       return errorHandler(error, req, res, next);
     }
 
@@ -961,6 +1151,7 @@ const adminResetPassword = async (req, res, next) => {
     if (!isValidPassword) {
       const error = new Error("Incorrect password");
       error.code = 500;
+      error.path = path;
       return errorHandler(error, req, res, next);
     }
 
@@ -968,6 +1159,9 @@ const adminResetPassword = async (req, res, next) => {
     let hashedPassword = await bcrypt.hash(password, 12);
 
     await User.update({ password: hashedPassword }, { where: { id: findUser.dataValues.id } });
+
+    let message = `${ip} ${userId} ${sessionId} ${code} ${path} - ${action}`;
+    logger.info(message);
 
     return res.status(200).json({
       message: "Record updated successfully!!!"
@@ -978,6 +1172,7 @@ const adminResetPassword = async (req, res, next) => {
     let action = "Something went wrong, please try again";
     const error = new Error(action);
     error.code = 500;
+    error.path = path;
     return errorHandler(error, req, res, next);
   }
 }
@@ -1024,7 +1219,7 @@ const fetchUsersByLabId = async (req, res) => {
 }
 
 exports.enableuser = enableuser;
-exports.deleteuser = deleteuser;
+exports.disableuser = disableuser;
 exports.updateuser = updateuser;
 exports.getuserbyid = getuserbyid;
 exports.getAllUsers = getAllUsers;

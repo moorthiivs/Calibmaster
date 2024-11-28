@@ -16,7 +16,7 @@ router.post("/getuserbyid", Authorization, usersController.getuserbyid);
 
 router.post("/updateuser", Authorization, usersController.updateuser);
 
-router.post("/deleteuser", Authorization, usersController.deleteuser);
+router.post("/disableuser", Authorization, usersController.disableuser);
 
 router.post("/reset-password", Authorization, usersController.resetPassword);
 
