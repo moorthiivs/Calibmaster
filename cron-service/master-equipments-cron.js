@@ -22,16 +22,47 @@ const sendMail = async (eachData) => {
         });
 
         let calibDueDate = new Date(eachData?.calibration_valid_upto);
-        let rDay = calibDueDate.getDate();
-        let rMonth = calibDueDate.getMonth() + 1;
+        let rDay = calibDueDate.getDate().toString().padStart(2, '0');
+        let rMonth = (calibDueDate.getMonth() + 1).toString().padStart(2, '0');
         let rYear = calibDueDate.getFullYear();
         let calibration_due_date = `${rDay}-${rMonth}-${rYear}`;
 
-        const html = `
-            <p>Serial No: ${eachData.serial_no} </p>
-            <p>Name Of Equipment: ${eachData.name_of_equipment} </p>
-            <p>Calibration Due Date: ${calibration_due_date} </p>
-        `;
+        const html = `<html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                        <title>Notification Mail</title>
+                        <style>
+                            body, p, div {
+                                margin: 0;
+                                padding: 0;
+                            }
+                            body {
+                                font - family: 'Arial', sans-serif;
+                                background-color: #f8f9fa;
+                                color: #333;
+                                box-sizing: border-box;
+                            }
+                            * {
+                                box - sizing: inherit;
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                                <td>
+                                    <p style="margin: 0 0 10px;">Dear Team,</p>
+                                    <p style="margin: 0 0 10px;">This is a reminder that the following equipment's calibration is due:</p>
+                                    <p style="margin: 0 0 0 15px;"><b>Serial No:</b> ${eachData.serial_no} </p>
+                                    <p style="margin: 0 0 0 15px;"><b>Name Of Equipment:</b> ${eachData.name_of_equipment} </p>
+                                    <p style="margin: 0 0 10px 15px;"><b>Calibration Due Date:</b> ${calibration_due_date} </p>
+                                    <p style="margin: 0 0 10px;">Please ensure that the calibration is completed before the due date to maintain compliance and ensure equipment accuracy.</p>
+                                </td>
+                            </tr>
+                        </table>
+                    </body>
+                </html>`
 
         const info = await transporter.sendMail({
             from: lab.sender_email,
@@ -39,8 +70,6 @@ const sendMail = async (eachData) => {
             subject: "Notification Mail For Master Equipment",
             html: html
         });
-
-        console.log(info);
 
         return info.messageId;
     } catch (error) {
@@ -60,8 +89,9 @@ const emailRemainder_1 = async (req, res, next) => {
                 });
 
                 let responseArr = [];
+                let mail_count = 0;
 
-                masterLists.map(async (eachRow) => {
+                for (let eachRow of masterLists) {
 
                     const { email_smtp_server_host, email_smtp_server_port, sender_password, sender_email } = eachRow?.lab;
 
@@ -91,7 +121,8 @@ const emailRemainder_1 = async (req, res, next) => {
                                 status
                             });
 
-                            await sendMail(eachRow);
+                            const mailresponse = await sendMail(eachRow);
+                            mailresponse && mail_count++;
                         } else {
                             status = `The mail will send the contact person on ${reaminderDate}`
                             responseArr.push({
@@ -100,20 +131,20 @@ const emailRemainder_1 = async (req, res, next) => {
                             });
                         }
                     }
-                });
+                }
 
-                let data = `Cron Job attempt on Master Equipment calibration_remainder_date_1 at ${new Date()} \n`;
+                let data = `Cron Job attempt on Master Equipment calibration_remainder_date_1 at ${new Date()} Total sent Mail count: ${mail_count} \n`;
 
                 fs.appendFile("cronLogger.txt", data, function (err) {
                     if (err) throw err;
                 });
             } catch (err) {
-                console.log(err);
+                console.error('Error during cron job execution:', err);
             }
 
         })
     } catch (err) {
-        console.log(err);
+        console.error('Error with cron job setup:', err);
     }
 };
 
@@ -129,8 +160,9 @@ const emailRemainder_2 = async (req, res, next) => {
                 });
 
                 let responseArr = [];
+                let mail_count = 0;
 
-                masterLists.map(async (eachRow) => {
+                for (let eachRow of masterLists) {
 
                     const { email_smtp_server_host, email_smtp_server_port, sender_password, sender_email } = eachRow?.lab;
 
@@ -160,7 +192,8 @@ const emailRemainder_2 = async (req, res, next) => {
                                 status
                             });
 
-                            await sendMail(eachRow);
+                            const mailresponse = await sendMail(eachRow);
+                            mailresponse && mail_count++;
                         } else {
                             status = `The mail will send the contact person on ${reaminderDate}`
                             responseArr.push({
@@ -169,20 +202,20 @@ const emailRemainder_2 = async (req, res, next) => {
                             });
                         }
                     }
-                });
+                }
 
-                let data = `Cron Job attempt on Master Equipment calibration_remainder_date_2 at ${new Date()} \n`;
+                let data = `Cron Job attempt on Master Equipment calibration_remainder_date_2 at ${new Date()} Total sent Mail count: ${mail_count} \n`;
 
                 fs.appendFile("cronLogger.txt", data, function (err) {
                     if (err) throw err;
                 });
             } catch (err) {
-                console.log(err);
+                console.error('Error during cron job execution:', err);
             }
 
         })
     } catch (err) {
-        console.log(err);
+        console.error('Error with cron job setup:', err);
     }
 };
 
