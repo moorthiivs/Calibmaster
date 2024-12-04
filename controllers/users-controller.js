@@ -389,7 +389,7 @@ const adduser = async (req, res, next) => {
                 </html>`;
 
           const info = await transporter.sendMail({
-            from: getlabDetail?.sender_email,
+            from: `"${getlabDetail?.lab_name}" ${getlabDetail?.sender_email}`,
             to: getReceiverEmail,
             subject: "Important: Customer Portal - Access ID",
             html: mail_content,
@@ -1076,7 +1076,7 @@ const resetPassword = async (req, res, next) => {
                   </html>`;
 
             const info = await transporter.sendMail({
-              from: getlabDetail?.sender_email,
+              from: `"${getlabDetail?.lab_name}" ${getlabDetail?.sender_email}`,
               to: getReceiverEmail,
               subject: "Important: Customer Portal - Your Password Has Been Reset",
               html: mail_content,
@@ -1203,28 +1203,24 @@ const fetchUsersByLabId = async (req, res) => {
     let users = await User.findAll({
       where: {
         labId: labId,
+        department: 'Client',
         calibmaster_client_id: { [Op.ne]: null },
       },
-      // attributes: {
-      //   exclude: ["password"],
-      // },
     })
 
-    if (users.length === 0) {
-      return res
-        .status(404)
-        .json({ message: "No users found for the given lab ID" })
-    } else {
-      return res.status(200).json({
-        status: "SUCCESS",
-        code: 200,
-        message: "Users Fetched Successfully!!",
-        data: users,
-      })
-    }
+    return res.status(200).json({
+      status: "SUCCESS",
+      code: 200,
+      message: "Users Fetched Successfully!!",
+      data: users,
+    });
   } catch (err) {
     console.error("Error fetching users:", err)
-    return res.status(500).json({ message: "Failed to fetch users" })
+    let action = "Failed to fetching users, please try again";
+    const error = new Error(action);
+    error.code = 500;
+    error.path = "api/user/fetchUsersById";
+    return errorHandler(error, req, res, next);
   }
 }
 

@@ -35,7 +35,7 @@ const sendMail = async (eachData, calibration_remainder) => {
         let rYear = calibDueDate.getFullYear();
         let calibration_due_date = `${rDay}-${rMonth}-${rYear}`;
 
-        if (calibration_done_date) {
+        if (calibration_done_date) {  //  Calibration Done Date
             let calibDoneDate = new Date(calibration_done_date);
             let dDay = calibDoneDate.getDate().toString().padStart(2, '0');
             let dMonth = (calibDoneDate.getMonth() + 1).toString().padStart(2, '0');
@@ -72,7 +72,7 @@ const sendMail = async (eachData, calibration_remainder) => {
                                 <td>
                                     <p style="margin: 0 0 10px;">Dear ${srf?.contact_name || 'Customer'},</p>
                                     <p style="margin: 0 0 10px;">We hope this message finds you well. This is a friendly reminder that the next calibration for your instrument is due soon. Please find the details below for your reference:</p>
-                                    <p style="margin: 0 0 10px;"><b>Instrument Information:</b></p>
+                                    <p style="margin: 0;"><b>Instrument Information:</b></p>
                                     <table width="100%" cellpadding="0" cellspacing="0" border="0">
                                         <tr>
                                             <td style="padding: 15px;">
@@ -95,7 +95,7 @@ const sendMail = async (eachData, calibration_remainder) => {
                 </html>`;
 
         const info = await transporter.sendMail({
-            from: lab.sender_email,
+            from: `"${lab?.lab_name}" ${lab.sender_email}`,
             to: srf.contact_email,
             subject: `Calibration Reminder ${calibration_remainder}: Important Notification`,
             html: html_content,
@@ -158,17 +158,13 @@ const sendNotificationMail_1 = async (req, res) => {
 
                         // *** Reaminder Date in yyyy--mm-dd format ***
                         const rDate = new Date(eachRow?.calibration_remainder_date_1);
-                        let rDay = rDate.getDate();
-                        let rMonth = rDate.getMonth() + 1;
+                        let rDay = rDate.getDate().toString().padStart(2, '0');
+                        let rMonth = (rDate.getMonth() + 1).toString().padStart(2, '0')
                         let rYear = rDate.getFullYear();
                         let reaminderDate = `${rYear}-${rMonth}-${rDay}`;
 
                         // *** Today Date in yyyy--mm-dd format ***
-                        const todayDate = new Date();
-                        let day = todayDate.getDate();
-                        let month = todayDate.getMonth() + 1;
-                        let year = todayDate.getFullYear();
-                        let currentDate = `${year}-${month}-${day}`;
+                        const currentDate = new Date().toLocaleString("en-CA", { timeZone: "Asia/Kolkata" }).split(',')[0];
 
                         let status;
 
@@ -193,13 +189,27 @@ const sendNotificationMail_1 = async (req, res) => {
                     }
                 }
 
-                let data = `Cron Job attempt on SRF calibration_remainder_date_1 at ${new Date()} Total sent Mail count: ${mail_count} \n`;
+                const currentDate = new Date().toLocaleString("en-CA", {
+                    timeZone: "Asia/Kolkata",
+                    weekday: "short",
+                    year: "2-digit",
+                    month: "short",
+                    day: "2-digit",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit",
+                    hour12: false
+                });
+                let data = `Cron Job attempt on SRF calibration_remainder_date_1 at ${currentDate} Total sent Mail: ${mail_count} \n`;
                 fs.appendFile("cronLogger.txt", data, function (err) {
                     if (err) throw err;
                 });
             } catch (err) {
                 console.error('Error during cron job execution:', err);
             }
+        }, {
+            scheduled: true,
+            timezone: "Asia/Kolkata"  // Set the timezone to India Standard Time (IST)
         });
     } catch (err) {
         console.error('Error with cron job setup:', err);
@@ -253,17 +263,13 @@ const sendNotificationMail_2 = async (req, res) => {
 
                         // *** Reaminder Date in yyyy--mm-dd format ***
                         const rDate = new Date(eachRow?.calibration_remainder_date_2);
-                        let rDay = rDate.getDate();
-                        let rMonth = rDate.getMonth() + 1;
+                        let rDay = rDate.getDate().toString().padStart(2, '0');
+                        let rMonth = (rDate.getMonth() + 1).toString().padStart(2, '0');
                         let rYear = rDate.getFullYear();
                         let reaminderDate = `${rYear}-${rMonth}-${rDay}`;
 
                         // *** Today Date in yyyy--mm-dd format ***
-                        const todayDate = new Date();
-                        let day = todayDate.getDate();
-                        let month = todayDate.getMonth() + 1;
-                        let year = todayDate.getFullYear();
-                        let currentDate = `${year}-${month}-${day}`;
+                        const currentDate = new Date().toLocaleString("en-CA", { timeZone: "Asia/Kolkata" }).split(',')[0];
 
                         let status;
 
@@ -288,7 +294,18 @@ const sendNotificationMail_2 = async (req, res) => {
                     }
                 }
 
-                let data = `Cron Job attempt on SRF calibration_remainder_date_2 at ${new Date()} Total sent Mail count: ${mail_count} \n`;
+                const currentDate = new Date().toLocaleString("en-CA", {
+                    timeZone: "Asia/Kolkata",
+                    weekday: "short",
+                    year: "2-digit",
+                    month: "short",
+                    day: "2-digit",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit",
+                    hour12: false
+                });
+                let data = `Cron Job attempt on SRF calibration_remainder_date_2 at ${currentDate} Total sent Mail: ${mail_count} \n`;
 
                 fs.appendFile("cronLogger.txt", data, function (err) {
                     if (err) throw err;
@@ -296,6 +313,9 @@ const sendNotificationMail_2 = async (req, res) => {
             } catch (err) {
                 console.error('Error during cron job execution:', err);
             }
+        }, {
+            scheduled: true,
+            timezone: "Asia/Kolkata"  // Set the timezone to India Standard Time (IST)
         });
     } catch (err) {
         console.error('Error with cron job setup:', err);

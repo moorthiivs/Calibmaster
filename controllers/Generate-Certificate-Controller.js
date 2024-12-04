@@ -767,7 +767,7 @@ const generate = async (req, res, next) => {
             Customerportalcertificate(pdfURL, fileName, masterURL, m_certificate_filename, customer_info);
 
             if (skip_response) return;
-            
+
             res.set({
                 "Content-Type": "application/pdf",
                 "Content-Length": buffer.length
@@ -836,7 +836,7 @@ const verify_certificate = async (req, res, next) => {
         return errorHandler(error, req, res, next);
     }
 }
-
+/*** this function is reused in certificate_controller_for_sync.js ***/
 const standard_details = async (master_list_equipments) => {
 
     let description = [];

@@ -99,17 +99,13 @@ const emailRemainder_1 = async (req, res, next) => {
 
                         // *** Reaminder Date in yyyy--mm-dd format ***
                         const rDate = new Date(eachRow?.calibration_remainder_date_1);
-                        let rDay = rDate.getDate();
-                        let rMonth = rDate.getMonth() + 1;
+                        let rDay = rDate.getDate().toString().padStart(2, '0');
+                        let rMonth = (rDate.getMonth() + 1).toString().padStart(2, '0');
                         let rYear = rDate.getFullYear();
                         let reaminderDate = `${rYear}-${rMonth}-${rDay}`;
 
                         // *** Today Date in yyyy--mm-dd format ***
-                        const todayDate = new Date();
-                        let day = todayDate.getDate();
-                        let month = todayDate.getMonth() + 1;
-                        let year = todayDate.getFullYear();
-                        let currentDate = `${year}-${month}-${day}`;
+                        const currentDate = new Date().toLocaleString("en-CA", { timeZone: "Asia/Kolkata" }).split(',')[0];
 
                         let status;
 
@@ -133,7 +129,18 @@ const emailRemainder_1 = async (req, res, next) => {
                     }
                 }
 
-                let data = `Cron Job attempt on Master Equipment calibration_remainder_date_1 at ${new Date()} Total sent Mail count: ${mail_count} \n`;
+                const currentDate = new Date().toLocaleString("en-CA", {
+                    timeZone: "Asia/Kolkata",
+                    weekday: "short",
+                    year: "2-digit",
+                    month: "short",
+                    day: "2-digit",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit",
+                    hour12: false
+                });
+                let data = `Cron Job attempt on Master Equipment calibration_remainder_date_1 at ${currentDate} Total sent Mail: ${mail_count} \n`;
 
                 fs.appendFile("cronLogger.txt", data, function (err) {
                     if (err) throw err;
@@ -142,6 +149,9 @@ const emailRemainder_1 = async (req, res, next) => {
                 console.error('Error during cron job execution:', err);
             }
 
+        }, {
+            scheduled: true,
+            timezone: "Asia/Kolkata"  // Set the timezone to India Standard Time (IST)
         })
     } catch (err) {
         console.error('Error with cron job setup:', err);
@@ -170,17 +180,13 @@ const emailRemainder_2 = async (req, res, next) => {
 
                         // *** Reaminder Date in yyyy--mm-dd format ***
                         const rDate = new Date(eachRow?.calibration_remainder_date_2);
-                        let rDay = rDate.getDate();
-                        let rMonth = rDate.getMonth() + 1;
+                        let rDay = rDate.getDate().toString().padStart(2, '0');
+                        let rMonth = (rDate.getMonth() + 1).toString().padStart(2, '0');
                         let rYear = rDate.getFullYear();
                         let reaminderDate = `${rYear}-${rMonth}-${rDay}`;
 
                         // *** Today Date in yyyy--mm-dd format ***
-                        const todayDate = new Date();
-                        let day = todayDate.getDate();
-                        let month = todayDate.getMonth() + 1;
-                        let year = todayDate.getFullYear();
-                        let currentDate = `${year}-${month}-${day}`;
+                        const currentDate = new Date().toLocaleString("en-CA", { timeZone: "Asia/Kolkata" }).split(',')[0];
 
                         let status;
 
@@ -204,7 +210,18 @@ const emailRemainder_2 = async (req, res, next) => {
                     }
                 }
 
-                let data = `Cron Job attempt on Master Equipment calibration_remainder_date_2 at ${new Date()} Total sent Mail count: ${mail_count} \n`;
+                const currentDate = new Date().toLocaleString("en-CA", {
+                    timeZone: "Asia/Kolkata",
+                    weekday: "short",
+                    year: "2-digit",
+                    month: "short",
+                    day: "2-digit",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit",
+                    hour12: false
+                });
+                let data = `Cron Job attempt on Master Equipment calibration_remainder_date_2 at ${currentDate} Total sent Mail: ${mail_count} \n`;
 
                 fs.appendFile("cronLogger.txt", data, function (err) {
                     if (err) throw err;
@@ -213,6 +230,9 @@ const emailRemainder_2 = async (req, res, next) => {
                 console.error('Error during cron job execution:', err);
             }
 
+        }, {
+            scheduled: true,
+            timezone: "Asia/Kolkata"  // Set the timezone to India Standard Time (IST)
         })
     } catch (err) {
         console.error('Error with cron job setup:', err);
