@@ -3,7 +3,7 @@ const { errorHandler } = require("../helpers/error-handler");
 const { getBase64Image } = require("../helpers/image-decoded-handler");
 const { standard_details } = require("./Generate-Certificate-Controller");
 
-const fetchInstrumentData = async (req, res, next) => {
+const fetchCertificateById = async (req, res, next) => {
   try {
     const { lab_id } = req.body;
 
@@ -72,22 +72,6 @@ const fetchInstrumentData = async (req, res, next) => {
           master_certificate_filename: m_certificate_filename || null
         };
 
-        if (m_certificate_filename) {
-          try {
-            customer_obj.master_certificates_base64 = await getBase64Image(`master_certificates/${m_certificate_filename}`);
-          }
-          catch (err) {
-            console.error("Error reading master_certificate_filename file:", err);
-          }
-        }
-        if (certificates?.fileName) {
-          try {
-            customer_obj.certificates_base64 = await getBase64Image(`certificates/${certificates?.fileName}`);
-          }
-          catch (err) {
-            console.error("Error reading certificate_filename file:", err);
-          }
-        }
         items.push(customer_obj);
       }
 
@@ -103,4 +87,31 @@ const fetchInstrumentData = async (req, res, next) => {
   }
 }
 
-module.exports = { fetchInstrumentData }
+const fetchCertificatebyfilename = async (req, res, next) => {
+  try {
+    const { filename, master_certificate_filename } = req.body;
+
+    if (!filename) {
+      return res.status(400).json({ error: "filename required" });
+    }
+
+    const certificates = {};
+
+    if (master_certificate_filename) {
+      certificates.master_certificate_base64 = await getBase64Image(`master_certificates/${master_certificate_filename}`);
+    }
+
+    certificates.certificate_base64 = await getBase64Image(`certificates/${filename}`);
+
+    res.status(200).json(certificates);
+  } catch (err) {
+    console.error("Error while fetching Certificate:", err);
+    let action = "Failed to fetch Certificate";
+    const error = new Error(action);
+    error.code = 500;
+    error.path = "api/certificate/fetchCertificatesByFilename";
+    return errorHandler(error, req, res, next);
+  }
+};
+
+module.exports = { fetchCertificateById, fetchCertificatebyfilename }

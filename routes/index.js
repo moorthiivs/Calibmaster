@@ -12,6 +12,7 @@ const labRoutes = require("./lab-routes");
 const srfdownloadRoute = require("./srfdownload-routes");
 const masterlistRoutes = require("./masterlist-routes");
 const certificateRoutes = require("./certificate-routes");
+const certificateSyncRoutes = require("./certificate-sync-routes");
 const uomRoutes = require("./uom-routes");
 
 const instrumentDisciplineRoutes = require("./instrument-discipline-routes")
@@ -80,6 +81,8 @@ router.use("/api/srf", Authorization, srfRoutes);
 router.use("/api/calibration-date", Authorization, calibrationDateRoutes);
 
 router.use("/api/certificate", Authorization, certificateRoutes);
+
+router.use("/api/certificate_sync", certificateSyncRoutes);
 
 router.use("/api/mail", Authorization, mailRoutes);
 
