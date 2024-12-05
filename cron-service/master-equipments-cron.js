@@ -132,7 +132,7 @@ const emailRemainder_1 = async (req, res, next) => {
                 const currentDate = new Date().toLocaleString("en-CA", {
                     timeZone: "Asia/Kolkata",
                     weekday: "short",
-                    year: "2-digit",
+                    year: "numeric",
                     month: "short",
                     day: "2-digit",
                     hour: "2-digit",
@@ -213,7 +213,7 @@ const emailRemainder_2 = async (req, res, next) => {
                 const currentDate = new Date().toLocaleString("en-CA", {
                     timeZone: "Asia/Kolkata",
                     weekday: "short",
-                    year: "2-digit",
+                    year: "numeric",
                     month: "short",
                     day: "2-digit",
                     hour: "2-digit",

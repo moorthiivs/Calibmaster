@@ -192,7 +192,7 @@ const sendNotificationMail_1 = async (req, res) => {
                 const currentDate = new Date().toLocaleString("en-CA", {
                     timeZone: "Asia/Kolkata",
                     weekday: "short",
-                    year: "2-digit",
+                    year: "numeric",
                     month: "short",
                     day: "2-digit",
                     hour: "2-digit",
@@ -201,6 +201,7 @@ const sendNotificationMail_1 = async (req, res) => {
                     hour12: false
                 });
                 let data = `Cron Job attempt on SRF calibration_remainder_date_1 at ${currentDate} Total sent Mail: ${mail_count} \n`;
+
                 fs.appendFile("cronLogger.txt", data, function (err) {
                     if (err) throw err;
                 });
@@ -297,7 +298,7 @@ const sendNotificationMail_2 = async (req, res) => {
                 const currentDate = new Date().toLocaleString("en-CA", {
                     timeZone: "Asia/Kolkata",
                     weekday: "short",
-                    year: "2-digit",
+                    year: "numeric",
                     month: "short",
                     day: "2-digit",
                     hour: "2-digit",
