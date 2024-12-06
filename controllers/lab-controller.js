@@ -560,7 +560,7 @@ const getAllLabs = async (req, res, next) => {
   try {
     let LabList = await Lab.findAll({
       order: [
-        ['lab_id', 'DESC'],
+        ['lab_id', 'ASC'],
       ]
     });
 
