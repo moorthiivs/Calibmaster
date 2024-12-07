@@ -340,6 +340,8 @@ const editCustomer = async (req, res, next) => {
             customerObj.updated_by_user_id = req.userId
             customerObj.lab_id = req.body.labId;
 
+            req.body.calibmaster_customer_id = findCustomer.calibmaster_customer_id;
+
             customerResult = await customer.update(
                 customerObj,
                 { where: { customer_id: req.body.customer_id } }
@@ -378,6 +380,21 @@ const editCustomer = async (req, res, next) => {
         error.code = 500;
         return errorHandler(error, req, res, next);
     }
+
+    const clientServerOptions = {
+        uri: config.CUSTOMER_PORTAL_SERVER + "/api/company/update",
+        body: JSON.stringify(req.body),
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        }
+    };
+
+    request(clientServerOptions, function (error, response) {
+        if (error) {
+            console.log("Company added in Customer Portal.", error);
+        }
+    });
 
     return res.status(201).json({
         msg: "Customer updated Successfully",
