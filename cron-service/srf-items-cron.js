@@ -115,7 +115,7 @@ const sendMail = async (eachData, calibration_remainder) => {
 
 const sendNotificationMail_1 = async (req, res) => {
     try {
-        cron.schedule('* * * * *', async function () { // run every day at 12:00 AM
+        cron.schedule('0 1 * * *', async function () { // run every day at 12:00 AM
             try {
                 let srfItems = await Item.findAll({
                     attributes: [
