@@ -2,6 +2,7 @@ const Lab = require("../models").Lab;
 const SRF = require("../models").srf_list;
 const Item = require("../models").srfitem;
 const instrument_type = require("../models").instrument_type;
+const customer_contact = require("../models").customer_contact;
 const nodemailer = require("nodemailer");
 const cron = require('node-cron');
 const fs = require('fs');
@@ -9,7 +10,7 @@ const fs = require('fs');
 // *** Helper/Callback function ***
 const sendMail = async (eachData, calibration_remainder) => {
 
-    const { srf, intrument_type, lab } = eachData;
+    const { intrument_type, lab, customercontact_info } = eachData;
 
     try {
         // Connecting to the STMP Server
@@ -24,12 +25,13 @@ const sendMail = async (eachData, calibration_remainder) => {
             }
         });
 
-        let identification_detail = eachData?.identification_detail || "";
-        let calibration_done_date = eachData?.calibration_done_date || "";
-        let url_number = eachData?.url_number || "";
-        let certificate_date = eachData?.certificate_date || "";
+        let identification_detail = eachData?.dataValues?.identification_detail || "";
+        let calibration_done_date = eachData?.dataValues?.calibration_done_date || "";
+        let url_number = eachData?.dataValues?.url_number || "";
+        let certificate_date = eachData?.dataValues?.certificate_date || "";
+        let serial_no = eachData?.dataValues?.serial_no || "";
 
-        let calibDueDate = new Date(eachData?.calibration_due_date);
+        let calibDueDate = new Date(eachData?.dataValues?.calibration_due_date);
         let rDay = calibDueDate.getDate().toString().padStart(2, '0');
         let rMonth = (calibDueDate.getMonth() + 1).toString().padStart(2, '0');
         let rYear = calibDueDate.getFullYear();
@@ -70,14 +72,14 @@ const sendMail = async (eachData, calibration_remainder) => {
                         <table width="100%" cellpadding="0" cellspacing="0" border="0">
                             <tr>
                                 <td>
-                                    <p style="margin: 0 0 10px;">Dear ${srf?.contact_name || 'Customer'},</p>
+                                    <p style="margin: 0 0 10px;">Dear ${customercontact_info?.contact_fullname || 'Customer'},</p>
                                     <p style="margin: 0 0 10px;">We hope this message finds you well. This is a friendly reminder that the next calibration for your instrument is due soon. Please find the details below for your reference:</p>
                                     <p style="margin: 0;"><b>Instrument Information:</b></p>
                                     <table width="100%" cellpadding="0" cellspacing="0" border="0">
                                         <tr>
                                             <td style="padding: 15px;">
                                                 <p style="margin: 0 0 5px;"><b>Instrument Full name:</b> ${intrument_type.instrument_full_name}</p>
-                                                <p style="margin: 0 0 5px;"><b>Serial number:</b> ${eachData?.serial_no}</p>
+                                                <p style="margin: 0 0 5px;"><b>Serial number:</b> ${serial_no}</p>
                                                 <p style="margin: 0 0 5px;"><b>Identification Number:</b> ${identification_detail}</p>
                                                 <p style="margin: 0 0 5px;"><b>Last Calibration done date:</b> ${calibration_done_date}</p>
                                                 <p style="margin: 0 0 5px;"><b>Calibration due date:</b> ${calibration_due_date}</p>
@@ -96,7 +98,7 @@ const sendMail = async (eachData, calibration_remainder) => {
 
         const info = await transporter.sendMail({
             from: `"${lab?.lab_name}" ${lab.sender_email}`,
-            to: srf.contact_email,
+            to: customercontact_info?.contact_email,
             subject: `Calibration Reminder ${calibration_remainder}: Important Notification`,
             html: html_content,
             headers: {
@@ -113,7 +115,7 @@ const sendMail = async (eachData, calibration_remainder) => {
 
 const sendNotificationMail_1 = async (req, res) => {
     try {
-        cron.schedule('0 1 * * *', async function () { // run every day at 12:00 AM
+        cron.schedule('* * * * *', async function () { // run every day at 12:00 AM
             try {
                 let srfItems = await Item.findAll({
                     attributes: [
@@ -126,7 +128,7 @@ const sendNotificationMail_1 = async (req, res) => {
                             model: SRF,
                             as: "srf",
                             attributes: [
-                                "srf_number", "contact_name", "contact_email"
+                                "srf_number", "contact_name", "contact_email", "customer_id"
                             ]
                         },
                         {
@@ -169,6 +171,16 @@ const sendNotificationMail_1 = async (req, res) => {
                         let status;
 
                         if (currentDate === reaminderDate) {
+
+                            const customercontact_info = await customer_contact.findOne({
+                                where: { customer_id: eachRow?.srf?.customer_id }, attributes: [
+                                    'contact_fullname',
+                                    'contact_email',
+                                    'contact_phone_1',
+                                    'contact_phone_2',
+                                ]
+                            });
+
                             status = "Today send the mail to contact person";
 
                             responseArr.push({
@@ -177,7 +189,7 @@ const sendNotificationMail_1 = async (req, res) => {
                             });
 
                             let calibration_remainder = eachRow?.calibration_remainder_date_2 ? 2 : 1;
-                            const mailresponse = await sendMail(eachRow, calibration_remainder);
+                            const mailresponse = await sendMail({ customercontact_info, ...eachRow }, calibration_remainder);
                             mailresponse && mail_count++;
                         } else {
                             status = `The mail will send the contact person on ${reaminderDate}`
@@ -232,7 +244,7 @@ const sendNotificationMail_2 = async (req, res) => {
                             model: SRF,
                             as: "srf",
                             attributes: [
-                                "srf_number", "contact_name", "contact_email"
+                                "srf_number", "contact_name", "contact_email", "customer_id"
                             ]
                         },
                         {
@@ -275,6 +287,16 @@ const sendNotificationMail_2 = async (req, res) => {
                         let status;
 
                         if (currentDate === reaminderDate) {
+
+                            const customercontact_info = await customer_contact.findOne({
+                                where: { customer_id: eachRow?.srf?.customer_id }, attributes: [
+                                    'contact_fullname',
+                                    'contact_email',
+                                    'contact_phone_1',
+                                    'contact_phone_2',
+                                ]
+                            });
+
                             status = "Today send the mail to contact person";
 
                             responseArr.push({
@@ -283,7 +305,7 @@ const sendNotificationMail_2 = async (req, res) => {
                             });
 
                             let calibration_remainder = 1;
-                            const mailresponse = await sendMail(eachRow, calibration_remainder);
+                            const mailresponse = await sendMail({ customercontact_info, ...eachRow }, calibration_remainder);
                             mailresponse && mail_count++;
                         } else {
                             status = `The mail will send the contact person on ${reaminderDate}`
