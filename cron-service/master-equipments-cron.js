@@ -21,11 +21,10 @@ const sendMail = async (eachData) => {
             }
         });
 
-        let calibDueDate = new Date(eachData?.calibration_valid_upto);
-        let rDay = calibDueDate.getDate().toString().padStart(2, '0');
-        let rMonth = (calibDueDate.getMonth() + 1).toString().padStart(2, '0');
-        let rYear = calibDueDate.getFullYear();
-        let calibration_due_date = `${rDay}-${rMonth}-${rYear}`;
+        let calibration_due_date = eachData?.calibration_valid_upto || '';
+        if (calibration_due_date) { // Calibration Due Date
+            calibration_due_date = new Date(calibration_due_date).toLocaleDateString('en-GB'); // Formats as DD/MM/YYYY
+        }
 
         const html = `<html lang="en">
             <head>
@@ -54,8 +53,8 @@ const sendMail = async (eachData) => {
                                 <td>
                                     <p style="margin: 0 0 10px;">Dear Team,</p>
                                     <p style="margin: 0 0 10px;">This is a reminder that the following equipment's calibration is due:</p>
-                                    <p style="margin: 0 0 0 15px;"><b>Serial No:</b> ${eachData.serial_no} </p>
-                                    <p style="margin: 0 0 0 15px;"><b>Name Of Equipment:</b> ${eachData.name_of_equipment} </p>
+                                    <p style="margin: 0 0 0 15px;"><b>Serial No:</b> ${eachData.serial_no || ''} </p>
+                                    <p style="margin: 0 0 0 15px;"><b>Name Of Equipment:</b> ${eachData.name_of_equipment || ''} </p>
                                     <p style="margin: 0 0 10px 15px;"><b>Calibration Due Date:</b> ${calibration_due_date} </p>
                                     <p style="margin: 0 0 10px;">Please ensure that the calibration is completed before the due date to maintain compliance and ensure equipment accuracy.</p>
                                 </td>
@@ -81,7 +80,7 @@ const emailRemainder_1 = async (req, res, next) => {
 
     try {
 
-        cron.schedule('0 1 * * *', async function () {  // run every day at 12:00 AM
+        cron.schedule('0 0 * * *', async function () {  // run every day at 12:00 AM
 
             try {
                 let masterLists = await MasterListEquipment.findAll({
@@ -97,15 +96,10 @@ const emailRemainder_1 = async (req, res, next) => {
 
                     if (eachRow?.calibration_remainder_date_1 && email_smtp_server_host && email_smtp_server_port && sender_password && sender_email) {
 
-                        // *** Reaminder Date in yyyy--mm-dd format ***
-                        const rDate = new Date(eachRow?.calibration_remainder_date_1);
-                        let rDay = rDate.getDate().toString().padStart(2, '0');
-                        let rMonth = (rDate.getMonth() + 1).toString().padStart(2, '0');
-                        let rYear = rDate.getFullYear();
-                        let reaminderDate = `${rYear}-${rMonth}-${rDay}`;
-
-                        // *** Today Date in yyyy--mm-dd format ***
-                        const currentDate = new Date().toLocaleString("en-CA", { timeZone: "Asia/Kolkata" }).split(',')[0];
+                        // *** Reaminder Date in DD/MM/YYYY format ***
+                        let reaminderDate = new Date(eachRow?.calibration_remainder_date_1).toLocaleDateString('en-GB'); // Formats as DD/MM/YYYY
+                        // *** Today Date in DD/MM/YYYY format ***
+                        const currentDate = new Date().toLocaleString("en-CA", { timeZone: "Asia/Kolkata" }).split(',')[0].split('/').reverse().join('-');
 
                         let status;
 
@@ -129,7 +123,7 @@ const emailRemainder_1 = async (req, res, next) => {
                     }
                 }
 
-                const currentDate = new Date().toLocaleString("en-CA", {
+                const currentDateInIST = new Date().toLocaleString("en-CA", {
                     timeZone: "Asia/Kolkata",
                     weekday: "short",
                     year: "numeric",
@@ -140,6 +134,7 @@ const emailRemainder_1 = async (req, res, next) => {
                     second: "2-digit",
                     hour12: false
                 });
+                const currentDate = currentDateInIST.replace(/^24:/, "00:"); // In time change to  24:00:00 to 00:00:00
                 let data = `Cron Job attempt on Master Equipment calibration_remainder_date_1 at ${currentDate} Total sent Mail: ${mail_count} \n`;
 
                 fs.appendFile("cronLogger.txt", data, function (err) {
@@ -162,7 +157,7 @@ const emailRemainder_2 = async (req, res, next) => {
 
     try {
 
-        cron.schedule('0 1 * * *', async function () {
+        cron.schedule('0 0 * * *', async function () {
 
             try {
                 let masterLists = await MasterListEquipment.findAll({
@@ -178,15 +173,10 @@ const emailRemainder_2 = async (req, res, next) => {
 
                     if (eachRow?.calibration_remainder_date_2 && email_smtp_server_host && email_smtp_server_port && sender_password && sender_email) {
 
-                        // *** Reaminder Date in yyyy--mm-dd format ***
-                        const rDate = new Date(eachRow?.calibration_remainder_date_2);
-                        let rDay = rDate.getDate().toString().padStart(2, '0');
-                        let rMonth = (rDate.getMonth() + 1).toString().padStart(2, '0');
-                        let rYear = rDate.getFullYear();
-                        let reaminderDate = `${rYear}-${rMonth}-${rDay}`;
-
-                        // *** Today Date in yyyy--mm-dd format ***
-                        const currentDate = new Date().toLocaleString("en-CA", { timeZone: "Asia/Kolkata" }).split(',')[0];
+                        // *** Reaminder Date in DD/MM/YYYY format ***
+                        let reaminderDate = new Date(eachRow?.calibration_remainder_date_2).toLocaleDateString('en-GB'); // Formats as DD/MM/YYYY
+                        // *** Today Date in DD/MM/YYYY format ***
+                        const currentDate = new Date().toLocaleString("en-CA", { timeZone: "Asia/Kolkata" }).split(',')[0].split('/').reverse().join('-');
 
                         let status;
 
@@ -210,7 +200,7 @@ const emailRemainder_2 = async (req, res, next) => {
                     }
                 }
 
-                const currentDate = new Date().toLocaleString("en-CA", {
+                const currentDateInIST = new Date().toLocaleString("en-CA", {
                     timeZone: "Asia/Kolkata",
                     weekday: "short",
                     year: "numeric",
@@ -221,6 +211,7 @@ const emailRemainder_2 = async (req, res, next) => {
                     second: "2-digit",
                     hour12: false
                 });
+                const currentDate = currentDateInIST.replace(/^24:/, "00:"); // In time change to  24:00:00 to 00:00:00
                 let data = `Cron Job attempt on Master Equipment calibration_remainder_date_2 at ${currentDate} Total sent Mail: ${mail_count} \n`;
 
                 fs.appendFile("cronLogger.txt", data, function (err) {
