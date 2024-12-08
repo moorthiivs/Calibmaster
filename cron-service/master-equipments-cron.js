@@ -52,7 +52,7 @@ const sendMail = async (eachData) => {
                             <tr>
                                 <td>
                                     <p style="margin: 0 0 10px;">Dear Team,</p>
-                                    <p style="margin: 0 0 10px;">This is a reminder that the following equipment's calibration is due:</p>
+                                    <p style="margin: 0 0 10px;">This is a reminder that the calibration of the following equipment is due:</p>
                                     <p style="margin: 0 0 0 15px;"><b>Serial No:</b> ${eachData.serial_no || ''} </p>
                                     <p style="margin: 0 0 0 15px;"><b>Name Of Equipment:</b> ${eachData.name_of_equipment || ''} </p>
                                     <p style="margin: 0 0 10px 15px;"><b>Calibration Due Date:</b> ${calibration_due_date} </p>
@@ -67,7 +67,11 @@ const sendMail = async (eachData) => {
             from: lab.sender_email,
             to: lab.sender_email,
             subject: "Notification Mail For Master Equipment",
-            html: html
+            html: html,
+            headers: {
+                'X-Priority': '1',
+                'Importance': 'high',
+            }
         });
 
         return info.messageId;
@@ -99,7 +103,9 @@ const emailRemainder_1 = async (req, res, next) => {
                         // *** Reaminder Date in DD/MM/YYYY format ***
                         let reaminderDate = new Date(eachRow?.calibration_remainder_date_1).toLocaleDateString('en-GB'); // Formats as DD/MM/YYYY
                         // *** Today Date in DD/MM/YYYY format ***
-                        const currentDate = new Date().toLocaleString("en-CA", { timeZone: "Asia/Kolkata" }).split(',')[0].split('/').reverse().join('-');
+                        const currentDate = new Date().toLocaleDateString("en-GB", {
+                            timeZone: "Asia/Kolkata"
+                        });
 
                         let status;
 
@@ -176,7 +182,9 @@ const emailRemainder_2 = async (req, res, next) => {
                         // *** Reaminder Date in DD/MM/YYYY format ***
                         let reaminderDate = new Date(eachRow?.calibration_remainder_date_2).toLocaleDateString('en-GB'); // Formats as DD/MM/YYYY
                         // *** Today Date in DD/MM/YYYY format ***
-                        const currentDate = new Date().toLocaleString("en-CA", { timeZone: "Asia/Kolkata" }).split(',')[0].split('/').reverse().join('-');
+                        const currentDate = new Date().toLocaleDateString("en-GB", {
+                            timeZone: "Asia/Kolkata"
+                        });
 
                         let status;
 

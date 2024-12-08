@@ -156,7 +156,9 @@ const sendNotificationMail_1 = async (req, res) => {
                         // *** Reaminder Date in DD/MM/YYYY format ***
                         let reaminderDate = new Date(eachRow?.calibration_remainder_date_1).toLocaleDateString('en-GB'); // Formats as DD/MM/YYYY
                         // *** Today Date in DD/MM/YYYY format ***
-                        const currentDate = new Date().toLocaleString("en-CA", { timeZone: "Asia/Kolkata" }).split(',')[0].split('/').reverse().join('-');
+                        const currentDate = new Date().toLocaleDateString("en-GB", {
+                            timeZone: "Asia/Kolkata"
+                        });
 
                         let status;
 
@@ -268,7 +270,9 @@ const sendNotificationMail_2 = async (req, res) => {
                         // *** Reaminder Date in DD/MM/YYYY format ***
                         let reaminderDate = new Date(eachRow?.calibration_remainder_date_2).toLocaleDateString('en-GB'); // Formats as DD/MM/YYYY
                         // *** Today Date in DD/MM/YYYY format ***
-                        const currentDate = new Date().toLocaleString("en-CA", { timeZone: "Asia/Kolkata" }).split(',')[0].split('/').reverse().join('-');
+                        const currentDate = new Date().toLocaleDateString("en-GB", {
+                            timeZone: "Asia/Kolkata"
+                        });
 
                         let status;
 
