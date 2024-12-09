@@ -84,7 +84,7 @@ const sendMail = async (eachData, calibration_remainder) => {
                                         </tr>
                                     </table>
                                     <p style="margin: 0 0 10px;">This is an ${remainder}.<br />Contact us for the next calibration.</p>
-                                    <p style="margin: 0 0 10px; font-size: 14px;">Best regards,<br />${lab?.lab_name}</p>
+                                    <p style="margin: 0 0 10px;">Best regards,<br />${lab?.lab_name}</p>
                                 </td>
                             </tr>
                         </table>
