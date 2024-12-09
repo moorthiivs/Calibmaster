@@ -204,7 +204,7 @@ const sendNotificationMail_1 = async (req, res) => {
                     second: "2-digit",
                     hour12: false
                 });
-                const currentDate = currentDateInIST.replace(/^24:/, "00:"); // In time change to  24:00:00 to 00:00:00
+                const currentDate = currentDateInIST.replace(/ 24:/, " 00:"); // In time change to  24:00:00 to 00:00:00
                 let data = `Cron Job attempt on SRF calibration_remainder_date_1 at ${currentDate} Total sent Mail: ${mail_count} \n`;
 
                 fs.appendFile("cronLogger.txt", data, function (err) {
@@ -318,7 +318,7 @@ const sendNotificationMail_2 = async (req, res) => {
                     second: "2-digit",
                     hour12: false
                 });
-                const currentDate = currentDateInIST.replace(/^24:/, "00:"); // In time change to  24:00:00 to 00:00:00
+                const currentDate = currentDateInIST.replace(/ 24:/, " 00:"); // In time change to  24:00:00 to 00:00:00
                 let data = `Cron Job attempt on SRF calibration_remainder_date_2 at ${currentDate} Total sent Mail: ${mail_count} \n`;
 
                 fs.appendFile("cronLogger.txt", data, function (err) {
