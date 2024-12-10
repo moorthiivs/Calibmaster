@@ -816,6 +816,13 @@ const generate = async (req, res, next) => {
                 srfitemId: srf_item_id
             });
             const result = await newCertificate.save();
+
+            await Item.update({
+                certificate_date: new Date().toLocaleDateString("en-IN").split('/').reverse().join('-')
+                , certificate_no: certificate_number
+            }, {
+                where: { srf_item_id }
+            });
             // return console.log(result);
 
             let srfItemsQuery = await Item.findOne({
