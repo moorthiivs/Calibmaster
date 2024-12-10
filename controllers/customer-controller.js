@@ -144,7 +144,7 @@ const createCustomer = async (req, res, next) => {
 
         const clientServerOptions = {
             uri: config.CUSTOMER_PORTAL_SERVER + "/api/company/new",
-            body: JSON.stringify(req.body),
+            body: JSON.stringify({ customer_id, ...req.body }),
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -153,11 +153,7 @@ const createCustomer = async (req, res, next) => {
 
         request(clientServerOptions, function (error, response) {
             if (error) {
-                const error = new Error("Error while adding company in Customer Portal");
-                error.code = 500;
-                return errorHandler(error, req, res, next);
-            } else {
-                console.log("Company added in Customer Portal.");
+                console.log("Company added in Customer Portal.", error);
             }
         });
     } catch (err) {
@@ -344,6 +340,8 @@ const editCustomer = async (req, res, next) => {
             customerObj.updated_by_user_id = req.userId
             customerObj.lab_id = req.body.labId;
 
+            req.body.calibmaster_customer_id = findCustomer.calibmaster_customer_id;
+
             customerResult = await customer.update(
                 customerObj,
                 { where: { customer_id: req.body.customer_id } }
@@ -383,6 +381,21 @@ const editCustomer = async (req, res, next) => {
         return errorHandler(error, req, res, next);
     }
 
+    const clientServerOptions = {
+        uri: config.CUSTOMER_PORTAL_SERVER + "/api/company/update",
+        body: JSON.stringify(req.body),
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        }
+    };
+
+    request(clientServerOptions, function (error, response) {
+        if (error) {
+            console.log("Company added in Customer Portal.", error);
+        }
+    });
+
     return res.status(201).json({
         msg: "Customer updated Successfully",
         customerResult,
@@ -393,59 +406,42 @@ const editCustomer = async (req, res, next) => {
 
 const fetchCustomer_Company = async (req, res, next) => {
     try {
-        const labId = req.params.id
+        const labId = req.params.id;
 
         if (!labId) {
             return res.status(400).json({ error: "Lab ID is required" })
         }
 
         // Fetch customer data
-        const customerData = await customer.findOne({
-            where: { lab_id: labId },
-            attributes: ["customer_id", "calibmaster_customer_id"],
-        })
-
-        if (!customerData) {
-            return res.status(404).json({ error: "Customer data not found" })
-        }
-
-        // Fetch company data
-        const companyData = await Company.findOne({
-            where: { labId: labId },
+        const customerData = await customer.findAll({
+            where: { 'lab_id': labId },
             attributes: [
-                "id",
-                "companyname",
-                "email",
+                "customer_id",
+                "customer_name",
                 "address1",
                 "address2",
                 "address3",
                 "rstatus",
-                "labId",
+                "lab_id",
+                "calibmaster_customer_id"
             ],
-        })
-
-        if (!companyData) {
-            return res.status(404).json({ error: "Company data not found" })
-        }
-
-        // Combine the data into the required format
-        const response = {
-            id: companyData.id,
-            companyname: companyData.companyname,
-            email: companyData.email,
-            address1: companyData.address1,
-            address2: companyData.address2,
-            address3: companyData.address3,
-            rstatus: companyData.rstatus,
-            labId: companyData.labId,
-            customer_id: customerData.customer_id,
-            calibmaster_customer_id: customerData.calibmaster_customer_id,
-        }
+            include: [{
+                model: customer_contact,
+                as: "customer_contact",
+                attributes: [
+                    "contact_email"
+                ]
+            }],
+        });
 
         // Send the combined response
-        res.status(200).json(response)
-    } catch (error) {
-        next(error)
+        res.status(200).json(customerData);
+    } catch (err) {
+        let action = "Failed to fetch customers, please try again";
+        const error = new Error(action);
+        error.code = 500;
+        error.path = "api/customer/fetchCustomersById";
+        return errorHandler(error, req, res, next);
     }
 }
 

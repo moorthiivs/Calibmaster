@@ -264,6 +264,25 @@ const editLab = async (req, res, next) => {
         where: { id: req.userId }
     });
 
+    // Set Lab Updation with body Request for Customer Portal
+    req.body.updated_by_login_name = fetchCreater.name;
+    req.body.updated_by_user_id = req.userId;
+
+    // *** Forwarding the request to Customer Portal ***
+    var clientServerOptions = {
+        uri: config.CUSTOMER_PORTAL_SERVER + "/api/lab/update",
+        body: JSON.stringify(req.body),
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+    };
+    request(clientServerOptions, function (err, response) {
+        if (err) {
+            console.log("Lab Update in Customer Portal", err);
+        }
+    });
+
     try {
         // update the rows
         let updatedLab = await Lab.update(

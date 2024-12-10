@@ -52,6 +52,11 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.DECIMAL,
         allowNull: true,
       },
+      
+      type: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
 
       created_timestamp: {
         type: DataTypes.DATE,

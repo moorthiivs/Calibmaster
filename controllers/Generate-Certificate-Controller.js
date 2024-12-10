@@ -2,6 +2,15 @@
 var pdfMake = require("pdfmake/build/pdfmake");
 var pdfFonts = require("pdfmake/build/vfs_fonts");
 pdfMake.vfs = pdfFonts.pdfMake || {};
+pdfMake.fonts = {
+    Times: {
+        normal: 'Times-Roman',
+        bold: 'Times-Bold',
+        italics: 'Times-Italic',
+        bolditalics: 'Times-BoldItalic'
+    },
+};
+
 var fs = require("fs");
 const path = require('path');
 const imageDataURI = require('image-data-uri');
@@ -132,24 +141,28 @@ const generate = async (req, res, next) => {
 
         // ***  Set First table data *** 
         const customer_address = `${item?.srf?.customer?.address1}, ${item?.srf?.customer?.address2 ? `${item?.srf?.customer?.address2}, ` : ''} ${item?.srf?.customer?.address3 ? `${item?.srf?.customer?.address3}, ` : ''}${item?.srf?.customer?.city}, ${item?.srf?.customer?.state} - ${item?.srf?.customer?.pincode}`;
-        const date_of_issue = (item?.srf?.issue_date) ? item?.srf?.issue_date : "--";
-        const received_date = item?.srf?.customer_dc_date;
-        let cal_date = item?.certificate_date;
+        let date_of_issue = new Date().toLocaleDateString("en-GB", { timeZone: "Asia/Kolkata" });
+        let received_date = item?.srf?.customer_dc_date;
+        let cal_date = item?.calibration_done_date;
         let due_date = item?.calibration_due_date;
         const condition = item?.remarks;
 
-        if (cal_date != null) {
-            cal_date = new Date(cal_date);
-            cal_date = `${new Date(cal_date).getDate() - 1}/${new Date(cal_date).getMonth() + 1}/${new Date(cal_date).getFullYear()}`
+        if (received_date != null) {
+            received_date = new Date(received_date).toLocaleDateString('en-GB'); // Formats as DD/MM/YYYY
         } else {
-            cal_date = "--";
+            received_date = "-";
+        }
+
+        if (cal_date != null) {
+            cal_date = new Date(cal_date).toLocaleDateString('en-GB'); // Formats as DD/MM/YYYY
+        } else {
+            cal_date = "-";
         }
 
         if (due_date != null) {
-            due_date = new Date(due_date);
-            due_date = `${new Date(due_date).getDate() - 1}/${new Date(due_date).getMonth() + 1}/${new Date(due_date).getFullYear()}`
+            due_date = new Date(due_date).toLocaleDateString('en-GB'); // Formats as DD/MM/YYYY
         } else {
-            due_date = "--";
+            due_date = "-";
         }
 
         // ***  Set duc details table data *** 
@@ -159,6 +172,7 @@ const generate = async (req, res, next) => {
         const idNo = item?.identification_details;
         const range = `${item?.intrument_type?.range_minimum} - ${item?.intrument_type?.range_maximum} ${item?.intrument_type?.range_maximum_uom?.uom_printsysmbol}`
         const lc = `${item?.intrument_type?.least_count} ${item?.intrument_type?.least_count_uom?.uom_printsysmbol}`;
+        const type = item?.intrument_type?.type;
 
         // ***  Query Master Result List  *** 
         let masterResult = await masterResultTable.findOne({
@@ -184,7 +198,7 @@ const generate = async (req, res, next) => {
 
         // *** Create Format for Master list Equipments ***
         let masterListEquipment = await standard_details(masterResult?.master_list_equipments);
-        const { m_description, m_make, m_serial_no, m_certificate_no, m_validity, m_traceability, m_certificate_filename } = masterListEquipment;
+        const { m_description, m_make, m_serial_no, m_certificate_no, m_validity, m_traceability, m_identification_details, m_certificate_filename } = masterListEquipment;
         // return res.json(masterListEquipment);
 
         const masterDescription = m_description;
@@ -193,6 +207,7 @@ const generate = async (req, res, next) => {
         const masterCertificateNo = m_certificate_no;
         const masterValidity = m_validity;
         const masterTraceability = m_traceability;
+        const masterId_no = m_identification_details;
 
         // *** Find Lab Logos ***
         const lab = await Lab.findOne({
@@ -351,10 +366,12 @@ const generate = async (req, res, next) => {
         // *** Seal & Logos area ***
         let calibrated_employee_master = await masterResult.calibrated_employee_master;
         let calibrated_employee_name = calibrated_employee_master.employee_full_name;
+        let calibrated_employee_role = calibrated_employee_master.employee_role;
         let calibrated_employee_signature = calibrated_employee_master.employee_signature;
 
         let approved_employee_master = await masterResult.approved_employee_master;
         let approved_employee_name = approved_employee_master.employee_full_name;
+        let approved_employee_role = calibrated_employee_master.employee_role;
         let approved_employee_signature = approved_employee_master.employee_signature;
 
         const labLogo_1_Path = path.resolve(__dirname, `../public/images/${lab.brand_logo_filename}`);
@@ -405,6 +422,17 @@ const generate = async (req, res, next) => {
             pageSize: 'A4',
             pageOrientation: 'portrait',
             pageMargins: [20, 130, 20, 90],
+            background: [                       // watermark 
+                {
+                    image: labLogo_1_Buffer,
+                    width: 300,
+                    height: 300,
+                    opacity: 0.1,
+                    alignment: 'center',
+                    angle: 45,
+                    margin: [0, 150]
+                }
+            ],
             header: function (currentPage, pageCount) {
                 return [
                     {
@@ -414,28 +442,31 @@ const generate = async (req, res, next) => {
                             {
                                 width: 80,
                                 image: labLogo_1_Buffer,
-                                margin: [15, 10, 0, 0]
+                                margin: [10, 10, 0, 0]
                             },
                             [
                                 {
                                     text: `${lab.lab_name}`,
-                                    alignment: 'center', fontSize: 18, bold: true,
+                                    alignment: 'center', fontSize: 22, bold: true,
                                     margin: [0, 10, 0, 0],
                                 },
                                 {
                                     text: `${lab.address1}, ${lab.address2 ? `${lab.address2}, ` : ''} ${lab.address3 ? `${lab.address3}, ` : ''}\n${lab.city}, ${lab.state} - ${lab.pincode}`,
                                     alignment: 'center', fontSize: 12,
-                                    margin: [0, 5, 0, 0],
+                                    margin: [0, 2, 0, 0],
+                                    lineHeight: 1.2
                                 },
                                 {
-                                    text: `Mobile: ${lab.contact_number1}/ Website: ${lab.lab_website}`,
+                                    text: `Mobile: ${lab.contact_number1}${lab.contact_number2 ? ` | ${lab.contact_number2}` : ''} / Website: ${lab.lab_website}`,
                                     alignment: 'center', fontSize: 12,
                                     margin: [0, 2, 0, 0],
+                                    lineHeight: 1.2
                                 },
                                 {
                                     text: `Email: ${lab.contact_email}`,
-                                    alignment: 'center', fontSize: 10,
+                                    alignment: 'center', fontSize: 12,
                                     margin: [0, 2, 0, 0],
+                                    lineHeight: 1.2
                                 },
                                 {
                                     text: 'CERTIFICATE OF CALIBRATION',
@@ -461,11 +492,25 @@ const generate = async (req, res, next) => {
             },
             footer: [
                 {
+                    canvas: [
+                        {
+                            type: 'line',
+                            x1: 0,
+                            y1: 0,
+                            x2: 600,  // Full width of the page
+                            y2: 0,
+                            lineWidth: 1,
+                            strokeColor: 'black'
+                        }
+                    ],
+                    margin: [0, 0, 0, 10]  // Margin for the line (spacing before and after the line)
+                },
+                {
                     alignment: 'left',
                     columnGap: 5,
                     columns: [
-                        { text: footerLongText, width: 'auto' },
                         lab_QR_LOGO_1_Buffer ? { image: lab_QR_LOGO_1_Buffer, width: 50, } : { text: '' },
+                        { text: footerLongText, width: 'auto' },
                         lab_QR_LOGO_2_Buffer ? { image: lab_QR_LOGO_2_Buffer, width: 50, } : { text: '' },
                     ],
                     margin: [10, 0, 10, 10]
@@ -475,31 +520,48 @@ const generate = async (req, res, next) => {
                 {
                     style: 'firstTable',
                     table: {
-                        widths: ['*', '*'],
+                        widths: ['*', '*', '*', '*'],
                         body: [
                             [
-                                { text: `CERTIFICATE NUMBER: ${certificate_number}` },
-                                { text: `DATE OF ISSUE: ${date_of_issue}` },
+                                { text: "CERTIFICATE NUMBER:" },
+                                { text: certificate_number || '-', alignment: 'center' },
+                                { text: "DATE OF ISSUE:" },
+                                { text: date_of_issue || '-', alignment: 'center' },
                             ],
                             [
-                                { text: `ULR NUMBER: ${item?.url_number ? item?.url_number : ''}` },
-                                { text: `RECEIVED DATE: ${received_date}` },
+                                { text: "ULR NUMBER:" },
+                                { text: item?.url_number || '-', alignment: 'center' },
+                                { text: "RECEIVED DATE:" },
+                                { text: received_date || '-', alignment: 'center' },
                             ],
                             [
-                                { text: `CUSTOMER ADDRESS: ${customer_address}`, rowSpan: 4, },
-                                { text: `CAL.DATE: ${cal_date}` },
+                                {
+                                    text: [
+                                        { text: 'CUSTOMER ADDRESS:', decoration: 'underline' },
+                                        `\n${customer_address}`
+                                    ], rowSpan: 4, colSpan: 2, lineHeight: 1.5
+                                },
+                                {},
+                                { text: "CAL.DATE:" },
+                                { text: cal_date || '-', alignment: 'center' }
                             ],
                             [
                                 {},
-                                { text: `DUE.DATE: ${due_date}` },
+                                {},
+                                { text: "DUE.DATE:" },
+                                { text: due_date || '-', alignment: 'center' }
                             ],
                             [
                                 {},
-                                { text: `CONDITION: ${condition}` },
+                                {},
+                                { text: 'CONDITION:' },
+                                { text: condition || '-', alignment: 'center' }
                             ],
                             [
                                 {},
-                                { text: 'CALIBRATED AT: LAB' },
+                                {},
+                                { text: 'CALIBRATED AT:' },
+                                { text: 'LAB', alignment: 'center' }
                             ]
                         ]
                     }
@@ -510,8 +572,8 @@ const generate = async (req, res, next) => {
                         widths: ['*', '*'],
                         body: [
                             [
-                                { text: 'DUC DETAILS', alignment: 'center' },
-                                { text: 'STANDARD DETAILS', alignment: 'center' }
+                                { text: 'DUC DETAILS', alignment: 'center', decoration: 'underline' },
+                                { text: 'STANDARD DETAILS', alignment: 'center', decoration: 'underline' }
                             ]
                         ]
                     },
@@ -524,31 +586,49 @@ const generate = async (req, res, next) => {
                 {
                     style: '3rdTable',
                     table: {
-                        widths: ['*', '*'],
+                        widths: ['*', '*', '*', '*'],
                         body: [
                             [
-                                { text: `DESCRIPTION: ${description}` },
-                                { text: `DESCRIPTION: ${masterDescription}` },
+                                { text: 'DESCRIPTION:' },
+                                { text: description || '-', alignment: 'center', },
+                                { text: 'DESCRIPTION:' },
+                                { text: masterDescription || '-', alignment: 'center', },
                             ],
                             [
-                                { text: `MAKE: ${make}` },
-                                { text: `MAKE: ${masterMake}` },
+                                { text: 'MAKE:' },
+                                { text: make || '-', alignment: 'center', },
+                                { text: 'MAKE:' },
+                                { text: masterMake || '-', alignment: 'center', },
                             ],
                             [
-                                { text: `SL.NO: ${slNo}` },
-                                { text: `SL.NO: ${masterSlNo}` }
+                                { text: 'SL.NO:' },
+                                { text: slNo || '-', alignment: 'center', },
+                                { text: 'SL.NO:' },
+                                { text: masterSlNo || '-', alignment: 'center', },
                             ],
                             [
-                                { text: `ID.NO: ${idNo}` },
-                                { text: `CERTIFICATE.NO: ${masterCertificateNo}` }
+                                { text: 'ID.NO:' },
+                                { text: idNo || '-', alignment: 'center', },
+                                { text: 'ID.NO:' },
+                                { text: masterId_no || '-', alignment: 'center', },
                             ],
                             [
-                                { text: `RANGE: ${range}` },
-                                { text: `VALIDITY: ${masterValidity}` }
+                                { text: 'RANGE:' },
+                                { text: range || '-', alignment: 'center', },
+                                { text: 'VALIDITY:' },
+                                { text: masterValidity || '-', alignment: 'center', },
                             ],
                             [
-                                { text: `L.C: ${lc}` },
-                                { text: `TRACEABILITY: ${masterTraceability}` }
+                                { text: 'L.C:' },
+                                { text: lc || '-', alignment: 'center', },
+                                { text: 'CERTIFICATE.NO:' },
+                                { text: masterCertificateNo || '-', alignment: 'center', },
+                            ],
+                            [
+                                { text: 'TYPE:' },
+                                { text: type || '-', alignment: 'center', },
+                                { text: 'TRACEABILITY:' },
+                                { text: masterTraceability || '-', alignment: 'center', },
                             ],
                         ]
                     }
@@ -556,11 +636,12 @@ const generate = async (req, res, next) => {
                 {
                     style: '4thTable',
                     table: {
-                        widths: ['*'],
+                        widths: ['*', '*'],
                         headerRows: 1,
                         body: [
                             [
-                                { text: `CALIBRATION PROCEDURE & REF.STD: ${calibration_procedure} & ${ref_std}` }
+                                { text: "CALIBRATION PROCEDURE & REF.STD:" },
+                                { text: `${calibration_procedure || '-'} & ${ref_std || '-'}`, alignment: 'center', }
                             ]
                         ]
                     },
@@ -577,7 +658,7 @@ const generate = async (req, res, next) => {
                         headerRows: 1,
                         body: [
                             [
-                                { text: 'ENVIRONMENTAL CONDITION:' }
+                                { text: 'ENVIRONMENTAL CONDITION:', decoration: 'underline' }
                             ]
                         ]
                     }
@@ -585,11 +666,12 @@ const generate = async (req, res, next) => {
                 {
                     style: '6thTable',
                     table: {
-                        widths: ['*'],
+                        widths: ['*', '*'],
                         headerRows: 1,
                         body: [
                             [
-                                { text: `TEMPERATURE (°C): ${temperature}` }
+                                { text: 'TEMPERATURE (°C):' },
+                                { text: temperature, }
                             ]
                         ]
                     },
@@ -602,11 +684,12 @@ const generate = async (req, res, next) => {
                 {
                     style: '7thTable',
                     table: {
-                        widths: ['*'],
+                        widths: ['*', '*'],
                         headerRows: 1,
                         body: [
                             [
-                                { text: `HUMIDITY (RH %): ${humidity}` }
+                                { text: 'HUMIDITY (RH %):' },
+                                { text: humidity, }
                             ]
                         ]
                     }
@@ -632,11 +715,13 @@ const generate = async (req, res, next) => {
                 {
                     style: 'firstTable', pageBreak: 'before',
                     table: {
-                        widths: ['*', '*'],
+                        widths: ['*', '*', '*', '*'],
                         body: [
                             [
-                                { text: `CERTIFICATE NUMBER: ${certificate_number}` },
-                                { text: `DATE OF ISSUE: ${date_of_issue}` },
+                                { text: 'CERTIFICATE NUMBER:' },
+                                { text: certificate_number, alignment: 'center' },
+                                { text: 'DATE OF ISSUE:' },
+                                { text: date_of_issue, alignment: 'center' },
                             ]
 
                         ]
@@ -659,6 +744,7 @@ const generate = async (req, res, next) => {
                                     alignment: 'center'
                                 },
                                 { text: `${calibrated_employee_name}`, listType: 'none' },
+                                { text: `${calibrated_employee_role}`, listType: 'none' },
                                 { text: 'Calibrated By', listType: 'none' }
                             ],
                             alignment: 'center'
@@ -673,6 +759,7 @@ const generate = async (req, res, next) => {
                                     alignment: 'center'
                                 },
                                 { text: `${approved_employee_name}`, listType: 'none' },
+                                { text: `${approved_employee_role}`, listType: 'none' },
                                 { text: 'Approved by', listType: 'none' }
                             ],
                             alignment: 'center'
@@ -685,7 +772,8 @@ const generate = async (req, res, next) => {
                 return currentNode.style && currentNode.style.indexOf('pdf-pagebreak-before') > -1;
             },
             defaultStyle: {
-                columnGap: 20
+                columnGap: 20,
+                font: 'Times'
             },
             styles: {
                 mainTable: {
@@ -728,6 +816,13 @@ const generate = async (req, res, next) => {
                 srfitemId: srf_item_id
             });
             const result = await newCertificate.save();
+
+            await Item.update({
+                certificate_date: new Date().toLocaleDateString("en-IN").split('/').reverse().join('-')
+                , certificate_no: certificate_number
+            }, {
+                where: { srf_item_id }
+            });
             // return console.log(result);
 
             let srfItemsQuery = await Item.findOne({
@@ -767,7 +862,7 @@ const generate = async (req, res, next) => {
             Customerportalcertificate(pdfURL, fileName, masterURL, m_certificate_filename, customer_info);
 
             if (skip_response) return;
-            
+
             res.set({
                 "Content-Type": "application/pdf",
                 "Content-Length": buffer.length
@@ -836,7 +931,7 @@ const verify_certificate = async (req, res, next) => {
         return errorHandler(error, req, res, next);
     }
 }
-
+/*** this function is reused in certificate_controller_for_sync.js ***/
 const standard_details = async (master_list_equipments) => {
 
     let description = [];
@@ -845,6 +940,7 @@ const standard_details = async (master_list_equipments) => {
     let certificate_no = [];
     let validity = [];
     let traceability = [];
+    let identification_details = [];
     let certificate_filename = [];
 
     master_list_equipments?.map((eachItem) => {
@@ -854,13 +950,12 @@ const standard_details = async (master_list_equipments) => {
         certificate_no?.push(eachItem.calibration_certificate_no);
 
         if (eachItem?.calibration_valid_upto) {
-            let vDate = eachItem?.calibration_valid_upto;
-            vDate = new Date(vDate);
-            vDate = `${new Date(vDate).getDate() - 1}/${new Date(vDate).getMonth() + 1}/${new Date(vDate).getFullYear()}`;
+            let vDate = new Date(eachItem?.calibration_valid_upto).toLocaleDateString('en-GB'); // Formats as DD/MM/YYYY
             validity?.push(vDate);
         }
 
         traceability?.push(eachItem.traceability);
+        identification_details?.push(eachItem?.asset_number);
         certificate_filename?.push(eachItem.mastercertificate_filename);
     });
 
@@ -870,9 +965,10 @@ const standard_details = async (master_list_equipments) => {
     const m_certificate_no = certificate_no?.join("/");
     const m_validity = validity?.join(",");
     const m_traceability = traceability?.join(",");
+    const m_identification_details = identification_details?.join(",");
     const m_certificate_filename = certificate_filename?.join(",");
 
-    return { m_description, m_make, m_serial_no, m_certificate_no, m_validity, m_traceability, m_certificate_filename };
+    return { m_description, m_make, m_serial_no, m_certificate_no, m_validity, m_traceability, m_identification_details, m_certificate_filename };
 }
 
 const convertFilepathtoBlob = async (filePath, originalFileName) => {

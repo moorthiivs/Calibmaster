@@ -1,71 +1,117 @@
-const { srfitem, srf_list, Certificate, instrument_type } = require("../models")
+const { srfitem, srf_list, Certificate, instrument_type, master_result_table } = require("../models");
+const { errorHandler } = require("../helpers/error-handler");
+const { getBase64Image } = require("../helpers/image-decoded-handler");
+const { standard_details } = require("./Generate-Certificate-Controller");
 
-const fetchInstrumentData = async (req, res, next) => {
+const fetchCertificateById = async (req, res, next) => {
   try {
-    const { lab_id } = req.body
+    const { lab_id } = req.body;
 
     if (!lab_id) {
       return res.status(400).json({ error: "Lab ID is required" })
     }
 
     // Fetch srf_lists and srfitems based on labId
-    const srfListData = await srf_list.findOne({
-      where: { lab_id: lab_id },
-    })
+    let srfItems = await srfitem.findAll({
+      where: { lab_id, rstatus: 1 },
+      attributes: [
+        "srf_id", "srf_item_id", "make", "model", "serial_no", "identification_details",
+      ],
+      include: [
+        {
+          model: srf_list,
+          as: "srf",
+          attributes: [
+            "srf_number", "customer_id"
+          ]
+        },
+        {
+          model: instrument_type,
+          as: "intrument_type",
+          attributes: [
+            "instrument_full_name"
+          ]
+        }
+      ]
+    });
 
-    if (!srfListData) {
-      return res.status(404).json({ error: "SRF list data not found" })
+    const items = [];
+
+    for (const each_item of srfItems) {
+
+      let certificates = await Certificate.findOne({
+        where: { srfitemId: each_item.srf_item_id },
+        order: [['createdAt', 'DESC']],
+      });
+
+      if (certificates) {
+        const { srf_id, srf_item_id } = each_item;
+
+        let masterResult = await master_result_table.findOne({
+          where: { lab_id, srf_id, srf_item_id },
+          attributes: ["master_list_equipments"]
+        });
+
+        const { m_certificate_filename } = await standard_details(masterResult?.master_list_equipments);
+        const customer_obj = {
+          filename: certificates?.fileName,
+
+          srfId: srf_id,
+          srfNo: String(each_item.srf.srf_number),
+          srf_item_id: Number(srf_item_id),
+
+          name: each_item.intrument_type.instrument_full_name,
+          make: each_item.make,
+          model: each_item.model,
+          serialno: each_item.serial_no,
+
+          idno: each_item.identification_details,
+          rstatus: 1,
+
+          companyId: each_item.srf.customer_id,
+          master_certificate_filename: m_certificate_filename || null
+        };
+
+        items.push(customer_obj);
+      }
+
     }
-
-    const srfItemsData = await srfitem.findAll({
-      where: { lab_id: lab_id },
-    })
-
-    if (!srfItemsData || srfItemsData.length === 0) {
-      return res.status(404).json({ error: "SRF items data not found" })
-    }
-
-    // Fetch Certificates based on srf_item_id
-    const certificatesData = await Certificate.findOne({
-      where: { srfitemId: srfItemsData[0].srf_item_id },
-    })
-
-    if (!certificatesData) {
-      return res.status(404).json({ error: "Certificates data not found" })
-    }
-
-    // Fetch instrument_full_name from Instrument_types
-    const instrumentTypeData = await instrument_type.findOne({
-      where: { instrument_type_id: srfItemsData[0].intrument_type_id },
-    })
-
-    if (!instrument_type) {
-      throw new Error("Instrument type model is not defined")
-    }
-
-    if (!instrumentTypeData) {
-      return res.status(404).json({ error: "Instrument type data not found" })
-    }
-
-    // Construct the response object
-    const response = {
-      filename: certificatesData.fileName,
-      srfId: srfItemsData[0].srf_id,
-      srfNo: `${srfListData.srf_number}`,
-      name: instrumentTypeData.instrument_full_name,
-      make: srfItemsData[0].make,
-      model: srfItemsData[0].model,
-      serialno: srfItemsData[0].serial_no,
-      idno: srfItemsData[0].srf_item_no,
-      rstatus: srfItemsData[0].rstatus,
-      companyId: srfListData.customer_id,
-    }
-
-    // Send the response
-    res.status(200).json(response)
-  } catch (error) {
-    next(error)
+    res.status(200).json({ srfitems: items })
+  } catch (err) {
+    console.error("Error while fetching Certificate:", err);
+    let action = "Failed to fetch Certificate";
+    const error = new Error(action);
+    error.code = 500;
+    error.path = "api/certificate/fetchCertificateById";
+    return errorHandler(error, req, res, next);
   }
 }
 
-module.exports = { fetchInstrumentData }
+const fetchCertificatebyfilename = async (req, res, next) => {
+  try {
+    const { filename, master_certificate_filename } = req.body;
+
+    if (!filename) {
+      return res.status(400).json({ error: "filename required" });
+    }
+
+    const certificates = {};
+
+    if (master_certificate_filename) {
+      certificates.master_certificate_base64 = await getBase64Image(`master_certificates/${master_certificate_filename}`);
+    }
+
+    certificates.certificate_base64 = await getBase64Image(`certificates/${filename}`);
+
+    res.status(200).json(certificates);
+  } catch (err) {
+    console.error("Error while fetching Certificate:", err);
+    let action = "Failed to fetch Certificate";
+    const error = new Error(action);
+    error.code = 500;
+    error.path = "api/certificate/fetchCertificatesByFilename";
+    return errorHandler(error, req, res, next);
+  }
+};
+
+module.exports = { fetchCertificateById, fetchCertificatebyfilename }

@@ -21,26 +21,58 @@ const sendMail = async (eachData) => {
             }
         });
 
-        let calibDueDate = new Date(eachData?.calibration_valid_upto);
-        let rDay = calibDueDate.getDate();
-        let rMonth = calibDueDate.getMonth() + 1;
-        let rYear = calibDueDate.getFullYear();
-        let calibration_due_date = `${rDay}-${rMonth}-${rYear}`;
+        let calibration_due_date = eachData?.calibration_valid_upto || '';
+        if (calibration_due_date) { // Calibration Due Date
+            calibration_due_date = new Date(calibration_due_date).toLocaleDateString('en-GB'); // Formats as DD/MM/YYYY
+        }
 
-        const html = `
-            <p>Serial No: ${eachData.serial_no} </p>
-            <p>Name Of Equipment: ${eachData.name_of_equipment} </p>
-            <p>Calibration Due Date: ${calibration_due_date} </p>
-        `;
+        const html = `<html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                        <title>Notification Mail</title>
+                        <style>
+                            body, p, div {
+                                margin: 0;
+                                padding: 0;
+                            }
+                            body {
+                                font - family: 'Arial', sans-serif;
+                                background-color: #f8f9fa;
+                                color: #333;
+                                box-sizing: border-box;
+                            }
+                            * {
+                                box - sizing: inherit;
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                                <td>
+                                    <p style="margin: 0 0 10px;">Dear Team,</p>
+                                    <p style="margin: 0 0 10px;">This is a reminder that the calibration of the following equipment is due:</p>
+                                    <p style="margin: 0 0 0 15px;"><b>Serial No:</b> ${eachData.serial_no || ''} </p>
+                                    <p style="margin: 0 0 0 15px;"><b>Name Of Equipment:</b> ${eachData.name_of_equipment || ''} </p>
+                                    <p style="margin: 0 0 10px 15px;"><b>Calibration Due Date:</b> ${calibration_due_date} </p>
+                                    <p style="margin: 0 0 10px;">Please ensure that the calibration is completed before the due date to maintain compliance and ensure equipment accuracy.</p>
+                                </td>
+                            </tr>
+                        </table>
+                    </body>
+                </html>`
 
         const info = await transporter.sendMail({
             from: lab.sender_email,
             to: lab.sender_email,
             subject: "Notification Mail For Master Equipment",
-            html: html
+            html: html,
+            headers: {
+                'X-Priority': '1',
+                'Importance': 'high',
+            }
         });
-
-        console.log(info);
 
         return info.messageId;
     } catch (error) {
@@ -60,26 +92,20 @@ const emailRemainder_1 = async (req, res, next) => {
                 });
 
                 let responseArr = [];
+                let mail_count = 0;
 
-                masterLists.map(async (eachRow) => {
+                for (let eachRow of masterLists) {
 
                     const { email_smtp_server_host, email_smtp_server_port, sender_password, sender_email } = eachRow?.lab;
 
                     if (eachRow?.calibration_remainder_date_1 && email_smtp_server_host && email_smtp_server_port && sender_password && sender_email) {
 
-                        // *** Reaminder Date in yyyy--mm-dd format ***
-                        const rDate = new Date(eachRow?.calibration_remainder_date_1);
-                        let rDay = rDate.getDate();
-                        let rMonth = rDate.getMonth() + 1;
-                        let rYear = rDate.getFullYear();
-                        let reaminderDate = `${rYear}-${rMonth}-${rDay}`;
-
-                        // *** Today Date in yyyy--mm-dd format ***
-                        const todayDate = new Date();
-                        let day = todayDate.getDate();
-                        let month = todayDate.getMonth() + 1;
-                        let year = todayDate.getFullYear();
-                        let currentDate = `${year}-${month}-${day}`;
+                        // *** Reaminder Date in DD/MM/YYYY format ***
+                        let reaminderDate = new Date(eachRow?.calibration_remainder_date_1).toLocaleDateString('en-GB'); // Formats as DD/MM/YYYY
+                        // *** Today Date in DD/MM/YYYY format ***
+                        const currentDate = new Date().toLocaleDateString("en-GB", {
+                            timeZone: "Asia/Kolkata"
+                        });
 
                         let status;
 
@@ -91,7 +117,8 @@ const emailRemainder_1 = async (req, res, next) => {
                                 status
                             });
 
-                            await sendMail(eachRow);
+                            const mailresponse = await sendMail(eachRow);
+                            mailresponse && mail_count++;
                         } else {
                             status = `The mail will send the contact person on ${reaminderDate}`
                             responseArr.push({
@@ -100,20 +127,35 @@ const emailRemainder_1 = async (req, res, next) => {
                             });
                         }
                     }
-                });
+                }
 
-                let data = `Cron Job attempt on Master Equipment calibration_remainder_date_1 at ${new Date()} \n`;
+                const currentDateInIST = new Date().toLocaleString("en-CA", {
+                    timeZone: "Asia/Kolkata",
+                    weekday: "short",
+                    year: "numeric",
+                    month: "short",
+                    day: "2-digit",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit",
+                    hour12: false
+                });
+                const currentDate = currentDateInIST.replace(/ 24:/, " 00:"); // In time change to  24:00:00 to 00:00:00
+                let data = `Cron Job attempt on Master Equipment calibration_remainder_date_1 at ${currentDate} Total sent Mail: ${mail_count} \n`;
 
                 fs.appendFile("cronLogger.txt", data, function (err) {
                     if (err) throw err;
                 });
             } catch (err) {
-                console.log(err);
+                console.error('Error during cron job execution:', err);
             }
 
+        }, {
+            scheduled: true,
+            timezone: "Asia/Kolkata"  // Set the timezone to India Standard Time (IST)
         })
     } catch (err) {
-        console.log(err);
+        console.error('Error with cron job setup:', err);
     }
 };
 
@@ -129,26 +171,20 @@ const emailRemainder_2 = async (req, res, next) => {
                 });
 
                 let responseArr = [];
+                let mail_count = 0;
 
-                masterLists.map(async (eachRow) => {
+                for (let eachRow of masterLists) {
 
                     const { email_smtp_server_host, email_smtp_server_port, sender_password, sender_email } = eachRow?.lab;
 
                     if (eachRow?.calibration_remainder_date_2 && email_smtp_server_host && email_smtp_server_port && sender_password && sender_email) {
 
-                        // *** Reaminder Date in yyyy--mm-dd format ***
-                        const rDate = new Date(eachRow?.calibration_remainder_date_2);
-                        let rDay = rDate.getDate();
-                        let rMonth = rDate.getMonth() + 1;
-                        let rYear = rDate.getFullYear();
-                        let reaminderDate = `${rYear}-${rMonth}-${rDay}`;
-
-                        // *** Today Date in yyyy--mm-dd format ***
-                        const todayDate = new Date();
-                        let day = todayDate.getDate();
-                        let month = todayDate.getMonth() + 1;
-                        let year = todayDate.getFullYear();
-                        let currentDate = `${year}-${month}-${day}`;
+                        // *** Reaminder Date in DD/MM/YYYY format ***
+                        let reaminderDate = new Date(eachRow?.calibration_remainder_date_2).toLocaleDateString('en-GB'); // Formats as DD/MM/YYYY
+                        // *** Today Date in DD/MM/YYYY format ***
+                        const currentDate = new Date().toLocaleDateString("en-GB", {
+                            timeZone: "Asia/Kolkata"
+                        });
 
                         let status;
 
@@ -160,7 +196,8 @@ const emailRemainder_2 = async (req, res, next) => {
                                 status
                             });
 
-                            await sendMail(eachRow);
+                            const mailresponse = await sendMail(eachRow);
+                            mailresponse && mail_count++;
                         } else {
                             status = `The mail will send the contact person on ${reaminderDate}`
                             responseArr.push({
@@ -169,20 +206,35 @@ const emailRemainder_2 = async (req, res, next) => {
                             });
                         }
                     }
-                });
+                }
 
-                let data = `Cron Job attempt on Master Equipment calibration_remainder_date_2 at ${new Date()} \n`;
+                const currentDateInIST = new Date().toLocaleString("en-CA", {
+                    timeZone: "Asia/Kolkata",
+                    weekday: "short",
+                    year: "numeric",
+                    month: "short",
+                    day: "2-digit",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit",
+                    hour12: false
+                });
+                const currentDate = currentDateInIST.replace(/ 24:/, " 00:"); // In time change to  24:00:00 to 00:00:00
+                let data = `Cron Job attempt on Master Equipment calibration_remainder_date_2 at ${currentDate} Total sent Mail: ${mail_count} \n`;
 
                 fs.appendFile("cronLogger.txt", data, function (err) {
                     if (err) throw err;
                 });
             } catch (err) {
-                console.log(err);
+                console.error('Error during cron job execution:', err);
             }
 
+        }, {
+            scheduled: true,
+            timezone: "Asia/Kolkata"  // Set the timezone to India Standard Time (IST)
         })
     } catch (err) {
-        console.log(err);
+        console.error('Error with cron job setup:', err);
     }
 };
 

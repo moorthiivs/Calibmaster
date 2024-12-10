@@ -11,6 +11,7 @@ const config = require("../utils/config");
 var request = require("request");
 const { Sequelize } = require('sequelize');
 var fs = require('fs');
+const { getBase64Image } = require("../helpers/image-decoded-handler");
 
 const addlab = async (req, res, next) => {
 
@@ -262,25 +263,6 @@ const addlab = async (req, res, next) => {
     req.body.effective_start_date = Date.now() + 1000 * 60 * 60 * 24 * 364 * 3000;
     req.body.effective_end_date = Date.now() + 1000 * 60 * 60 * 24 * 364 * 3000;
 
-    // *** Forwarding the request to Customer Portal ***
-    var clientServerOptions = {
-      uri: config.CUSTOMER_PORTAL_SERVER + "/api/lab/new",
-      body: JSON.stringify(req.body),
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    };
-
-    request(clientServerOptions, function (error, response) {
-      if (error) {
-        console.log(error);
-        const error = new Error("Error while adding Lab in Customer Portal");
-        error.code = 500;
-        return errorHandler(error, req, res, next);
-      }
-    });
-
     const newLab = new Lab({
       lab_name,
       calibmaster_lab_id,
@@ -342,6 +324,21 @@ const addlab = async (req, res, next) => {
 
     const result = await newLab.save();
     let createdlab = result.dataValues;
+
+    // *** Forwarding the request to Customer Portal ***
+    var clientServerOptions = {
+      uri: config.CUSTOMER_PORTAL_SERVER + "/api/lab/new",
+      body: JSON.stringify({ lab_id: createdlab.lab_id, ...req.body }),
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    };
+    request(clientServerOptions, function (err, response) {
+      if (err) {
+        console.log("Lab added in Customer Portal", err);
+      }
+    });
 
     var hashedPassword = await bcrypt.hash(adminPassword, 12);
 
@@ -563,7 +560,7 @@ const getAllLabs = async (req, res, next) => {
   try {
     let LabList = await Lab.findAll({
       order: [
-        ['lab_id', 'DESC'],
+        ['lab_id', 'ASC'],
       ]
     });
 
@@ -678,55 +675,98 @@ const errorHandlerFLab = (error, req, res, next) => {
 }
 
 const fetchLabById = async (req, res, next) => {
-  const { labId } = req.body
+  const { labId } = req.body;
 
-  console.log("Received labId:", labId)
-
+  // Check if labId is provided
   if (!labId) {
-    let action = "Lab ID is required"
-    const error = new Error(action)
-    error.code = 400
-    error.path = "/api/lab/fetchLabById"
-    return errorHandlerFLab(error, req, res, next)
+    let action = "Lab ID is required";
+    const error = new Error(action);
+    error.code = 400;
+    error.path = "/api/lab/fetchLabById";
+    return errorHandlerFLab(error, req, res, next);
   }
 
   try {
-    // Logging for debugging
-    console.log("Attempting to find lab with ID:", labId)
-
+    // Fetch the lab data from the database
     let lab = await Lab.findOne({
       where: { lab_id: labId },
-      attributes: {
-        exclude: ["brand_logo", "other_logo1_image", "other_logo2_image"],
-      },
-    })
+      attributes: [
+        'lab_id',
+        'lab_name',
+        'calibmaster_lab_id',
+        'address1',
+        'address2',
+        'address3',
+        'city',
+        'state',
+        'country',
+        'pincode',
+        'lab_website',
+        'contact_email',
+        'contact_number1',
+        'contact_number2',
+        'symbol',
+        'rstatus',
+        'email_smtp_server_host',
+        'email_smtp_server_port',
+        'sender_email',
+        'sender_password',
+        'gst_number',
+        'lab_active_flag',
+        'brand_logo_filename',
+        'brand_logo_mime_type',
+        'brand_logo',
+        'other_logo1_image_filename',
+        'other_logo1_image_mime_type',
+        'other_logo1_image',
+        'other_logo2_image_filename',
+        'other_logo2_image_mime_type',
+        'other_logo2_image',
+        'created_timestamp',
+        'created_by_login_name',
+        'created_by_user_id',
+        'updated_timestamp',
+        'updated_by_login_name',
+        'updated_by_user_id',
+        'effective_start_date',
+        'effective_end_date'
+      ]
+    });
 
-    // Log the result
-    console.log("Lab found:", lab)
-
+    // Handle case where lab is not found
     if (!lab) {
-      let action = "Lab not found"
-      const error = new Error(action)
-      error.code = 404 // Not found error code
-      error.path = "/api/lab/fetchLabById"
-      return errorHandlerFLab(error, req, res, next)
-    } else {
-      return res.status(200).json({
-        status: "SUCCESS",
-        code: 200,
-        message: "Lab Fetched Successfully!!",
-        data: lab,
-      })
+      let action = "Lab not found";
+      const error = new Error(action);
+      error.code = 404; // Not found error code
+      error.path = "/api/lab/fetchLabById";
+      return errorHandlerFLab(error, req, res, next);
     }
+
+    // Fetch the brand logo in Base64 format
+    let brand_logo_base64Image = null;
+    try {
+      brand_logo_base64Image = await getBase64Image(`public/images/${lab.brand_logo_filename}`);
+    } catch (error) {
+      console.error("Error reading brand logo image:", error);
+    }
+
+    // Return the response after all data is ready
+    return res.status(200).json({
+      status: "SUCCESS",
+      code: 200,
+      message: "Lab Fetched Successfully!!",
+      data: { lab, brand_logo_base64Image },
+    });
+
   } catch (err) {
-    console.error("Error fetching lab:", err) // Debugging log
-    let action = "Failed to fetch Lab"
-    const error = new Error(action)
-    error.code = 500
-    error.path = "/api/lab/fetchLabById"
-    return errorHandlerFLab(error, req, res, next)
+    console.error("Error fetching lab:", err); // Debugging log
+    let action = "Failed to fetch Lab";
+    const error = new Error(action);
+    error.code = 500;
+    error.path = "/api/lab/fetchLabById";
+    return errorHandlerFLab(error, req, res, next);
   }
-}
+};
 
 
 exports.addlab = addlab;

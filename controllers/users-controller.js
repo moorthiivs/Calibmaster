@@ -352,37 +352,44 @@ const adduser = async (req, res, next) => {
                   <meta name="viewport" content="width=device-width, initial-scale=1.0">
                     <title>Access Credentials for Customer Portal</title>
                     <style>
+                      body, p, div {
+                        margin: 0;
+                        padding: 0;
+                      }
                       body {
                         font - family: 'Arial', sans-serif;
                         background-color: #f8f9fa;
-                        margin: 0;
-                        padding: 0;
                         color: #333;
+                        box-sizing: border-box;
                       }
-                      .margin-zero{
-                        margin: 0;
+                      * {
+                        box - sizing: inherit;
                       }
                     </style>
                   </head>
                   <body>
-                    <div class="mail-container">
-                      <p>Dear ${getcustomerDetail?.dataValues?.contact_fullname || 'Customer'},</p>
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td>
+                          <p style="margin: 0 0 10px;">Dear ${getcustomerDetail?.dataValues?.contact_fullname || 'Customer'},</p>
 
-                      <p>Please find your credentials to access the Customer Portal below:</p>
+                          <p style="margin: 0 0 10px;">Please find your credentials to access the Customer Portal below:</p>
 
-                      <p class="margin-zero"><b>User ID:</b> ${email}<br /><b>Password:</b> ${password}</p>
+                          <p style="margin: 0 0 10px 15px;"><b>User ID:</b> ${email}<br /><b>Password:</b> ${password}</p>
 
-                      <p><a href="${config.CUSTOMER_PORTAL_SERVER}" style="color: #007bff; text-decoration: none;">Click here to access the Customer Portal</a></p>
+                          <p style="margin: 0 0 10px;"><a href="${config.CUSTOMER_PORTAL_SERVER}" style="color: #007bff; text-decoration: none;">Click here to access the Customer Portal</a></p>
 
-                      <p>If you experience any issues or need assistance, feel free to reach out to our lab team.</p>
+                          <p style="margin: 0 0 10px;">If you experience any issues or need assistance, feel free to reach out to our lab team.</p>
 
-                      <p class="margin-zero">Best regards,<br />${getlabDetail?.lab_name}</p>
-                      <div>
-                      </body>
-                    </html>`;
+                          <p style="margin: 0 0 10px; font-size: 14px;">Best regards,<br />${getlabDetail?.lab_name}</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </body>
+                </html>`;
 
           const info = await transporter.sendMail({
-            from: getlabDetail?.sender_email,
+            from: `"${getlabDetail?.lab_name}" ${getlabDetail?.sender_email}`,
             to: getReceiverEmail,
             subject: "Important: Customer Portal - Access ID",
             html: mail_content,
@@ -1026,43 +1033,50 @@ const resetPassword = async (req, res, next) => {
             });
 
             const mail_content = `
-                    <html lang="en">
-                      <head>
-                        <meta charset="UTF-8">
-                          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                            <title>Access Credentials for Customer Portal</title>
-                            <style>
-                              body {
-                                font - family: 'Arial', sans-serif;
-                              background-color: #f8f9fa;
-                              margin: 0;
-                              padding: 0;
-                              color: #333;
+              <html lang="en">
+                <head>
+                  <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                      <title>Access Credentials for Customer Portal</title>
+                      <style>
+                        body, p, div {
+                          margin: 0;
+                          padding: 0;
                         }
-                              .margin-zero{
-                                margin: 0;
+                        body {
+                          font - family: 'Arial', sans-serif;
+                          background-color: #f8f9fa;
+                          color: #333;
+                          box-sizing: border-box;
                         }
-                            </style>
-                          </head>
-                          <body>
-                            <div class="mail-container">
-                              <p>Dear ${getcustomerDetail?.dataValues?.contact_fullname || 'Customer'},</p>
+                        * {
+                          box - sizing: inherit;
+                        }
+                      </style>
+                    </head>
+                    <body>
+                      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                        <tr>
+                          <td>
+                            <p style="margin: 0 0 10px;">Dear ${getcustomerDetail?.dataValues?.contact_fullname || 'Customer'},</p>
 
-                              <p>Your password has been successfully reset by an Lab. Please find your new credentials below to access the Customer Portal:</p>
+                            <p style="margin: 0 0 10px;">Your password has been successfully reset by an Lab. Please find your new credentials below to access the Customer Portal:</p>
 
-                              <p class="margin-zero"><b>User ID:</b> ${findUser?.email} <br /><b>Password:</b> ${password}</p>
+                            <p style="margin: 0 0 10px 15px;"><b>User ID:</b> ${findUser?.email} <br /><b>New Password:</b> ${password}</p>
 
-                              <p><a href="${config.CUSTOMER_PORTAL_SERVER}" style="color: #007bff; text-decoration: none;">Click here to access the Customer Portal</a></p>
+                            <p style="margin: 0 0 10px;"><a href="${config.CUSTOMER_PORTAL_SERVER}" style="color: #007bff; text-decoration: none;">Click here to access the Customer Portal</a></p>
 
-                              <p>If you experience any issues or need assistance, feel free to reach out to our lab team.</p>
+                            <p style="margin: 0 0 10px;">If you experience any issues or need assistance, feel free to reach out to our lab team.</p>
 
-                              <p class="margin-zero">Best regards,<br />${getlabDetail?.lab_name}</p>
-                              <div>
-                              </body>
-                            </html>`;
+                            <p style="margin: 0 0 10px; font-size: 14px;">Best regards,<br />${getlabDetail?.lab_name}</p>
+                          </td>
+                        </tr>
+                      </table>
+                    </body>
+                  </html>`;
 
             const info = await transporter.sendMail({
-              from: getlabDetail?.sender_email,
+              from: `"${getlabDetail?.lab_name}" ${getlabDetail?.sender_email}`,
               to: getReceiverEmail,
               subject: "Important: Customer Portal - Your Password Has Been Reset",
               html: mail_content,
@@ -1189,28 +1203,24 @@ const fetchUsersByLabId = async (req, res) => {
     let users = await User.findAll({
       where: {
         labId: labId,
+        department: 'Client',
         calibmaster_client_id: { [Op.ne]: null },
       },
-      // attributes: {
-      //   exclude: ["password"],
-      // },
     })
 
-    if (users.length === 0) {
-      return res
-        .status(404)
-        .json({ message: "No users found for the given lab ID" })
-    } else {
-      return res.status(200).json({
-        status: "SUCCESS",
-        code: 200,
-        message: "Users Fetched Successfully!!",
-        data: users,
-      })
-    }
+    return res.status(200).json({
+      status: "SUCCESS",
+      code: 200,
+      message: "Users Fetched Successfully!!",
+      data: users,
+    });
   } catch (err) {
     console.error("Error fetching users:", err)
-    return res.status(500).json({ message: "Failed to fetch users" })
+    let action = "Failed to fetching users, please try again";
+    const error = new Error(action);
+    error.code = 500;
+    error.path = "api/user/fetchUsersById";
+    return errorHandler(error, req, res, next);
   }
 }
 

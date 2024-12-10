@@ -16,6 +16,7 @@ const storage = multer.diskStorage({
 let upload = multer({ storage });
 
 router.post("/upload", upload.single("file"), certificateController.certificateUploadHandler);
-router.post("/fetchCertificateById", CertificateSync.fetchInstrumentData);
+
+router.post("/fetchCertificateById", CertificateSync.fetchCertificateById);
 
 module.exports = router;

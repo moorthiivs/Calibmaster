@@ -20,6 +20,7 @@ const createInstrumentType = async (req, res, next) => {
         least_count_uom_id,
         size_spec,
         size_spec_uom_id,
+        type,
         lab_id
     } = req.body;
 
@@ -37,36 +38,76 @@ const createInstrumentType = async (req, res, next) => {
             where: { id: req.userId }
         });
 
-        const newInstrumentType = new instrumentTypeModel({
-            instrument_id,
-            instrument_type_spec: (instrument_type_spec) ? instrument_type_spec : null,
-            instrument_full_name,
+        if (!type.length) {
+            const newInstrumentType = new instrumentTypeModel({
+                instrument_id,
+                instrument_type_spec: (instrument_type_spec) ? instrument_type_spec : null,
+                instrument_full_name,
 
-            range_minimum: (range_minimum) ? range_minimum : null,
-            range_minimum_uom_id: (range_minimum_uom_id) ? range_minimum_uom_id : null,
+                range_minimum: (range_minimum) ? range_minimum : null,
+                range_minimum_uom_id: (range_minimum_uom_id) ? range_minimum_uom_id : null,
 
-            range_maximum: (range_maximum) ? range_maximum : null,
-            range_maximum_uom_id: (range_maximum_uom_id) ? range_maximum_uom_id : null,
+                range_maximum: (range_maximum) ? range_maximum : null,
+                range_maximum_uom_id: (range_maximum_uom_id) ? range_maximum_uom_id : null,
 
-            least_count: (least_count) ? least_count : null,
-            least_count_uom_id: (least_count_uom_id) ? least_count_uom_id : null,
+                least_count: (least_count) ? least_count : null,
+                least_count_uom_id: (least_count_uom_id) ? least_count_uom_id : null,
 
-            size_spec: (size_spec) ? size_spec : null,
-            size_spec_uom_id: (size_spec_uom_id) ? size_spec_uom_id : null,
+                size_spec: (size_spec) ? size_spec : null,
+                size_spec_uom_id: (size_spec_uom_id) ? size_spec_uom_id : null,
+                type: null,
 
-            created_timestamp: Date.now(),
-            created_by_login_name: fetchCreater.name,
-            created_by_user_id: req.userId,
+                created_timestamp: Date.now(),
+                created_by_login_name: fetchCreater.name,
+                created_by_user_id: req.userId,
 
-            updated_timestamp: Date.now(),
-            updated_by_login_name: fetchCreater.name,
-            updated_by_user_id: req.userId,
+                updated_timestamp: Date.now(),
+                updated_by_login_name: fetchCreater.name,
+                updated_by_user_id: req.userId,
 
-            lab_id
-        });
+                lab_id
+            });
 
-        const result = await newInstrumentType.save();
-        return res.status(200).json(result);
+            const result = await newInstrumentType.save();
+            return res.status(200).json(result);
+        }
+        else {
+            let result;
+
+            for (const type_value of type) {
+                const newInstrumentType = new instrumentTypeModel({
+                    instrument_id,
+                    instrument_type_spec: (instrument_type_spec) ? instrument_type_spec : null,
+                    instrument_full_name,
+
+                    range_minimum: (range_minimum) ? range_minimum : null,
+                    range_minimum_uom_id: (range_minimum_uom_id) ? range_minimum_uom_id : null,
+
+                    range_maximum: (range_maximum) ? range_maximum : null,
+                    range_maximum_uom_id: (range_maximum_uom_id) ? range_maximum_uom_id : null,
+
+                    least_count: (least_count) ? least_count : null,
+                    least_count_uom_id: (least_count_uom_id) ? least_count_uom_id : null,
+
+                    size_spec: (size_spec) ? size_spec : null,
+                    size_spec_uom_id: (size_spec_uom_id) ? size_spec_uom_id : null,
+                    type: type_value,
+
+                    created_timestamp: Date.now(),
+                    created_by_login_name: fetchCreater.name,
+                    created_by_user_id: req.userId,
+
+                    updated_timestamp: Date.now(),
+                    updated_by_login_name: fetchCreater.name,
+                    updated_by_user_id: req.userId,
+
+                    lab_id
+                });
+
+                result = await newInstrumentType.save();
+            }
+            return res.status(200).json(result);
+        }
 
     } catch (error) {
         console.log(error);
@@ -92,6 +133,7 @@ const listInstrumentTypes = async (req, res, next) => {
 
             "instrument_types"."instrument_type_id",
             "instrument_types"."instrument_full_name",
+            "instrument_types"."type",
 
 	        "instrumentsMain"."instrument_name",
 
@@ -280,7 +322,8 @@ const editInstrumentType = async (req, res, next) => {
         least_count,
         least_count_uom_id,
         size_spec,
-        size_spec_uom_id
+        size_spec_uom_id,
+        type
     } = req.body;
 
     if (!instrument_type_id || !instrument_id || !instrument_full_name) {
@@ -324,6 +367,7 @@ const editInstrumentType = async (req, res, next) => {
 
                 size_spec: (size_spec) ? size_spec : null,
                 size_spec_uom_id: (size_spec_uom_id) ? size_spec_uom_id : null,
+                type,
 
                 created_timestamp: Date.now(),
                 created_by_login_name: fetchCreater.name,
