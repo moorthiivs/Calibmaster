@@ -795,7 +795,7 @@ const generate = async (req, res, next) => {
                     fontSize: 9
                 },
                 remarksList: {
-                    margin: [10, 0, 0, 0],
+                    margin: [15, 0, 0, 0],
                 }
             }
         };
