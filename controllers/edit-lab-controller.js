@@ -75,6 +75,7 @@ const editLab = async (req, res, next) => {
         thirdLogo,
 
         sealLogo,
+        nablLogo,
 
         nabl_qr_Code_logo_1, nableURL_1,
         nabl_qr_Code_logo_2, nableURL_2
@@ -224,6 +225,24 @@ const editLab = async (req, res, next) => {
         sealLogoImgFileName = existingLab.seal_image_filename;
     }
 
+    let nablLogoImgFileName;
+    if (nablLogo) {
+        const nablLogoDecodeImg = decodeBase64Image(nablLogo);
+        const imageBuffer = nablLogoDecodeImg.data;
+        const fileExtension = nablLogoDecodeImg.type.slice(6);
+        nablLogoImgFileName = Math.floor(Math.random() * 9999999) + "." + fileExtension;
+
+        try {
+            fs.writeFileSync("public/images/" + nablLogoImgFileName, imageBuffer, 'utf8');
+        }
+        catch (err) {
+            console.error(err)
+        }
+    } else {
+        nablLogoImgFileName = existingLab.nabl_logo_filename;
+    }
+
+
     // *** QR CODE Logo-1 ***
     let qr_codo_logo_1;
     if (nabl_qr_Code_logo_1) {
@@ -326,6 +345,7 @@ const editLab = async (req, res, next) => {
                 other_logo2_image: buff3,
 
                 seal_image_filename: sealLogoImgFileName,
+                nabl_logo_filename: nablLogoImgFileName,
 
                 certificate_accreditation_qr_code_logo_1: qr_codo_logo_1,
                 certificate_accreditation_url_1: nableURL_1,

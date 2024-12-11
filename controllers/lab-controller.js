@@ -78,6 +78,7 @@ const addlab = async (req, res, next) => {
     thirdLogo,
 
     sealLogo,
+    nablLogo,
 
     nabl_qr_Code_logo_1, nableURL_1,
     nabl_qr_Code_logo_2, nableURL_2
@@ -182,6 +183,23 @@ const addlab = async (req, res, next) => {
     }
   } else {
     sealLogoImgFileName = "";
+  }
+
+  let nablLogoImgFileName;
+  if (nablLogo) {
+    const nablLogoDecodeImg = decodeBase64Image(nablLogo);
+    const imageBuffer = nablLogoDecodeImg.data;
+    const fileExtension = nablLogoDecodeImg.type.slice(6);
+    nablLogoImgFileName = Math.floor(Math.random() * 9999999) + "." + fileExtension;
+
+    try {
+      fs.writeFileSync("public/images/" + nablLogoImgFileName, imageBuffer, 'utf8');
+    }
+    catch (err) {
+      console.error(err)
+    }
+  } else {
+    nablLogoImgFileName = "";
   }
 
   // *** QR CODE Logo-1 ***
@@ -303,6 +321,7 @@ const addlab = async (req, res, next) => {
       other_logo2_image: buff3,
 
       seal_image_filename: sealLogoImgFileName,
+      nabl_logo_filename: nablLogoImgFileName,
 
       rstatus: 1,
       lab_active_flag: 1,

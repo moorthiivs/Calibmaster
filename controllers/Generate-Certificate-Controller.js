@@ -2,14 +2,6 @@
 var pdfMake = require("pdfmake/build/pdfmake");
 var pdfFonts = require("pdfmake/build/vfs_fonts");
 pdfMake.vfs = pdfFonts.pdfMake || {};
-pdfMake.fonts = {
-    Times: {
-        normal: 'Times-Roman',
-        bold: 'Times-Bold',
-        italics: 'Times-Italic',
-        bolditalics: 'Times-BoldItalic'
-    },
-};
 
 var fs = require("fs");
 const path = require('path');
@@ -216,7 +208,7 @@ const generate = async (req, res, next) => {
                 'address1', 'address2', 'address3',
                 'city', 'state', 'country', 'pincode',
                 'lab_website', 'contact_email', 'contact_number1', 'contact_number2',
-                'brand_logo_filename', 'seal_image_filename',
+                'brand_logo_filename', 'seal_image_filename', 'nabl_logo_filename',
                 'certificate_accreditation_qr_code_logo_1', 'scope_accreditation_qr_code_logo_2'
             ],
             where: { lab_id },
@@ -349,7 +341,6 @@ const generate = async (req, res, next) => {
 
                 const eachObj = {
                     style: 'eachTableStyle',
-                    color: '#444',
                     table: {
                         widths: widthsArr,
                         headerRows: eachTableHeader,
@@ -412,6 +403,9 @@ const generate = async (req, res, next) => {
         const sealLogoPath = path.resolve(__dirname, `../public/images/${lab.seal_image_filename}`);
         const sealBuffer = await imageToBuffer(sealLogoPath);
 
+        const nablLogoPath = path.resolve(__dirname, `../public/images/${lab.nabl_logo_filename}`);
+        const nablBuffer = await imageToBuffer(nablLogoPath);
+
         const sign1LogoPath = path.resolve(__dirname, `../public/${calibrated_employee_signature}`);
         const sign1LogoBuffer = await imageToBuffer(sign1LogoPath);
 
@@ -441,32 +435,33 @@ const generate = async (req, res, next) => {
                         columns: [
                             {
                                 width: 80,
+                                height: 80,
                                 image: labLogo_1_Buffer,
-                                margin: [10, 10, 0, 0]
+                                margin: [20, 25, 0, 0]
                             },
                             [
                                 {
-                                    text: `${lab.lab_name}`,
+                                    text: `${lab.lab_name.toUpperCase()}`,
                                     alignment: 'center', fontSize: 22, bold: true,
                                     margin: [0, 10, 0, 0],
                                 },
                                 {
                                     text: `${lab.address1}, ${lab.address2 ? `${lab.address2}, ` : ''} ${lab.address3 ? `${lab.address3}, ` : ''}\n${lab.city}, ${lab.state} - ${lab.pincode}`,
-                                    alignment: 'center', fontSize: 12,
+                                    alignment: 'center', fontSize: 10,
                                     margin: [0, 2, 0, 0],
-                                    lineHeight: 1.2
+                                    lineHeight: 1.1
                                 },
                                 {
                                     text: `Mobile: ${lab.contact_number1}${lab.contact_number2 ? ` | ${lab.contact_number2}` : ''} / Website: ${lab.lab_website}`,
-                                    alignment: 'center', fontSize: 12,
+                                    alignment: 'center', fontSize: 10,
                                     margin: [0, 2, 0, 0],
-                                    lineHeight: 1.2
+                                    lineHeight: 1.1
                                 },
                                 {
                                     text: `Email: ${lab.contact_email}`,
-                                    alignment: 'center', fontSize: 12,
+                                    alignment: 'center', fontSize: 10,
                                     margin: [0, 2, 0, 0],
-                                    lineHeight: 1.2
+                                    lineHeight: 1.1
                                 },
                                 {
                                     text: 'CERTIFICATE OF CALIBRATION',
@@ -475,16 +470,21 @@ const generate = async (req, res, next) => {
                                 }
                             ],
                             {
-                                width: 100,
-                                columns: [
+                                width: 80,
+                                stack: [
                                     {
                                         text: `${currentPage} of ${pageCount}`,
                                         alignment: 'right',
                                         fontSize: 10,
                                         margin: [0, 10, 15, 0]
-                                    }
+                                    },
+                                    nablBuffer ? {
+                                        width: 80,
+                                        height: 80,
+                                        image: nablBuffer,
+                                        margin: [-25, 5, 0, 0]
+                                    } : { text: '' },
                                 ],
-                                margin: [0, 10, 0, 0]
                             }
                         ]
                     },
@@ -510,7 +510,7 @@ const generate = async (req, res, next) => {
                     columnGap: 5,
                     columns: [
                         lab_QR_LOGO_1_Buffer ? { image: lab_QR_LOGO_1_Buffer, width: 50, } : { text: '' },
-                        { text: footerLongText, width: 'auto' },
+                        { text: footerLongText, width: 'auto', fontSize: 10, },
                         lab_QR_LOGO_2_Buffer ? { image: lab_QR_LOGO_2_Buffer, width: 50, } : { text: '' },
                     ],
                     margin: [10, 0, 10, 10]
@@ -696,20 +696,17 @@ const generate = async (req, res, next) => {
                 },
                 {
                     style: '8thTable',
+                    margin: [0, 5, 0, 0],
                     table: {
-                        widths: ['*'],
-                        headerRows: 1,
+                        widths: ['auto', '*'],
                         body: [
                             [
-                                { text: 'CALIBRATION RESULT ( All Values are in mm ):' }
+                                { text: 'CALIBRATION RESULT', decoration: 'underline' },
+                                { text: '( All Values are in mm ) :' }
                             ]
                         ]
                     },
-                    layout: {
-                        hLineColor: function (i, node) {
-                            return (i === 0) ? 'white' : 'black';
-                        },
-                    }
+                    layout: 'noBorders'
                 },
                 bigEyeObj,
                 {
@@ -727,7 +724,7 @@ const generate = async (req, res, next) => {
                         ]
                     }
                 },
-                { text: 'REMARKS:', margin: [0, 10, 0, 5] },
+                { text: 'REMARKS:', decoration: 'underline', margin: [0, 10, 0, 5] },
                 {
                     style: 'remarksList',
                     ol: remarks
@@ -773,7 +770,6 @@ const generate = async (req, res, next) => {
             },
             defaultStyle: {
                 columnGap: 20,
-                font: 'Times'
             },
             styles: {
                 mainTable: {
@@ -797,6 +793,9 @@ const generate = async (req, res, next) => {
                 eachTableStyle: {
                     margin: [0, 10, 0, 10],
                     fontSize: 9
+                },
+                remarksList: {
+                    margin: [15, 0, 0, 0],
                 }
             }
         };

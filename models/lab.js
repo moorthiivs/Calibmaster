@@ -139,6 +139,11 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: true,
       },
 
+      nabl_logo_filename: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+
       certificate_accreditation_qr_code_logo_1: {
         type: DataTypes.STRING,
         allowNull: true,
