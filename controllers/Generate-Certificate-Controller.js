@@ -362,7 +362,7 @@ const generate = async (req, res, next) => {
 
         let approved_employee_master = await masterResult.approved_employee_master;
         let approved_employee_name = approved_employee_master.employee_full_name;
-        let approved_employee_role = calibrated_employee_master.employee_role;
+        let approved_employee_role = approved_employee_master.employee_role;
         let approved_employee_signature = approved_employee_master.employee_signature;
 
         const labLogo_1_Path = path.resolve(__dirname, `../public/images/${lab.brand_logo_filename}`);
