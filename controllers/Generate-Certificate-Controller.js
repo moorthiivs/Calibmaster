@@ -710,26 +710,17 @@ const generate = async (req, res, next) => {
                 },
                 bigEyeObj,
                 {
-                    style: 'firstTable', pageBreak: 'before',
-                    table: {
-                        widths: ['*', '*', '*', '*'],
-                        body: [
-                            [
-                                { text: 'CERTIFICATE NUMBER:' },
-                                { text: certificate_number, alignment: 'center' },
-                                { text: 'DATE OF ISSUE:' },
-                                { text: date_of_issue, alignment: 'center' },
-                            ]
-
-                        ]
-                    }
-                },
-                { text: 'REMARKS:', decoration: 'underline', margin: [0, 10, 0, 5] },
-                {
-                    style: 'remarksList',
-                    ol: remarks
+                    id: 'remark_part',
+                    stack: [
+                        { text: 'REMARKS:', decoration: 'underline', margin: [0, 10, 0, 5] },
+                        {
+                            style: 'remarksList',
+                            ol: remarks
+                        }
+                    ]
                 },
                 {
+                    id: 'signature_part',
                     alignment: 'justify',
                     columns: [
                         {
@@ -766,6 +757,10 @@ const generate = async (req, res, next) => {
                 },
             ],
             pageBreakBefore: function (currentNode) {
+                if (currentNode.id === 'signature_part' && currentNode.pageNumbers.length != 1)
+                    return true;
+                if (currentNode.id === 'remark_part' && currentNode.pageNumbers.length != 1)
+                    return true;
                 return currentNode.style && currentNode.style.indexOf('pdf-pagebreak-before') > -1;
             },
             defaultStyle: {
