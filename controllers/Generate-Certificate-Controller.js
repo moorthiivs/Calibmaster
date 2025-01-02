@@ -240,6 +240,7 @@ const generate = async (req, res, next) => {
             const headerTypes = tableDesignArr[x].header_types;
             const cellTexts = tableDesignArr[x].cell_texts;
             const procedureimages = tableDesignArr[x].procedure_image_filename;
+            const conditional_formats = tableDesignArr[x].conditional_formats
 
             // const widthsArr = [];
 
@@ -307,6 +308,17 @@ const generate = async (req, res, next) => {
                 let eachRow = [];
                 for (const key in cellTexts[i]) {
                     let { val, constFormula } = cellTexts[i][key];
+
+                    if (conditional_formats[key]) {
+                        let v = isNaN(Number(val)) ? 0 : Number(val);
+                        if (!(conditional_formats[key].higher_range >= v && conditional_formats[key].lower_range <= v)) {
+                            if (conditional_formats[key].higher_range < v)
+                                val = conditional_formats[key].higher_range;
+                            else if (conditional_formats[key].lower_range > v)
+                                val = conditional_formats[key].lower_range;
+                        }
+                    }
+
                     const textContent = constFormula.split(/[\(\)]/);
                     if (textContent[0].trim() === 'HEADER')
                         eachRow.push({ text: val, bold: true });

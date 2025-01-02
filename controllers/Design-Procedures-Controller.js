@@ -323,7 +323,7 @@ const update = async (req, res, next) => {
             let {
                 design_procedure_id, fromId,
                 rows, columns,
-                header_types, header_texts, second_row_headers, cell_texts, print_on_certifcate, procedure_image_filename
+                header_types, header_texts, second_row_headers, cell_texts, print_on_certifcate, procedure_image_filename, conditional_formats
             } = mainArray[i];
 
             procedure_image_filename = StoreProcedureImages(procedure_image_filename, fromId);
@@ -336,7 +336,7 @@ const update = async (req, res, next) => {
                     console.log({ log: `${design_procedure_id} is deleted` });
                 } else {
                     const response = await Dynamicdesign.update(
-                        { fromId, rows, columns, header_types, header_texts, second_row_headers, cell_texts, print_on_certifcate, procedure_image_filename },
+                        { fromId, rows, columns, header_types, header_texts, second_row_headers, cell_texts, print_on_certifcate, procedure_image_filename, conditional_formats },
                         { where: { design_procedure_id } }
                     );
                     console.log({ log: `${design_procedure_id} is updated ${response}` });
@@ -486,7 +486,7 @@ const duplicateDefinedProcedures = async (req, res, next) => {
         const { atmospheric_pressure, calibration_procedure, humidity, instrument_type_id, ref_std, remarks, temperature, traceability, validity, master_list_equipments } = masterTable;
 
         const mainArray = tableDesign.map(tableData => {
-            const { fromId, rows, columns, header_types, header_texts, second_row_headers, cell_texts, table_type, print_on_certifcate, procedure_image_filename } = tableData;
+            const { fromId, rows, columns, header_types, header_texts, second_row_headers, cell_texts, table_type, print_on_certifcate, procedure_image_filename, conditional_formats } = tableData;
             return {
                 fromId,
                 rows,
@@ -498,7 +498,8 @@ const duplicateDefinedProcedures = async (req, res, next) => {
                 table_type,
                 unique_id: new Date().getTime(),
                 print_on_certifcate,
-                procedure_image_filename
+                procedure_image_filename,
+                conditional_formats
             }
         })
 

@@ -65,6 +65,11 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.ARRAY(DataTypes.STRING),
         allowNull: false,
         defaultValue: []
+      },
+      conditional_formats: {
+        type: DataTypes.JSON,
+        allowNull: false,
+        defaultValue: {}
       }
     },
     {
