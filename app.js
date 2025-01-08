@@ -7,14 +7,30 @@ const dotenv = require('dotenv');
 const routers = require('./routes/');
 const srfItemsCronservices = require('./cron-service/srf-items-cron');
 const masterEquipmentsCronservices = require('./cron-service/master-equipments-cron');
+const cron = require('node-cron');
 
 const app = express();
 
 // Cron Job Run
-srfItemsCronservices.sendNotificationMail_1();
-srfItemsCronservices.sendNotificationMail_2();
-masterEquipmentsCronservices.emailRemainder_1();
-masterEquipmentsCronservices.emailRemainder_2();
+// srfItemsCronservices.sendNotificationMail_1();
+// srfItemsCronservices.sendNotificationMail_2();
+// masterEquipmentsCronservices.emailRemainder_1();
+// masterEquipmentsCronservices.emailRemainder_2();
+
+// Cron Job
+cron.schedule('0 0 * * *', async function () { // run every day at 12:00 AM
+  try {
+    await srfItemsCronservices.sendNotificationMail_1();
+    await srfItemsCronservices.sendNotificationMail_2();
+    await masterEquipmentsCronservices.emailRemainder_1();
+    await masterEquipmentsCronservices.emailRemainder_2();
+  } catch (err) {
+    console.error('Error with cron job setup:', err);
+  }
+}, {
+  scheduled: true,
+  timezone: "Asia/Kolkata"  // Set the timezone to India Standard Time (IST)
+});
 
 const whitelist = ["http://localhost:5173"];
 

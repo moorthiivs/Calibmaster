@@ -240,6 +240,7 @@ const generate = async (req, res, next) => {
             const headerTypes = tableDesignArr[x].header_types;
             const cellTexts = tableDesignArr[x].cell_texts;
             const procedureimages = tableDesignArr[x].procedure_image_filename;
+            const conditional_formats = tableDesignArr[x].conditional_formats
 
             // const widthsArr = [];
 
@@ -307,6 +308,17 @@ const generate = async (req, res, next) => {
                 let eachRow = [];
                 for (const key in cellTexts[i]) {
                     let { val, constFormula } = cellTexts[i][key];
+
+                    if (conditional_formats[key]) {
+                        let v = isNaN(Number(val)) ? 0 : Number(val);
+                        if (!(conditional_formats[key].higher_range >= v && conditional_formats[key].lower_range <= v)) {
+                            if (conditional_formats[key].higher_range < v)
+                                val = conditional_formats[key].higher_range;
+                            else if (conditional_formats[key].lower_range > v)
+                                val = conditional_formats[key].lower_range;
+                        }
+                    }
+
                     const textContent = constFormula.split(/[\(\)]/);
                     if (textContent[0].trim() === 'HEADER')
                         eachRow.push({ text: val, bold: true });
@@ -362,7 +374,7 @@ const generate = async (req, res, next) => {
 
         let approved_employee_master = await masterResult.approved_employee_master;
         let approved_employee_name = approved_employee_master.employee_full_name;
-        let approved_employee_role = calibrated_employee_master.employee_role;
+        let approved_employee_role = approved_employee_master.employee_role;
         let approved_employee_signature = approved_employee_master.employee_signature;
 
         const labLogo_1_Path = path.resolve(__dirname, `../public/images/${lab.brand_logo_filename}`);
@@ -710,26 +722,17 @@ const generate = async (req, res, next) => {
                 },
                 bigEyeObj,
                 {
-                    style: 'firstTable', pageBreak: 'before',
-                    table: {
-                        widths: ['*', '*', '*', '*'],
-                        body: [
-                            [
-                                { text: 'CERTIFICATE NUMBER:' },
-                                { text: certificate_number, alignment: 'center' },
-                                { text: 'DATE OF ISSUE:' },
-                                { text: date_of_issue, alignment: 'center' },
-                            ]
-
-                        ]
-                    }
-                },
-                { text: 'REMARKS:', decoration: 'underline', margin: [0, 10, 0, 5] },
-                {
-                    style: 'remarksList',
-                    ol: remarks
+                    id: 'remark_part',
+                    stack: [
+                        { text: 'REMARKS:', decoration: 'underline', margin: [0, 10, 0, 5] },
+                        {
+                            style: 'remarksList',
+                            ol: remarks
+                        }
+                    ]
                 },
                 {
+                    id: 'signature_part',
                     alignment: 'justify',
                     columns: [
                         {
@@ -766,6 +769,10 @@ const generate = async (req, res, next) => {
                 },
             ],
             pageBreakBefore: function (currentNode) {
+                if (currentNode.id === 'signature_part' && currentNode.pageNumbers.length != 1)
+                    return true;
+                if (currentNode.id === 'remark_part' && currentNode.pageNumbers.length != 1)
+                    return true;
                 return currentNode.style && currentNode.style.indexOf('pdf-pagebreak-before') > -1;
             },
             defaultStyle: {
@@ -795,7 +802,7 @@ const generate = async (req, res, next) => {
                     fontSize: 9
                 },
                 remarksList: {
-                    margin: [15, 0, 0, 0],
+                    margin: [20, 0, 0, 0],
                 }
             }
         };

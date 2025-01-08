@@ -71,6 +71,11 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
         defaultValue: []
       },
+      conditional_formats: {
+        type: DataTypes.JSON,
+        allowNull: false,
+        defaultValue: {}
+      },
     },
     {
       sequelize,
