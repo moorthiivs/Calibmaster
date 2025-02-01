@@ -567,7 +567,7 @@ const createQuotation = async (req, res, next) => {
             }
             catch (err) {
                 console.log(err);
-                const error = new Error("Error Quotaion is not created!!");
+                const error = new Error("There was an error while sending the quotation to the customer.");
                 error.code = 500;
                 return errorHandler(error, req, res, next);
             }
