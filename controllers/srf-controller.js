@@ -1672,6 +1672,96 @@ const addItemtoSRF = async (req, res, next) => {
   });
 };
 
+const addBulkItemtoSRF = async (req, res, next) => {
+
+  if (!req.body || !req.body.srf_id || !req.body.items || !req.body.labId) {
+    const error = new Error("Invalid Request Params!!");
+    error.code = 400;
+    return errorHandler(error, req, res, next);
+  }
+
+  const { labId, srf_id } = req.body;
+
+  // Fetch SRF on database
+  try {
+    const srf = await SRF.findOne({
+      where: { srf_id, rstatus: 1 }
+    });
+
+    if (!srf) {
+      const error = new Error("SRF not Found!!!");
+      error.code = 500;
+      return errorHandler(error, req, res, next);
+    }
+
+  } catch (err) {
+    const error = new Error("Failed to fetch SRF");
+    error.code = 500;
+    return errorHandler(error, req, res, next);
+  }
+
+  // Fetch user on database
+  const fetchCreater = await User.findOne({
+    where: { id: req.userId }
+  });
+
+  try {
+    const items = req.body.items;
+    for (let item of items) {
+      item.srf_id = srf_id;
+      item.status = "Not Calibrated";
+      item.rstatus = 1;
+      item.lab_id = labId;
+
+      item.created_timestamp = Date.now();
+      item.created_by_login_name = fetchCreater.name;
+      item.created_by_user_id = req.userId;
+
+      item.updated_timestamp = Date.now();
+      item.updated_by_login_name = fetchCreater.name;
+      item.updated_by_user_id = req.userId;
+    }
+    await Item.bulkCreate(items);
+
+  } catch (err) {
+    console.log(err);
+    const error = new Error("Failed to create bulk srf-item");
+    error.code = 500;
+    return errorHandler(error, req, res, next);
+  }
+
+  //Getting SRF Items
+  let items;
+  try {
+    items = await Item.findAll({
+      where: { srf_id, lab_id: labId, rstatus: 1 },
+      include: ["intrument_type", "srf"],
+      order: [
+        ['srf_item_id', 'ASC'],
+      ]
+    });
+
+    let counter = 1;
+    for (let item of items) {
+      item.slNo = counter++;
+    }
+  } catch (err) {
+    const error = new Error("Failed to find srf-items");
+    error.code = 500;
+    return errorHandler(error, req, res, next);
+  }
+
+  //Returning 200 Response
+  return res.status(200).json({
+    status: "SUCCESS",
+    code: 200,
+    message: "SRF Bulk Items Added Successfully",
+    data: {
+      items
+    },
+  });
+};
+
 const updateSRFItem = async (req, res, next) => {
 
   if (!req.body || !req.body.srf_id || !req.body.srf_item_id || !req.body.item || !req.body.lab_id) {
@@ -2461,6 +2551,7 @@ exports.updateCalInfo = updateCalInfo;
 exports.updateDCInfo = updateDCInfo;
 exports.updateSRFItem = updateSRFItem;
 exports.addItemtoSRF = addItemtoSRF;
+exports.addBulkItemtoSRF = addBulkItemtoSRF;
 exports.getsrfbyId = getsrfbyId;
 exports.getSRFs = getSRFs;
 exports.addSRFHandler = addSRFHandler;
