@@ -1673,10 +1673,22 @@ const addItemtoSRF = async (req, res, next) => {
 };
 
 const addBulkItemtoSRF = async (req, res, next) => {
+  const path = '/api/srf/addbulkitemtosrf';
 
   if (!req.body || !req.body.srf_id || !req.body.items || !req.body.labId) {
     const error = new Error("Invalid Request Params!!");
     error.code = 400;
+    error.path = path;
+    return errorHandler(error, req, res, next);
+  }
+
+  // SRF Items Validation
+  const validitems = itemsSchema(req.body.items);
+
+  if (!validitems) {
+    const error = new Error("Invalid SRF Items!!");
+    error.code = 400;
+    error.path = path;
     return errorHandler(error, req, res, next);
   }
 
@@ -1691,12 +1703,14 @@ const addBulkItemtoSRF = async (req, res, next) => {
     if (!srf) {
       const error = new Error("SRF not Found!!!");
       error.code = 500;
+      error.path = path;
       return errorHandler(error, req, res, next);
     }
 
   } catch (err) {
     const error = new Error("Failed to fetch SRF");
     error.code = 500;
+    error.path = path;
     return errorHandler(error, req, res, next);
   }
 
@@ -1727,6 +1741,7 @@ const addBulkItemtoSRF = async (req, res, next) => {
     console.log(err);
     const error = new Error("Failed to create bulk srf-item");
     error.code = 500;
+    error.path = path;
     return errorHandler(error, req, res, next);
   }
 
@@ -1748,6 +1763,7 @@ const addBulkItemtoSRF = async (req, res, next) => {
   } catch (err) {
     const error = new Error("Failed to find srf-items");
     error.code = 500;
+    error.path = path;
     return errorHandler(error, req, res, next);
   }
 
