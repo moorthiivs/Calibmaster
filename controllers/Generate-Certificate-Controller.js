@@ -132,7 +132,20 @@ const generate = async (req, res, next) => {
         }
 
         // ***  Set First table data *** 
-        const customer_address = `${item?.srf?.customer?.address1}, ${item?.srf?.customer?.address2 ? `${item?.srf?.customer?.address2}, ` : ''} ${item?.srf?.customer?.address3 ? `${item?.srf?.customer?.address3}, ` : ''}${item?.srf?.customer?.city}, ${item?.srf?.customer?.state} - ${item?.srf?.customer?.pincode}`;
+        let customer_name = item?.srf?.customer?.customer_name;
+        let customer_address = [
+            item?.srf?.customer?.address1?.replace(/,\s*$/, '').trim(),
+            item?.srf?.customer?.address2?.replace(/,\s*$/, '').trim(),
+            item?.srf?.customer?.address3?.replace(/,\s*$/, '').trim(),
+            item?.srf?.customer?.city?.replace(/,\s*$/, '').trim(),
+            item?.srf?.customer?.state?.replace(/,\s*$/, '').trim(),
+        ].filter(Boolean).join(', ');
+
+        if (item?.srf?.customer?.pincode)
+            customer_address += ` - ${item.srf.customer.pincode}.`;
+        else
+            customer_address += '.';
+
         let date_of_issue = new Date().toLocaleDateString("en-GB", { timeZone: "Asia/Kolkata" });
         let received_date = item?.srf?.customer_dc_date;
         let cal_date = item?.calibration_done_date;
@@ -162,8 +175,8 @@ const generate = async (req, res, next) => {
         const make = item?.make;
         const slNo = item?.serial_no;
         const idNo = item?.identification_details;
-        const range = `${item?.intrument_type?.range_minimum} - ${item?.intrument_type?.range_maximum} ${item?.intrument_type?.range_maximum_uom?.uom_printsysmbol}`
-        const lc = `${item?.intrument_type?.least_count} ${item?.intrument_type?.least_count_uom?.uom_printsysmbol}`;
+        const range = `${item?.intrument_type?.range_minimum ?? ''} - ${item?.intrument_type?.range_maximum ?? ''} ${item?.intrument_type?.range_maximum_uom?.uom_printsysmbol ?? ''}`
+        const lc = `${item?.intrument_type?.least_count  ?? ''} ${item?.intrument_type?.least_count_uom?.uom_printsysmbol  ?? ''}`;
         const type = item?.intrument_type?.type;
 
         // ***  Query Master Result List  *** 
@@ -377,6 +390,19 @@ const generate = async (req, res, next) => {
         let approved_employee_role = approved_employee_master.employee_role;
         let approved_employee_signature = approved_employee_master.employee_signature;
 
+        let lab_address = [
+            lab.address1?.replace(/,\s*$/, '').trim(),
+            lab.address2?.replace(/,\s*$/, '').trim(),
+            lab.address3?.replace(/,\s*$/, '').trim(),
+            '\n' + lab.city?.replace(/,\s*$/, '').trim(),
+            lab.state?.replace(/,\s*$/, '').trim(),
+        ].filter(Boolean).join(', ');
+
+        if (lab?.pincode)
+            lab_address += ` - ${lab?.pincode}.`;
+        else
+            lab_address += '.';
+
         const labLogo_1_Path = path.resolve(__dirname, `../public/images/${lab.brand_logo_filename}`);
         const labLogo_1_Buffer = await imageToBuffer(labLogo_1_Path);
 
@@ -458,7 +484,7 @@ const generate = async (req, res, next) => {
                                     margin: [0, 10, 0, 0],
                                 },
                                 {
-                                    text: `${lab.address1}, ${lab.address2 ? `${lab.address2}, ` : ''} ${lab.address3 ? `${lab.address3}, ` : ''}\n${lab.city}, ${lab.state} - ${lab.pincode}`,
+                                    text: lab_address,
                                     alignment: 'center', fontSize: 10,
                                     margin: [0, 2, 0, 0],
                                     lineHeight: 1.1
@@ -550,6 +576,7 @@ const generate = async (req, res, next) => {
                                 {
                                     text: [
                                         { text: 'CUSTOMER ADDRESS:', decoration: 'underline' },
+                                        `\n${customer_name}`,
                                         `\n${customer_address}`
                                     ], rowSpan: 4, colSpan: 2, lineHeight: 1.5
                                 },

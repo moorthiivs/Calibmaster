@@ -24,6 +24,8 @@ router.post("/getsrfbyid", srfController.getsrfbyId);
 
 router.post("/additemtosrf", srfController.addItemtoSRF);
 
+router.post("/addbulkitemtosrf", srfController.addBulkItemtoSRF);
+
 router.post("/updateitem", srfController.updateSRFItem);
 
 router.post("/deleteitem", srfController.deleteSRFItem);
