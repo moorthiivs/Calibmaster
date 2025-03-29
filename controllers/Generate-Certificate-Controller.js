@@ -26,7 +26,12 @@ const Certificate = require("../models").Certificate;
 const masterResultTable = require("../models").master_result_table;
 const resultTable = require("../models").result_table;
 
-// Error Handler
+
+const { ProcedureResult } = require('../models');
+
+const { generatePdfFromSheet } = require('../utils/pdfUtils');
+
+// Error Handler 
 const { errorHandler } = require("../helpers/error-handler");
 
 async function imageToBuffer(imagePath) {
@@ -93,6 +98,33 @@ const generate = async (req, res, next) => {
 
         const certificate_number = new Date().getTime();
 
+
+        let ExcelProcedureTable;
+    
+
+
+          const excelTable = await ProcedureResult.findOne({
+            where: {
+              labid: lab_id,
+              srf_id,
+              srf_item_id
+            },
+            attributes: ["ExcelData","print_on_certificate"]
+          });
+          
+          
+      
+          
+          //Extract the ExcelData object
+          const excelData = excelTable.dataValues.ExcelData;
+
+          const selectedSheet = excelTable.dataValues.print_on_certificate;
+          
+          //Pass the extracted ExcelData to the function
+          const pdfBuffer = await generatePdfFromSheet(excelData,selectedSheet);
+
+          ExcelProcedureTable = pdfBuffer
+
         // ***  Query SRF-Items by srf_item_id *** 
         let item = await Item.findOne({
             where: { lab_id: lab_id, srf_item_id, rstatus: 1 },
@@ -122,6 +154,8 @@ const generate = async (req, res, next) => {
             ],
             order: [["srf_item_id", "ASC"]]
         });
+        
+
         // return res.json({ item });
 
         if (!item) {
@@ -203,6 +237,8 @@ const generate = async (req, res, next) => {
 
         // *** Create Format for Master list Equipments ***
         let masterListEquipment = await standard_details(masterResult?.master_list_equipments);
+
+
         const { m_description, m_make, m_serial_no, m_certificate_no, m_validity, m_traceability, m_identification_details, m_certificate_filename } = masterListEquipment;
         // return res.json(masterListEquipment);
 
@@ -229,154 +265,154 @@ const generate = async (req, res, next) => {
         // return res.json(lab);
 
         // *** Find Results ***
-        const tableDesignArr = await resultTable.findAll({
-            where: {
-                master_result_table_id: masterResult?.master_result_table_id,
-                print_on_certifcate: 'YES'
-            },
-            order: [
-                ['fromId', 'ASC'],
-            ],
-        });
-        // return res.json(tableDesignArr);
+        // const tableDesignArr = await resultTable.findAll({
+        //     where: {
+        //         master_result_table_id: masterResult?.master_result_table_id,
+        //         print_on_certifcate: 'YES'
+        //     },
+        //     order: [
+        //         ['fromId', 'ASC'],
+        //     ],
+        // });
+        // // return res.json(tableDesignArr);
 
-        const bigEyeObj = [];
+        // const bigEyeObj = [];
 
-        for (let x = 0; x < tableDesignArr.length; x++) {
+        // for (let x = 0; x < tableDesignArr.length; x++) {
 
-            const Columns = tableDesignArr[x].columns;
-            const table_type = tableDesignArr[x].table_type;
+        //     const Columns = tableDesignArr[x].columns;
+        //     const table_type = tableDesignArr[x].table_type;
 
-            const FirstHeaderTexts = tableDesignArr[x].header_texts;
-            const secondHeaderTexts = tableDesignArr[x].second_row_headers;
+        //     const FirstHeaderTexts = tableDesignArr[x].header_texts;
+        //     const secondHeaderTexts = tableDesignArr[x].second_row_headers;
 
-            const headerTypes = tableDesignArr[x].header_types;
-            const cellTexts = tableDesignArr[x].cell_texts;
-            const procedureimages = tableDesignArr[x].procedure_image_filename;
-            const conditional_formats = tableDesignArr[x].conditional_formats
+        //     const headerTypes = tableDesignArr[x].header_types;
+        //     const cellTexts = tableDesignArr[x].cell_texts;
+        //     const procedureimages = tableDesignArr[x].procedure_image_filename;
+        //     const conditional_formats = tableDesignArr[x].conditional_formats
 
-            // const widthsArr = [];
+        //     // const widthsArr = [];
 
-            // const eachTableContainer = [];
+        //     // const eachTableContainer = [];
 
-            // for (let i = 0; i < cellTexts?.length; i++) {
-            //     let eachRow = [];
-            //     for (const key in cellTexts[i]) {
-            //         eachRow.push({ text: cellTexts[i][key]?.val });
-            //     }
-            //     eachTableContainer.push(eachRow)
-            // }
+        //     // for (let i = 0; i < cellTexts?.length; i++) {
+        //     //     let eachRow = [];
+        //     //     for (const key in cellTexts[i]) {
+        //     //         eachRow.push({ text: cellTexts[i][key]?.val });
+        //     //     }
+        //     //     eachTableContainer.push(eachRow)
+        //     // }
 
-            // for (let i = 0; i < Columns; i++) {
-            //     if (Columns <= 10) {
-            //         widthsArr.push(100);
-            //     } else {
-            //         widthsArr.push(60);
-            //     }
-            // }
+        //     // for (let i = 0; i < Columns; i++) {
+        //     //     if (Columns <= 10) {
+        //     //         widthsArr.push(100);
+        //     //     } else {
+        //     //         widthsArr.push(60);
+        //     //     }
+        //     // }
 
-            // const eachObj = {
-            //     style: 'eachTableStyle',
-            //     color: '#444',
-            //     table: {
-            //         widths: widthsArr,
-            //         headerRows: 2,
-            //         keepWithHeaderRows: 1,
-            //         body: eachTableContainer
-            //     }
-            // }
-            // bigEyeObj.push(eachObj);
+        //     // const eachObj = {
+        //     //     style: 'eachTableStyle',
+        //     //     color: '#444',
+        //     //     table: {
+        //     //         widths: widthsArr,
+        //     //         headerRows: 2,
+        //     //         keepWithHeaderRows: 1,
+        //     //         body: eachTableContainer
+        //     //     }
+        //     // }
+        //     // bigEyeObj.push(eachObj);
 
-            // added newly
-            if (procedureimages.length) {
-                const imageBuffers = await Promise.all(procedureimages.map(async (image) => {
-                    const imagePath = path.resolve(__dirname, `../public/procedure_images/${image}`);
-                    return imageToBuffer(imagePath);
-                }));
+        //     // added newly
+        //     if (procedureimages.length) {
+        //         const imageBuffers = await Promise.all(procedureimages.map(async (image) => {
+        //             const imagePath = path.resolve(__dirname, `../public/procedure_images/${image}`);
+        //             return imageToBuffer(imagePath);
+        //         }));
 
-                const validImageBuffers = imageBuffers.filter(buffer => buffer !== false);
+        //         const validImageBuffers = imageBuffers.filter(buffer => buffer !== false);
 
-                const content = validImageBuffers.length === 1 ? {
-                    alignment: 'center',
-                    image: validImageBuffers[0],
-                    fit: [150, 100],
-                    margin: [0, 20, 0, 20]
-                } : {
-                    columns: validImageBuffers.map((imageData) => ({
-                        image: imageData,
-                        fit: [150, 100],
-                        alignment: 'center'
-                    })),
-                    columnGap: 10,
-                    alignment: 'center',
-                    margin: [0, 20, 0, 20]
-                };
+        //         const content = validImageBuffers.length === 1 ? {
+        //             alignment: 'center',
+        //             image: validImageBuffers[0],
+        //             fit: [150, 100],
+        //             margin: [0, 20, 0, 20]
+        //         } : {
+        //             columns: validImageBuffers.map((imageData) => ({
+        //                 image: imageData,
+        //                 fit: [150, 100],
+        //                 alignment: 'center'
+        //             })),
+        //             columnGap: 10,
+        //             alignment: 'center',
+        //             margin: [0, 20, 0, 20]
+        //         };
 
-                bigEyeObj.push(content);
-            }
-            const eachTableContainer = [];
-            let eachTableHeader = 1;
+        //         bigEyeObj.push(content);
+        //     }
+        //     const eachTableContainer = [];
+        //     let eachTableHeader = 1;
 
-            for (let i = 0; i < cellTexts?.length; i++) {
-                let eachRow = [];
-                for (const key in cellTexts[i]) {
-                    let { val, constFormula } = cellTexts[i][key];
+        //     for (let i = 0; i < cellTexts?.length; i++) {
+        //         let eachRow = [];
+        //         for (const key in cellTexts[i]) {
+        //             let { val, constFormula } = cellTexts[i][key];
 
-                    if (conditional_formats[key]) {
-                        let v = isNaN(Number(val)) ? 0 : Number(val);
-                        if (!(conditional_formats[key].higher_range >= v && conditional_formats[key].lower_range <= v)) {
-                            if (conditional_formats[key].higher_range < v)
-                                val = conditional_formats[key].higher_range;
-                            else if (conditional_formats[key].lower_range > v)
-                                val = conditional_formats[key].lower_range;
-                        }
-                    }
+        //             if (conditional_formats[key]) {
+        //                 let v = isNaN(Number(val)) ? 0 : Number(val);
+        //                 if (!(conditional_formats[key].higher_range >= v && conditional_formats[key].lower_range <= v)) {
+        //                     if (conditional_formats[key].higher_range < v)
+        //                         val = conditional_formats[key].higher_range;
+        //                     else if (conditional_formats[key].lower_range > v)
+        //                         val = conditional_formats[key].lower_range;
+        //                 }
+        //             }
 
-                    const textContent = constFormula.split(/[\(\)]/);
-                    if (textContent[0].trim() === 'HEADER')
-                        eachRow.push({ text: val, bold: true });
-                    else
-                        eachRow.push({ text: val === '--' ? '' : val });
-                    if (i === 0 && !(textContent[0].trim() === 'BLANK' || textContent[0].trim() === 'HEADER')) {
-                        eachTableHeader = 0;
-                    }
-                }
-                eachTableContainer.push(eachRow)
-            }
+        //             const textContent = constFormula.split(/[\(\)]/);
+        //             if (textContent[0].trim() === 'HEADER')
+        //                 eachRow.push({ text: val, bold: true });
+        //             else
+        //                 eachRow.push({ text: val === '--' ? '' : val });
+        //             if (i === 0 && !(textContent[0].trim() === 'BLANK' || textContent[0].trim() === 'HEADER')) {
+        //                 eachTableHeader = 0;
+        //             }
+        //         }
+        //         eachTableContainer.push(eachRow)
+        //     }
 
-            let eachTable = []
-            let startingIndex = 0;
-            let endingIndex = 8;
+        //     let eachTable = []
+        //     let startingIndex = 0;
+        //     let endingIndex = 8;
 
-            for (let i = 1; i <= Math.ceil(Columns / 8); i++) {  // Overflow the table columns are split 8 columns
-                endingIndex *= i;
-                let eachRow = []
-                eachTableContainer.map((row) => {
-                    eachRow.push(row.slice(startingIndex, endingIndex));
-                })
-                startingIndex += 8;
-                eachTable.push(eachRow)
-            }
-            eachTable.map((tableItem) => {
+        //     for (let i = 1; i <= Math.ceil(Columns / 8); i++) {  // Overflow the table columns are split 8 columns
+        //         endingIndex *= i;
+        //         let eachRow = []
+        //         eachTableContainer.map((row) => {
+        //             eachRow.push(row.slice(startingIndex, endingIndex));
+        //         })
+        //         startingIndex += 8;
+        //         eachTable.push(eachRow)
+        //     }
+        //     eachTable.map((tableItem) => {
 
-                let widthsArr = []
-                for (let i = 0; i < tableItem[0].length; i++) {
-                    widthsArr.push(60);
-                }
+        //         let widthsArr = []
+        //         for (let i = 0; i < tableItem[0].length; i++) {
+        //             widthsArr.push(60);
+        //         }
 
-                const eachObj = {
-                    style: 'eachTableStyle',
-                    table: {
-                        widths: widthsArr,
-                        headerRows: eachTableHeader,
-                        keepWithHeaderRows: eachTableHeader,
-                        body: tableItem
-                    }
-                }
-                bigEyeObj.push(eachObj);
-            })
-            // bigEyeObj.push(cellTexts);
-        }
+        //         const eachObj = {
+        //             style: 'eachTableStyle',
+        //             table: {
+        //                 widths: widthsArr,
+        //                 headerRows: eachTableHeader,
+        //                 keepWithHeaderRows: eachTableHeader,
+        //                 body: tableItem
+        //             }
+        //         }
+        //         bigEyeObj.push(eachObj);
+        //     })
+        //     // bigEyeObj.push(cellTexts);
+        // }
         // return res.json(bigEyeObj);
 
         // *** Seal & Logos area ***
@@ -457,7 +493,7 @@ const generate = async (req, res, next) => {
             background: [                       // watermark 
                 {
                     image: labLogo_1_Buffer,
-                    width: 300,
+                    width: 200,
                     height: 300,
                     opacity: 0.1,
                     alignment: 'center',
@@ -472,38 +508,38 @@ const generate = async (req, res, next) => {
                         columnGap: 0,
                         columns: [
                             {
-                                width: 80,
-                                height: 80,
+                                width: 50,
+                                height: 50,
                                 image: labLogo_1_Buffer,
                                 margin: [20, 25, 0, 0]
                             },
                             [
                                 {
                                     text: `${lab.lab_name.toUpperCase()}`,
-                                    alignment: 'center', fontSize: 22, bold: true,
+                                    alignment: 'center', fontSize: 18, bold: true,
                                     margin: [0, 10, 0, 0],
                                 },
                                 {
                                     text: lab_address,
-                                    alignment: 'center', fontSize: 10,
+                                    alignment: 'center', fontSize: 9,
                                     margin: [0, 2, 0, 0],
                                     lineHeight: 1.1
                                 },
                                 {
                                     text: `Mobile: ${lab.contact_number1}${lab.contact_number2 ? ` | ${lab.contact_number2}` : ''} / Website: ${lab.lab_website}`,
-                                    alignment: 'center', fontSize: 10,
+                                    alignment: 'center', fontSize: 9,
                                     margin: [0, 2, 0, 0],
                                     lineHeight: 1.1
                                 },
                                 {
                                     text: `Email: ${lab.contact_email}`,
-                                    alignment: 'center', fontSize: 10,
+                                    alignment: 'center', fontSize: 9,
                                     margin: [0, 2, 0, 0],
                                     lineHeight: 1.1
                                 },
                                 {
                                     text: 'CERTIFICATE OF CALIBRATION',
-                                    alignment: 'center', fontSize: 18, bold: true,
+                                    alignment: 'center', fontSize: 16, bold: true,
                                     margin: [0, 5, 0, 0],
                                 }
                             ],
@@ -517,8 +553,8 @@ const generate = async (req, res, next) => {
                                         margin: [0, 10, 15, 0]
                                     },
                                     nablBuffer ? {
-                                        width: 80,
-                                        height: 80,
+                                        width: 50,
+                                        height: 50,
                                         image: nablBuffer,
                                         margin: [-25, 5, 0, 0]
                                     } : { text: '' },
@@ -547,9 +583,9 @@ const generate = async (req, res, next) => {
                     alignment: 'left',
                     columnGap: 5,
                     columns: [
-                        lab_QR_LOGO_1_Buffer ? { image: lab_QR_LOGO_1_Buffer, width: 50, } : { text: '' },
+                        lab_QR_LOGO_1_Buffer ? { image: lab_QR_LOGO_1_Buffer, width: 30, } : { text: '' },
                         { text: footerLongText, width: 'auto', fontSize: 10, },
-                        lab_QR_LOGO_2_Buffer ? { image: lab_QR_LOGO_2_Buffer, width: 50, } : { text: '' },
+                        lab_QR_LOGO_2_Buffer ? { image: lab_QR_LOGO_2_Buffer, width: 30, } : { text: '' },
                     ],
                     margin: [10, 0, 10, 10]
                 }
@@ -575,7 +611,7 @@ const generate = async (req, res, next) => {
                             [
                                 {
                                     text: [
-                                        { text: 'CUSTOMER ADDRESS:', decoration: 'underline' },
+                                        { text: 'CUSTOMER NAME & ADDRESS:', decoration: 'underline' },
                                         `\n${customer_name}`,
                                         `\n${customer_address}`
                                     ], rowSpan: 4, colSpan: 2, lineHeight: 1.5
@@ -606,7 +642,7 @@ const generate = async (req, res, next) => {
                     }
                 },
                 {
-                    style: '2ndTable',
+                    style: 'secondTable',
                     table: {
                         widths: ['*', '*'],
                         body: [
@@ -623,7 +659,7 @@ const generate = async (req, res, next) => {
                     }
                 },
                 {
-                    style: '3rdTable',
+                    style: 'thirdTable',
                     table: {
                         widths: ['*', '*', '*', '*'],
                         body: [
@@ -673,7 +709,7 @@ const generate = async (req, res, next) => {
                     }
                 },
                 {
-                    style: '4thTable',
+                    style: 'fourthTable',
                     table: {
                         widths: ['*', '*'],
                         headerRows: 1,
@@ -691,7 +727,7 @@ const generate = async (req, res, next) => {
                     }
                 },
                 {
-                    style: '5thTable',
+                    style: 'fivthTable',
                     table: {
                         widths: ['*'],
                         headerRows: 1,
@@ -703,7 +739,7 @@ const generate = async (req, res, next) => {
                     }
                 },
                 {
-                    style: '6thTable',
+                    style: 'sixthTable',
                     table: {
                         widths: ['*', '*'],
                         headerRows: 1,
@@ -721,7 +757,7 @@ const generate = async (req, res, next) => {
                     }
                 },
                 {
-                    style: '7thTable',
+                    style: 'seventhTable',
                     table: {
                         widths: ['*', '*'],
                         headerRows: 1,
@@ -731,10 +767,10 @@ const generate = async (req, res, next) => {
                                 { text: humidity, }
                             ]
                         ]
-                    }
+                    } 
                 },
                 {
-                    style: '8thTable',
+                    style: 'eightthTable',
                     margin: [0, 5, 0, 0],
                     table: {
                         widths: ['auto', '*'],
@@ -747,9 +783,25 @@ const generate = async (req, res, next) => {
                     },
                     layout: 'noBorders'
                 },
-                bigEyeObj,
+                //bigEyeObj,
+
+                {
+                    style: 'ninethTable',
+                    margin: [0, 0, 0, 20],
+                    table: {
+                        headerRows: 1,
+                        widths: Array(ExcelProcedureTable[0].length).fill('*'),
+                        body: ExcelProcedureTable
+                      },
+                      layout: {
+                        fillColor: rowIndex => (rowIndex === 0 ? '#CCCCCC' : null),
+                        hLineColor: () => '#AAA',
+                        vLineColor: () => '#AAA'
+                      }
+                },
                 {
                     id: 'remark_part',
+                    style: 'remarks_style',
                     stack: [
                         { text: 'REMARKS:', decoration: 'underline', margin: [0, 10, 0, 5] },
                         {
@@ -766,7 +818,7 @@ const generate = async (req, res, next) => {
                             ul: [
                                 {
                                     image: sign1LogoBuffer,
-                                    width: 50,
+                                    width: 40,
                                     margin: [0, 0, 0, 0],
                                     alignment: 'center'
                                 },
@@ -776,12 +828,12 @@ const generate = async (req, res, next) => {
                             ],
                             alignment: 'center'
                         },
-                        sealBuffer ? { image: sealBuffer, width: 80, margin: [0, 0, 0, 0], alignment: 'center' } : { text: '' },
+                        sealBuffer ? { image: sealBuffer, width: 50, margin: [0, 0, 0, 0], alignment: 'center' } : { text: '' },
                         {
                             ul: [
                                 {
                                     image: sign2LogoBuffer,
-                                    width: 50,
+                                    width: 40,
                                     margin: [0, 0, 0, 0],
                                     alignment: 'center'
                                 },
@@ -796,16 +848,44 @@ const generate = async (req, res, next) => {
                 },
             ],
             pageBreakBefore: function (currentNode) {
+                //return false
                 if (currentNode.id === 'signature_part' && currentNode.pageNumbers.length != 1)
                     return true;
                 if (currentNode.id === 'remark_part' && currentNode.pageNumbers.length != 1)
                     return true;
                 return currentNode.style && currentNode.style.indexOf('pdf-pagebreak-before') > -1;
             },
-            defaultStyle: {
-                columnGap: 20,
-            },
+            // defaultStyle: {
+            //     columnGap: 20,
+            // },
+
+            defaultStyle: { columnGap: 0 },
+
             styles: {
+                firstTable:{
+                    fontSize: 8
+                },
+                secondTable:{
+                    fontSize: 8
+                },
+                thirdTable:{
+                    fontSize: 8
+                },
+                fourthTable:{
+                    fontSize: 8
+                },
+                sixthTable:{
+                    fontSize: 8
+                },
+                seventhTable:{
+                    fontSize: 8
+                },
+                ninethTable:{
+                    fontSize: 6
+                },
+                remarks_style:{
+                    fontSize: 8
+                },
                 mainTable: {
                     alignment: 'center'
                 },
@@ -829,7 +909,7 @@ const generate = async (req, res, next) => {
                     fontSize: 9
                 },
                 remarksList: {
-                    margin: [20, 0, 0, 0],
+                    margin: [10, 0, 0, 0],
                 }
             }
         };
@@ -905,9 +985,9 @@ const generate = async (req, res, next) => {
 
     } catch (err) {
         console.log(err);
-        let action = "Something went wrong";
+        let action = "Something went wrong"; 
         const error = new Error(action);
-        error.code = 500;
+        error.code = 500; 
         error.path = "Certificate Create Error";
         return skip_response || errorHandler(error, req, res, next);
     }
@@ -977,7 +1057,9 @@ const standard_details = async (master_list_equipments) => {
     let certificate_filename = [];
 
     master_list_equipments?.map((eachItem) => {
-        description?.push(eachItem.remark);
+        
+        //description?.push(eachItem.remark);
+        description?.push(eachItem.name_of_equipment);
         make?.push(eachItem.make);
         serial_no?.push(eachItem.serial_no);
         certificate_no?.push(eachItem.calibration_certificate_no);

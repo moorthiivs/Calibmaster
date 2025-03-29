@@ -25,4 +25,9 @@ router.post("/find_uncertainty_master_parameters", DesignProceduresController.fi
 
 router.post("/edit_uncertainty_master_parameters", DesignProceduresController.edit_uncertainty_master_parameters);
 
+
+// // *** Excel File map ***
+
+router.post("/listProcedure", DesignProceduresController.listProcedure); 
+
 module.exports = router;

@@ -61,6 +61,9 @@ const BankConfigRoutes = require("./bank-config-routes");
 
 const Authorization = require("../middleware/check-auth");
 
+
+const CalibMasterExcel = require('./calibmaster-excel-routes')
+
 //Routes of the APP
 router.use("/api/heartbeat", heartbeatRoute);
 router.use("/api/users", usersRoutes);
@@ -136,6 +139,10 @@ router.use("/api/bank-config-routes", Authorization, BankConfigRoutes);
 
 // Quotation part
 router.use("/api/quotation", Authorization, QuotationRoutes);
+
+// Calibmaster Excel
+///router.use('/api/calibmasterexcel/', Authorization, CalibMasterExcel)
+router.use('/api/calibmasterexcel/',  CalibMasterExcel)
 
 router.get("/*", (req, res) => {
     const frontendPath = path.join(__dirname + "../../public/index.html");

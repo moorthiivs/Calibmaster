@@ -8,7 +8,12 @@ const resultTable = require("../models").result_table;
 const UncertaintyMasterParameter = require("../models").uncertainty_master_parameter;
 const procedureUncertainties = require("../models").procedure_uncertainties;
 
+const { ProcedureResult } = require('../models');
+
+const calibmasterexcel = require('../models').CalibmasterExcel
+
 const { errorHandler } = require("../helpers/error-handler");
+
 
 function decodeBase64Image(dataString) {
     var matches = dataString.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/),
@@ -67,7 +72,6 @@ const create = async (req, res, next) => {
         const result = await newMasterTable.save();
 
         if (result) {
-
             // uncertainty_master_parameters?.map((item) => {
             //     item.master_design_procedure_id = result?.master_design_procedure_id;
             //     return item;
@@ -87,6 +91,11 @@ const create = async (req, res, next) => {
         } else {
             return res.json({ msg: false });
         }
+
+        if(result){
+            return res.status(200).json({message: true, data: result,response: 'New Define Procedure Created Successfully!!!', })
+        }
+
     } catch (err) {
         console.log(err)
         res.status(404);
@@ -124,6 +133,9 @@ const list = async (req, res, next) => {
     try {
 
         const { lab_id, instrument_type_id, srf_id, srf_item_id } = req.body;
+
+
+
 
         if (!lab_id || !instrument_type_id || !srf_id || !srf_item_id) {
             let action = "All fields are required";
@@ -168,6 +180,39 @@ const list = async (req, res, next) => {
     }
 }
 
+const listProcedure = async (req, res, next) => {
+
+    try {
+
+        const { lab_id } = req.body;
+        console.log(lab_id,"message: true,");
+        
+
+        if (!lab_id ) {
+            let action = "lab_id are required";
+            const error = new Error(action);
+            error.code = 500;
+            error.path = "--";
+            return errorHandler(error, req, res, next);
+        }
+
+        const definedProcedures = await MasterTable.findAll({
+            where: { lab_id: lab_id },
+            attributes: ['master_design_procedure_id', 'calibration_procedure'],  
+            order: [['master_design_procedure_id', 'ASC']]
+          });
+          
+
+        return res.status(200).json({message: true, definedProcedures});
+      
+    } catch (err) {
+        console.log(err)
+        res.status(404);
+        const error = new Error("Internal Server Error");
+        next(errorHandler(error, req, res, next))
+    }
+}
+
 const fetch = async (req, res, next) => {
 
     try {
@@ -192,14 +237,27 @@ const fetch = async (req, res, next) => {
                 },
             });
 
-            const tableDesign = await resultTable.findAll({
-                where: { master_result_table_id: masterTable.master_result_table_id },
-                order: [
-                    ['fromId', 'ASC'],
-                ],
-            });
+            // const tableDesign = await resultTable.findAll({
+            //     where: { master_result_table_id: masterTable.master_result_table_id },
+            //     order: [
+            //         ['fromId', 'ASC'],
+            //     ],
+            // });
 
-            return res.json({ masterTable, tableDesign, ifExistResultMasterTable: true });
+            const excelTable = await ProcedureResult.findOne({
+                where: {
+                    labid:lab_id,
+                    srf_id,
+                    srf_item_id
+                },
+            })
+            
+
+            return res.json({ masterTable, 
+                excelTable,
+                //tableDesign, 
+                ifExistResultMasterTable: true 
+            });
 
         } else {
 
@@ -210,6 +268,18 @@ const fetch = async (req, res, next) => {
                 },
                 include: "procedure_uncertainties"
             });
+
+
+            const excelTable = await calibmasterexcel.findOne({
+                where: {
+                    labid:lab_id,
+                    master_design_procedure_id
+                },
+            })
+
+
+            console.log(excelTable);
+            
 
             const { procedure_uncertainties } = masterTable;
 
@@ -233,8 +303,10 @@ const fetch = async (req, res, next) => {
             });
 
             return res.json({
-                masterTable, tableDesign,
-                uncertainty_master_parameter_query,
+                masterTable, 
+                excelTable,
+                //tableDesign,
+                ///uncertainty_master_parameter_query,
                 ifExistResultMasterTable: false
             });
         }
@@ -318,56 +390,58 @@ const update = async (req, res, next) => {
             { where: { master_design_procedure_id, lab_id } }
         );
 
-        for (let i = 0; i < mainArray.length; i++) {
+        // for (let i = 0; i < mainArray.length; i++) {
 
-            let {
-                design_procedure_id, fromId,
-                rows, columns,
-                header_types, header_texts, second_row_headers, cell_texts, print_on_certifcate, procedure_image_filename, conditional_formats
-            } = mainArray[i];
+        //     let {
+        //         design_procedure_id, fromId,
+        //         rows, columns,
+        //         header_types, header_texts, second_row_headers, cell_texts, print_on_certifcate, procedure_image_filename, conditional_formats
+        //     } = mainArray[i];
 
-            procedure_image_filename = StoreProcedureImages(procedure_image_filename, fromId);
+        //     procedure_image_filename = StoreProcedureImages(procedure_image_filename, fromId);
 
-            if (design_procedure_id) {
-                if (mainArray[i]?.delete) {
-                    await Dynamicdesign.destroy({
-                        where: { design_procedure_id }
-                    });
-                    console.log({ log: `${design_procedure_id} is deleted` });
-                } else {
-                    const response = await Dynamicdesign.update(
-                        { fromId, rows, columns, header_types, header_texts, second_row_headers, cell_texts, print_on_certifcate, procedure_image_filename, conditional_formats },
-                        { where: { design_procedure_id } }
-                    );
-                    console.log({ log: `${design_procedure_id} is updated ${response}` });
-                }
-            } else {
-                mainArray[i].master_design_procedure_id = master_design_procedure_id;
-                mainArray[i].calibration_procedure = calibration_procedure;
+        //     if (design_procedure_id) {
+        //         if (mainArray[i]?.delete) {
+        //             await Dynamicdesign.destroy({
+        //                 where: { design_procedure_id }
+        //             });
+        //             console.log({ log: `${design_procedure_id} is deleted` });
+        //         } else {
+        //             const response = await Dynamicdesign.update(
+        //                 { fromId, rows, columns, header_types, header_texts, second_row_headers, cell_texts, print_on_certifcate, procedure_image_filename, conditional_formats },
+        //                 { where: { design_procedure_id } }
+        //             );
+        //             console.log({ log: `${design_procedure_id} is updated ${response}` });
+        //         }
+        //     } else {
+        //         mainArray[i].master_design_procedure_id = master_design_procedure_id;
+        //         mainArray[i].calibration_procedure = calibration_procedure;
 
-                const newTableDesign = new Dynamicdesign(mainArray[i]);
-                await newTableDesign.save();
-            }
-        }
+        //         const newTableDesign = new Dynamicdesign(mainArray[i]);
+        //         await newTableDesign.save();
+        //     }
+        // }
 
         // *** 1st Delete rows with master_design_procedure_id ***
-        await procedureUncertainties.destroy({
-            where: { master_design_procedure_id: master_design_procedure_id }
-        });
+
+        // await procedureUncertainties.destroy({
+        //     where: { master_design_procedure_id: master_design_procedure_id }
+        // });
 
         // *** 2nd Add New Records with master_design_procedure_id, uncertainty_master_parameter_id ***
-        uncertainty_master_parameters?.map((item) => {
-            item.master_design_procedure_id = master_design_procedure_id;
-            return item;
-        });
 
-        const procedure_uncertainties_insert_query = await procedureUncertainties.bulkCreate(uncertainty_master_parameters);
+        // uncertainty_master_parameters?.map((item) => {
+        //     item.master_design_procedure_id = master_design_procedure_id;
+        //     return item;
+        // });
+
+      //  const procedure_uncertainties_insert_query = await procedureUncertainties.bulkCreate(uncertainty_master_parameters);
 
         return res.json({
             msg: "Dynamic Tables Updated Successfully",
-            mainArray,
+            //mainArray,
             masterTableUpdate,
-            procedure_uncertainties_insert_query
+            //procedure_uncertainties_insert_query
         });
     } catch (err) {
         console.log(err)
@@ -550,5 +624,6 @@ module.exports = {
     update,
     create_procedure_uncertainties,
     find_uncertainty_master_parameters,
-    edit_uncertainty_master_parameters
+    edit_uncertainty_master_parameters,
+    listProcedure
 }

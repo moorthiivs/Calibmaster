@@ -1,24 +1,29 @@
 const MasterTable = require("../models").master_result_table;
 const Dynamicdesign = require("../models").result_table;
 
+
+const { ProcedureResult } = require('../models');
+
 const { errorHandler } = require("../helpers/error-handler");
+const { where } = require("sequelize");
 
 const create = async (req, res, next) => {
-
+ 
     try {
-
+ 
         const {
             lab_id, instrument_type_id, srf_id, srf_item_id, master_design_procedure_id,
             calibration_procedure, ref_std,
             validity, traceability,
             temperature, humidity, atmospheric_pressure, ulr_number,
             master_list_equipments, remarks, calibrated_employee_id, approved_employee_id,
-            mainArray
+            userid, ExceljsonData, PrintonCertificate, FileName
         } = req.body;
 
         const ifExistsMasterTable = await MasterTable.findOne({
             where: { srf_id, srf_item_id }
         });
+
 
         if (ifExistsMasterTable) {
 
@@ -32,24 +37,25 @@ const create = async (req, res, next) => {
                 { where: { lab_id, srf_id, srf_item_id, } }
             );
 
-            // return res.json(mainArray);
 
-            for (let i = 0; i < mainArray.length; i++) {
+             // save excel json here
 
-                const {
-                    result_table_id,
-                    rows, columns,
-                    fromId,
-                    header_types, header_texts, second_row_headers, cell_texts
-                } = mainArray[i];
+             const ProcedureResultTable = await ProcedureResult.update(
+                {
+                    ExcelData:ExceljsonData,
+                    updatedby:userid,
+                    print_on_certificate:PrintonCertificate,
+                },
+                { where: { labid:lab_id, srf_id, srf_item_id, } }
+             )
+             
+             if(ProcedureResultTable){
+                // return res.json(mainArray);
+                   return res.json({ msg: "Result Tables Updated Successfully", masterTableUpdate });
 
-                const response = await Dynamicdesign.update(
-                    { rows, columns, header_types, header_texts, second_row_headers, cell_texts },
-                    { where: { result_table_id } }
-                );
-                console.log(response);
-            }
-            return res.json({ msg: "Result Tables Updated Successfully", masterTableUpdate });
+             }
+
+
 
         } else {
 
@@ -65,14 +71,21 @@ const create = async (req, res, next) => {
             const result = await newMasterTable.save();
 
             if (result) {
-                for (let i = 0; i < mainArray?.length; i++) {
 
-                    mainArray[i].master_result_table_id = await result.master_result_table_id;
+                // save excel json here
 
-                    const newTableDesign = new Dynamicdesign(mainArray[i]);
-                    await newTableDesign.save();
-                }
-
+                const newProcedureResultTable = new ProcedureResult({
+                    FileName,
+                    ExcelData:ExceljsonData,
+                    srf_id,
+                    srf_item_id,
+                    labid:lab_id,
+                    print_on_certificate:PrintonCertificate,
+                    createdby: userid,
+                    master_design_procedure_id
+                });
+                const result = await newProcedureResultTable.save();
+        
                 return res.json({ msg: "Result Tables Added Successfully" });
             } else {
                 const error = new Error("Failed To Add Result Tables");
@@ -81,8 +94,14 @@ const create = async (req, res, next) => {
                 return errorHandler(error, req, res, next);
             }
         }
+        
+        
+
+
+
+
     } catch (err) {
-        console.log(err);
+        console.log(err); 
         const error = new Error("Something went wrong");
         error.code = 500;
         error.path = "--";
