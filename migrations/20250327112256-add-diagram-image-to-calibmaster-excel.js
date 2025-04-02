@@ -4,7 +4,7 @@ module.exports = {
   up: async (queryInterface, Sequelize) => {
     await queryInterface.addColumn('CalibmasterExcels', 'diagram_image', {
       type: Sequelize.ARRAY(Sequelize.STRING),
-      allowNull: false,
+      allowNull: true,
       defaultValue: []
     });
   },

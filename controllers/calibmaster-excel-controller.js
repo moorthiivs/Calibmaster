@@ -48,83 +48,84 @@ function StoreProcedureImages (images, fromId) {
 
 const CreateCalibmasterExcel = async (req, res, next) => {
   try {
-    const { userId, labId, master_design_procedure_id, diagram_image } =
-      req.body
+    const { userId, labId, master_design_procedure_id, diagram_image } = req.body;
 
+    console.log("Received diagram_image:", diagram_image);
 
-    const file = req.file
+    const file = req.file;
 
     if (!userId || !labId || !file) {
       return res
         .status(400)
-        .json({ message: 'User ID, Lab ID, and Excel file are required.' })
+        .json({ message: "User ID, Lab ID, and Excel file are required." });
     }
 
-    const fileName = file.originalname
-    const uploadPath = file.path
+
+    const fileName = file.originalname;
+    const uploadPath = file.path;
 
     const existingProcedureFile = await calibmasterexcel.findOne({
-      where: { labid: labId, master_design_procedure_id }
-    })
+      where: { labid: labId, master_design_procedure_id },
+    });
 
     if (existingProcedureFile) {
       if (fs.existsSync(uploadPath)) {
-        fs.unlinkSync(uploadPath)
-        console.log(`Successfully deleted existing file: ${uploadPath}`)
+        fs.unlinkSync(uploadPath);
+        console.log(`Successfully deleted existing file: ${uploadPath}`);
       } else {
-        console.warn(
-          `File not found at path: ${uploadPath} - nothing to delete`
-        )
+        console.warn(`File not found at path: ${uploadPath} - nothing to delete`);
       }
       return res.status(400).json({
         message:
-          'A file has already been uploaded for this procedure. Only one sheet is allowed per master design procedure.'
-      })
+          "A file has already been uploaded for this procedure. Only one sheet is allowed per master design procedure.",
+      });
     }
 
     const existingFileName = await calibmasterexcel.findOne({
-      where: { FileName: fileName, labid: labId }
-    })
+      where: { FileName: fileName, labid: labId },
+    });
 
     if (existingFileName) {
-      fs.unlinkSync(uploadPath)
+      fs.unlinkSync(uploadPath);
       return res.status(400).json({
         message:
-          'A file with this name already exists in the lab. Please use a different file name.'
-      })
+          "A file with this name already exists in the lab. Please use a different file name.",
+      });
     }
 
-    const savedImages = StoreProcedureImages(diagram_image, userId)
 
-    const workbook = xlsx.readFile(uploadPath)
-    const sheetNames = workbook.SheetNames
+    let savedImages = null;
+    if (diagram_image && diagram_image.length > 0) {
+      savedImages = StoreProcedureImages(diagram_image, userId);
+    }
 
-    const allSheetsData = {}
-    sheetNames.forEach(sheetName => {
-      const sheet = workbook.Sheets[sheetName]
-      const jsonData = []
+    const workbook = xlsx.readFile(uploadPath);
+    const sheetNames = workbook.SheetNames;
 
-      if (sheet && sheet['!ref']) {
-        const range = xlsx.utils.decode_range(sheet['!ref'])
+    const allSheetsData = {};
+    sheetNames.forEach((sheetName) => {
+      const sheet = workbook.Sheets[sheetName];
+      const jsonData = [];
+
+      if (sheet && sheet["!ref"]) {
+        const range = xlsx.utils.decode_range(sheet["!ref"]);
         for (let r = range.s.r; r <= range.e.r; r++) {
-          const row = []
+          const row = [];
           for (let c = range.s.c; c <= range.e.c; c++) {
-            const addr = xlsx.utils.encode_cell({ r, c })
-            const cell = sheet[addr]
+            const addr = xlsx.utils.encode_cell({ r, c });
+            const cell = sheet[addr];
             if (cell) {
-              row.push(
-                cell.f ? `=${cell.f}` : cell.v !== undefined ? cell.v : ''
-              )
+              row.push(cell.f ? `=${cell.f}` : cell.v !== undefined ? cell.v : "");
             } else {
-              row.push('')
+              row.push("");
             }
           }
-          jsonData.push(row)
+          jsonData.push(row);
         }
       }
 
-      allSheetsData[sheetName] = jsonData
-    })
+      allSheetsData[sheetName] = jsonData;
+    });
 
     const newEntry = await calibmasterexcel.create({
       FileName: fileName,
@@ -133,21 +134,22 @@ const CreateCalibmasterExcel = async (req, res, next) => {
       createdby: userId,
       labid: labId,
       master_design_procedure_id,
-      diagram_image: savedImages
-    })
+      diagram_image: savedImages,
+    });
 
     res.status(200).json({
       message: true,
-      data: newEntry
-    })
+      data: newEntry,
+    });
   } catch (err) {
-    console.error(err)
-    const error = new Error('Something went wrong')
-    error.code = 500
-    error.path = '/api/calibmasterexcel/create-calibmaster-excel'
-    return errorHandler(error, req, res, next)
+    console.error(err);
+    const error = new Error("Something went wrong");
+    error.code = 500;
+    error.path = "/api/calibmasterexcel/create-calibmaster-excel";
+    return errorHandler(error, req, res, next);
   }
-}
+};
+
 
 const FetchCalibmasterExcel = async (req, res, next) => {
   try {

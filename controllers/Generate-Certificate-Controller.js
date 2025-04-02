@@ -29,10 +29,19 @@ const resultTable = require("../models").result_table;
 
 const { ProcedureResult } = require('../models');
 
-const { generatePdfFromSheet } = require('../utils/pdfUtils');
+const { generatePdfFromSheet, generatePdfTables } = require('../utils/pdfUtils');
+
+const calibmasterexcel = require('../models').CalibmasterExcel
+
+
+ProcedureResult.belongsTo(calibmasterexcel, {
+    foreignKey: 'master_design_procedure_id',
+    targetKey: 'master_design_procedure_id'
+})
 
 // Error Handler 
 const { errorHandler } = require("../helpers/error-handler");
+const { generateImageContent } = require("../utils/ProcedureImage");
 
 async function imageToBuffer(imagePath) {
     try {
@@ -96,12 +105,10 @@ const generate = async (req, res, next) => {
 
         const skip_response = req.body?.skip_response || false;
 
-        const certificate_number = new Date().getTime();
-
+        //const certificate_number = new Date().getTime();
 
         let ExcelProcedureTable;
     
-
 
           const excelTable = await ProcedureResult.findOne({
             where: {
@@ -109,11 +116,19 @@ const generate = async (req, res, next) => {
               srf_id,
               srf_item_id
             },
-            attributes: ["ExcelData","print_on_certificate"]
+            attributes: ["ExcelData", "print_on_certificate"],
+            include: [{
+                model: calibmasterexcel,
+                as: 'CalibmasterExcel', 
+                attributes: ['diagram_image'], 
+                required: false, 
+              }]
           });
           
-          
-      
+
+          const procedureimages = excelTable.CalibmasterExcel ? excelTable.CalibmasterExcel.diagram_image : null;
+
+          const imageContent = await generateImageContent(procedureimages);
           
           //Extract the ExcelData object
           const excelData = excelTable.dataValues.ExcelData;
@@ -121,9 +136,11 @@ const generate = async (req, res, next) => {
           const selectedSheet = excelTable.dataValues.print_on_certificate;
           
           //Pass the extracted ExcelData to the function
-          const pdfBuffer = await generatePdfFromSheet(excelData,selectedSheet);
+          const pdfBuffer = await generatePdfFromSheet(excelData,selectedSheet,imageContent);
 
           ExcelProcedureTable = pdfBuffer
+
+          const excelProcedureTables = await generatePdfTables(excelData, selectedSheet);
 
         // ***  Query SRF-Items by srf_item_id *** 
         let item = await Item.findOne({
@@ -154,7 +171,6 @@ const generate = async (req, res, next) => {
             ],
             order: [["srf_item_id", "ASC"]]
         });
-        
 
         // return res.json({ item });
 
@@ -205,7 +221,7 @@ const generate = async (req, res, next) => {
         }
 
         // ***  Set duc details table data *** 
-        const description = item?.intrument_type?.instrument_full_name;
+        const description = item?.intrument_type?.instrument?.instrument_name;
         const make = item?.make;
         const slNo = item?.serial_no;
         const idNo = item?.identification_details;
@@ -239,8 +255,12 @@ const generate = async (req, res, next) => {
         let masterListEquipment = await standard_details(masterResult?.master_list_equipments);
 
 
-        const { m_description, m_make, m_serial_no, m_certificate_no, m_validity, m_traceability, m_identification_details, m_certificate_filename } = masterListEquipment;
+        const { m_description, m_make, m_serial_no, m_certificate_no, m_validity, m_traceability, m_identification_details, m_certificate_filename,master_quantity } = masterListEquipment;
         // return res.json(masterListEquipment);
+        
+        const srf = item.srf.dataValues.srf_number;
+        
+        const certificate_number = `SSPI/${new Date().getFullYear().toString().slice(-2)}/${srf}/${master_quantity}`;
 
         const masterDescription = m_description;
         const masterMake = m_make;
@@ -560,36 +580,128 @@ const generate = async (req, res, next) => {
                                     } : { text: '' },
                                 ],
                             }
-                        ]
+                        ],
+                        margin: [0, 0, 0, 0]
                     },
                 ]
             },
-            footer: [
-                {
-                    canvas: [
-                        {
-                            type: 'line',
+            footer: function(currentPage, pageCount) {
+                let footerContent = [
+                    {
+                        canvas: [{
+                            type: "line",
                             x1: 0,
                             y1: 0,
-                            x2: 600,  // Full width of the page
+                            x2: 600,
                             y2: 0,
                             lineWidth: 1,
-                            strokeColor: 'black'
+                            strokeColor: "black"
+                        }],
+                        margin: [0, 0, 0, 5]
+                    },
+                    {
+                        alignment: "left",
+                        columnGap: 5,
+                        columns: [
+                            lab_QR_LOGO_1_Buffer ? { 
+                                image: lab_QR_LOGO_1_Buffer, 
+                                width: 30 
+                            } : { text: "" },
+                            { 
+                                text: footerLongText, 
+                                width: "auto", 
+                                fontSize: 8 
+                            },
+                            lab_QR_LOGO_2_Buffer ? { 
+                                image: lab_QR_LOGO_2_Buffer, 
+                                width: 30 
+                            } : { text: "" },
+                        ],
+                        margin: [10, 10, 10, 5]
+                    }
+                ];
+            
+                if (currentPage === pageCount) {
+                    footerContent.unshift(
+
+                        // {
+                        //     id: 'signature_part',
+                        //     alignment: 'justify',
+                        //     columns: [
+                        //         {
+                        //             ul: [
+                        //                 {
+                        //                     image: sign1LogoBuffer,
+                        //                     width: 30,
+                        //                     margin: [0, 0, 0, 0],
+                        //                     alignment: 'center'
+                        //                 },
+                        //                 { 
+                        //                     text: `${calibrated_employee_name}`, 
+                        //                     listType: 'none', 
+                        //                     fontSize: 8 
+                        //                 },
+                        //                 { 
+                        //                     text: `${calibrated_employee_role}`, 
+                        //                     listType: 'none', 
+                        //                     fontSize: 8 
+                        //                 },
+                        //                 { 
+                        //                     text: 'Calibrated By', 
+                        //                     listType: 'none', 
+                        //                     fontSize: 8 
+                        //                 }
+                        //             ],
+                        //             alignment: 'center'
+                        //         },
+                        //         sealBuffer ? { 
+                        //             image: sealBuffer, 
+                        //             width: 40, 
+                        //             margin: [0, 0, 0, 0], 
+                        //             alignment: 'center' 
+                        //         } : { text: '' },
+                        //         {
+                        //             ul: [
+                        //                 {
+                        //                     image: sign2LogoBuffer,
+                        //                     width: 30,
+                        //                     margin: [0, 0, 0, 0],
+                        //                     alignment: 'center'
+                        //                 },
+                        //                 { 
+                        //                     text: `${approved_employee_name}`, 
+                        //                     listType: 'none', 
+                        //                     fontSize: 8 
+                        //                 },
+                        //                 { 
+                        //                     text: `${approved_employee_role}`, 
+                        //                     listType: 'none', 
+                        //                     fontSize: 8 
+                        //                 },
+                        //                 { 
+                        //                     text: 'Approved by', 
+                        //                     listType: 'none', 
+                        //                     fontSize: 8 
+                        //                 }
+                        //             ],
+                        //             alignment: 'center'
+                        //         },
+                        //     ],
+                        //     margin: [0, -40, 0, 5],
+                        // },
+                        {
+                            text: "*** End of Calibration Report ***",
+                            alignment: "center",
+                            fontSize: 10,
+                            bold: true,
+                            margin: [0, 0, 0, 2]
                         }
-                    ],
-                    margin: [0, 0, 0, 10]  // Margin for the line (spacing before and after the line)
-                },
-                {
-                    alignment: 'left',
-                    columnGap: 5,
-                    columns: [
-                        lab_QR_LOGO_1_Buffer ? { image: lab_QR_LOGO_1_Buffer, width: 30, } : { text: '' },
-                        { text: footerLongText, width: 'auto', fontSize: 10, },
-                        lab_QR_LOGO_2_Buffer ? { image: lab_QR_LOGO_2_Buffer, width: 30, } : { text: '' },
-                    ],
-                    margin: [10, 0, 10, 10]
+                    );
                 }
-            ],
+            
+                return footerContent;
+            },
+            
             content: [
                 {
                     style: 'firstTable',
@@ -657,11 +769,11 @@ const generate = async (req, res, next) => {
                             return (i === 0 || i === node.table.body.length) ? 'white' : 'black';
                         },
                     }
-                },
+                }, 
                 {
                     style: 'thirdTable',
                     table: {
-                        widths: ['*', '*', '*', '*'],
+                        widths: ['25%', '25%', '25%', '25%'],
                         body: [
                             [
                                 { text: 'DESCRIPTION:' },
@@ -707,7 +819,7 @@ const generate = async (req, res, next) => {
                             ],
                         ]
                     }
-                },
+                }, 
                 {
                     style: 'fourthTable',
                     table: {
@@ -771,7 +883,7 @@ const generate = async (req, res, next) => {
                 },
                 {
                     style: 'eightthTable',
-                    margin: [0, 5, 0, 0],
+                    margin: [0, 5, 0, 10],
                     table: {
                         widths: ['auto', '*'],
                         body: [
@@ -785,23 +897,36 @@ const generate = async (req, res, next) => {
                 },
                 //bigEyeObj,
 
-                {
-                    style: 'ninethTable',
-                    margin: [0, 0, 0, 20],
-                    table: {
-                        headerRows: 1,
-                        widths: Array(ExcelProcedureTable[0].length).fill('*'),
-                        body: ExcelProcedureTable
-                      },
-                      layout: {
-                        fillColor: rowIndex => (rowIndex === 0 ? '#CCCCCC' : null),
-                        hLineColor: () => '#AAA',
-                        vLineColor: () => '#AAA'
-                      }
-                },
+                ...imageContent,
+                ...excelProcedureTables,
+
+                // {
+                //     style: 'ninethTable',
+                //     margin: [0, 0, 0, 0],
+                //     table: {
+                //         headerRows: 1,
+                //         widths: Array(ExcelProcedureTable[0].length).fill('*'),
+                //         body: ExcelProcedureTable
+                //       },
+                //       layout: {
+                //         fillColor: rowIndex => (rowIndex === 0 ? '#CCCCCC' : null),
+                //         hLineColor: () => '#AAA',
+                //         vLineColor: () => '#AAA'
+                //       } 
+                // },
+                // {
+                //     id:"remark_part",
+                //     text: 'REMARKS', style: 'subheader',decoration: 'underline', 
+                //     margin: [0 ,20, 0, 5]
+                // },
+                // {
+                //     style: 'remarksList',
+                //     ol: remarks ,
+                //     lineHeight: 1.1 
+                // },
+
                 {
                     id: 'remark_part',
-                    style: 'remarks_style',
                     stack: [
                         { text: 'REMARKS:', decoration: 'underline', margin: [0, 10, 0, 5] },
                         {
@@ -818,33 +943,33 @@ const generate = async (req, res, next) => {
                             ul: [
                                 {
                                     image: sign1LogoBuffer,
-                                    width: 40,
+                                    width: 30,
                                     margin: [0, 0, 0, 0],
                                     alignment: 'center'
                                 },
-                                { text: `${calibrated_employee_name}`, listType: 'none' },
-                                { text: `${calibrated_employee_role}`, listType: 'none' },
-                                { text: 'Calibrated By', listType: 'none' }
+                                { text: `${calibrated_employee_name}`, listType: 'none', fontSize: 8 },
+                                { text: `${calibrated_employee_role}`, listType: 'none', fontSize: 8 },
+                                { text: 'Calibrated By', listType: 'none',fontSize: 8 }
                             ],
                             alignment: 'center'
                         },
-                        sealBuffer ? { image: sealBuffer, width: 50, margin: [0, 0, 0, 0], alignment: 'center' } : { text: '' },
+                        sealBuffer ? { image: sealBuffer, width: 40, margin: [0, 0, 0, 0], alignment: 'center' } : { text: '' },
                         {
                             ul: [
                                 {
                                     image: sign2LogoBuffer,
-                                    width: 40,
+                                    width: 30,
                                     margin: [0, 0, 0, 0],
                                     alignment: 'center'
                                 },
-                                { text: `${approved_employee_name}`, listType: 'none' },
-                                { text: `${approved_employee_role}`, listType: 'none' },
-                                { text: 'Approved by', listType: 'none' }
+                                { text: `${approved_employee_name}`, listType: 'none',    fontSize: 8 },
+                                { text: `${approved_employee_role}`, listType: 'none',    fontSize: 8 },
+                                { text: 'Approved by', listType: 'none',fontSize: 8 }
                             ],
                             alignment: 'center'
                         },
                     ],
-                    margin: [0, 30, 0, 5],
+                    margin: [0, 10, 0, 5],
                 },
             ],
             pageBreakBefore: function (currentNode) {
@@ -855,63 +980,85 @@ const generate = async (req, res, next) => {
                     return true;
                 return currentNode.style && currentNode.style.indexOf('pdf-pagebreak-before') > -1;
             },
-            // defaultStyle: {
-            //     columnGap: 20,
+            defaultStyle: {
+                columnGap: 20,
+            },
+
+            // pageBreakBefore: function(currentNode) {
+            //     // Force signature to stay with footer content
+            //     if (currentNode.id === 'signature_part') {
+            //       const remainingSpace = 792 - currentNode.y - 150; 
+            //       if (remainingSpace < 200) {
+            //         return true;
+            //       }
+            //     }
+      
+            //     if (currentNode.id === 'remark_part' && imageContent.length > 0 && excelProcedureTables.length > 0) {
+                    
+            //         return true;
+            //     }
+            //         return false;
+            
             // },
+          
 
-            defaultStyle: { columnGap: 0 },
+              defaultStyle: { columnGap: 0 },
 
-            styles: {
-                firstTable:{
-                    fontSize: 8
-                },
-                secondTable:{
-                    fontSize: 8
-                },
-                thirdTable:{
-                    fontSize: 8
-                },
-                fourthTable:{
-                    fontSize: 8
-                },
-                sixthTable:{
-                    fontSize: 8
-                },
-                seventhTable:{
-                    fontSize: 8
-                },
-                ninethTable:{
-                    fontSize: 6
-                },
-                remarks_style:{
-                    fontSize: 8
-                },
-                mainTable: {
-                    alignment: 'center'
-                },
-                signatureTable: {
-                    alignment: 'center'
-                },
-                calibrationTable: {
-                    alignment: 'center'
-                },
-                uncertainityTable: {
-                    alignment: 'center'
-                },
-                repeatabilityTable: {
-                    alignment: 'center'
-                },
-                eccentricityTable: {
-                    alignment: 'center'
-                },
-                eachTableStyle: {
-                    margin: [0, 10, 0, 10],
-                    fontSize: 9
-                },
-                remarksList: {
-                    margin: [10, 0, 0, 0],
-                }
-            }
+              styles: {
+                  firstTable:{
+                      fontSize: 8
+                  },
+                  secondTable:{
+                      fontSize: 8
+                  },
+                  thirdTable:{
+                      fontSize: 8
+                  },
+                  fourthTable:{
+                      fontSize: 8
+                  },
+                  sixthTable:{
+                      fontSize: 8
+                  },
+                  seventhTable:{
+                      fontSize: 8
+                  },
+                  ninethTable:{
+                      fontSize: 6
+                  },
+                  remarks_style:{
+                      fontSize: 8
+                  },
+                  remarksList:{
+                      fontSize: 8
+                  },
+                  mainTable: {
+                      alignment: 'center'
+                  },
+                  signatureTable: {
+                      alignment: 'center'
+                  },
+                  calibrationTable: {
+                      alignment: 'center'
+                  },
+                  uncertainityTable: {
+                      alignment: 'center'
+                  },
+                  repeatabilityTable: {
+                      alignment: 'center'
+                  },
+                  eccentricityTable: {
+                      alignment: 'center'
+                  },
+                //   eachTableStyle: {
+                //       margin: [0, 10, 0, 10],
+                //       fontSize: 9
+                //   },
+                  // remarksList: {
+                  //     margin: [10, 0, 0, 0],
+                  // }
+              }
+
         };
 
         const pdfDocGenerator = pdfMake.createPdf(docDefinition, {});
@@ -1055,6 +1202,7 @@ const standard_details = async (master_list_equipments) => {
     let traceability = [];
     let identification_details = [];
     let certificate_filename = [];
+    let master_quantity = master_list_equipments.length
 
     master_list_equipments?.map((eachItem) => {
         
@@ -1083,7 +1231,7 @@ const standard_details = async (master_list_equipments) => {
     const m_identification_details = identification_details?.join(",");
     const m_certificate_filename = certificate_filename?.join(",");
 
-    return { m_description, m_make, m_serial_no, m_certificate_no, m_validity, m_traceability, m_identification_details, m_certificate_filename };
+    return { m_description, m_make, m_serial_no, m_certificate_no, m_validity, m_traceability, m_identification_details, m_certificate_filename,master_quantity };
 }
 
 const convertFilepathtoBlob = async (filePath, originalFileName) => {

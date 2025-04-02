@@ -29,12 +29,12 @@ module.exports = (sequelize, DataTypes) => {
     },
     diagram_image: {
       type: DataTypes.ARRAY(DataTypes.STRING),
-      allowNull: false,
+      allowNull: true,
       defaultValue: []
     },
     labid: {
-      type: DataTypes.INTEGER,
-      allowNull: true
+      type: DataTypes.INTEGER, 
+      allowNull: true  
     },    
     master_design_procedure_id: {
       type: DataTypes.INTEGER,
