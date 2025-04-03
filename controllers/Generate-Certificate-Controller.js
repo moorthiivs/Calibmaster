@@ -528,38 +528,45 @@ const generate = async (req, res, next) => {
                         columnGap: 0,
                         columns: [
                             {
-                                width: 50,
-                                height: 50,
+                                width: 100,
+                                height: 100,
                                 image: labLogo_1_Buffer,
                                 margin: [20, 25, 0, 0]
                             },
                             [
                                 {
                                     text: `${lab.lab_name.toUpperCase()}`,
-                                    alignment: 'center', fontSize: 18, bold: true,
+                                    alignment: 'center',
+                                    fontSize: 18,
+                                    bold: true,
                                     margin: [0, 10, 0, 0],
                                 },
                                 {
                                     text: lab_address,
-                                    alignment: 'center', fontSize: 9,
+                                    alignment: 'center',
+                                    fontSize: 9,
                                     margin: [0, 2, 0, 0],
                                     lineHeight: 1.1
                                 },
                                 {
                                     text: `Mobile: ${lab.contact_number1}${lab.contact_number2 ? ` | ${lab.contact_number2}` : ''} / Website: ${lab.lab_website}`,
-                                    alignment: 'center', fontSize: 9,
+                                    alignment: 'center',
+                                    fontSize: 9,
                                     margin: [0, 2, 0, 0],
                                     lineHeight: 1.1
                                 },
                                 {
                                     text: `Email: ${lab.contact_email}`,
-                                    alignment: 'center', fontSize: 9,
+                                    alignment: 'center',
+                                    fontSize: 9,
                                     margin: [0, 2, 0, 0],
                                     lineHeight: 1.1
                                 },
                                 {
                                     text: 'CERTIFICATE OF CALIBRATION',
-                                    alignment: 'center', fontSize: 16, bold: true,
+                                    alignment: 'center',
+                                    fontSize: 16,
+                                    bold: true,
                                     margin: [0, 5, 0, 0],
                                 }
                             ],
@@ -573,18 +580,30 @@ const generate = async (req, res, next) => {
                                         margin: [0, 10, 15, 0]
                                     },
                                     nablBuffer ? {
-                                        width: 50,
-                                        height: 50,
+                                        width: 100,
+                                        height: 100,
                                         image: nablBuffer,
                                         margin: [-25, 5, 0, 0]
                                     } : { text: '' },
                                 ],
                             }
                         ],
-                        margin: [0, 0, 0, 0]
+                        
                     },
-                ]
-            },
+                    // {
+                    //     canvas: [{
+                    //         type: "line",
+                    //         x1: 0,
+                    //         y1: 0,
+                    //         x2: 600,
+                    //         y2: 0,
+                    //         lineWidth: 2,
+                    //         strokeColor: "black"
+                    //     }],
+                    //     margin: [0, 0, 0, 50]
+                    // },
+                ];
+            },            
             footer: function(currentPage, pageCount) {
                 let footerContent = [
                     {

@@ -614,6 +614,46 @@ const duplicateDefinedProcedures = async (req, res, next) => {
     }
 }
 
+const deletes = async (req, res, next) => {
+    try {
+      const { master_design_procedure_id } = req.body;
+  
+      // Check if the record exists
+      const masterTable = await MasterTable.findOne({
+        where: { master_design_procedure_id },
+      });
+  
+      if (!masterTable) {
+        const error = new Error("Design Procedure not found");
+        error.code = 404;
+        return errorHandler(error, req, res, next);
+      }
+  
+      // First, delete related records from child table
+      await MasterResultTable.destroy({
+        where: { master_design_procedure_id },
+      });
+  
+      // Then, delete the parent record
+      await MasterTable.destroy({
+        where: { master_design_procedure_id },
+      });
+  
+      return res.status(200).json({
+        response: "Design Procedure deleted successfully!!!",
+        code: 200,
+      });
+    } catch (error) {
+      console.error("Error deleting Design Procedure:", error);
+      return res.status(500).json({
+        response: "Error deleting Design Procedure",
+        code: 500,
+        error: error.message,
+      });
+    }
+  };
+  
+
 module.exports = {
     create,
     findAllList,
@@ -625,5 +665,6 @@ module.exports = {
     create_procedure_uncertainties,
     find_uncertainty_master_parameters,
     edit_uncertainty_master_parameters,
-    listProcedure
+    listProcedure,
+    deletes
 }

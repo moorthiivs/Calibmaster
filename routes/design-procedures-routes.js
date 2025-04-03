@@ -18,6 +18,9 @@ router.post("/duplicate-defined-procedure", DesignProceduresController.duplicate
 
 router.post("/update", DesignProceduresController.update);
 
+
+router.delete("/delete",DesignProceduresController.deletes)
+
 // *** Test Routes ***
 router.post("/create_procedure_uncertainties", DesignProceduresController.create_procedure_uncertainties);
 

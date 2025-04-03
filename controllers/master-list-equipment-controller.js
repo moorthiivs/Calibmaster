@@ -387,9 +387,48 @@ const viewCertificate = async (req, res, next) => {
     }
 }
 
+
+const deleteMaster = async (req, res, next) => {
+    try {
+        const { master_list_equipment_id } = req.body;
+
+        if (!master_list_equipment_id) {
+            const error = new Error("Master equipment ID not found");
+            error.code = 400; // Change to 400 (Bad Request)
+            return errorHandler(error, req, res, next);
+        }
+
+        let result = await MasterListEquipment.findOne({
+            where: { master_list_equipment_id }
+        });
+
+        if (!result) {
+            const error = new Error("Master equipment not found");
+            error.code = 404; // Change to 404 (Not Found)
+            return errorHandler(error, req, res, next);
+        }
+
+        // If data exists, delete it
+        await MasterListEquipment.destroy({
+            where: { master_list_equipment_id }
+        });
+
+        return res.status(200).json({
+            response: "Master equipment deleted successfully!!!",
+            code: 200
+        });
+
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ error: "Internal server error" });
+    }
+};
+
+
 exports.create = create;
 exports.list = list;
 exports.find = find;
 exports.update = update;
 exports.emailRemainder = emailRemainder;
 exports.viewCertificate = viewCertificate;
+exports.deleteMaster = deleteMaster
