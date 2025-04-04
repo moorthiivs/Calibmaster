@@ -2182,6 +2182,43 @@ const updateCalInfo = async (req, res, next) => {
   }
 };
 
+// *** Delete SRF All Items *** 
+
+const deleteSRF = async (req, res, next) => {
+  if (!req.body || !req.body.srf_id || !req.body.labId) {
+    const error = new Error("Missing required fields");
+    error.code = 500;
+    return errorHandler(error, req, res, next);
+  }
+
+  const { srf_id, labId } = req.body;
+
+  try {
+    // Delete dependent records from srfitems first
+    await Item.destroy({
+      where: { srf_id: srf_id }
+    });
+
+    // Now delete from srf_lists
+    await SRF.destroy({
+      where: { srf_id: srf_id, lab_id: labId }
+    });
+
+  } catch (err) {
+    console.log(err);
+    const error = new Error("Failed to Delete SRF Item");
+    error.code = 500;
+    return errorHandler(error, req, res, next);
+  }
+
+  return res.status(201).json({
+    status: "SUCCESS",
+    code: 201,
+    message: "SRF Item Deleted Successfully",
+  });
+};
+
+
 // *** Delete SRF Item 
 const deleteSRFItem = async (req, res, next) => {
 
@@ -2562,6 +2599,7 @@ const fetchSrfItem = async (req, res, next) => {
 exports.getfilteredSRFItems = getfilteredSRFItems;
 exports.updatePaymentInfo = updatePaymentInfo;
 exports.updateInvoiceInfo = updateInvoiceInfo;
+exports.deleteSRF = deleteSRF;
 exports.deleteSRFItem = deleteSRFItem;
 exports.updateCalInfo = updateCalInfo;
 exports.updateDCInfo = updateDCInfo;

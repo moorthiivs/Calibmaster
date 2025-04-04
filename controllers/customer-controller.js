@@ -445,9 +445,20 @@ const fetchCustomer_Company = async (req, res, next) => {
     }
 }
 
+const deleteCustomer = async (req, res, next) => {
+    try {
+        
+    } catch (error) {
+        
+        console.log(error);
+        
+    }
+}
+
 
 exports.createCustomer = createCustomer;
 exports.listCustomer = listCustomer;
 exports.fetchCustomer = fetchCustomer;
 exports.editCustomer = editCustomer;
 exports.fetchCustomer_Company = fetchCustomer_Company;
+exports.deleteCustomer = deleteCustomer;

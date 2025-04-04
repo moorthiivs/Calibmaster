@@ -28,6 +28,8 @@ router.post("/addbulkitemtosrf", srfController.addBulkItemtoSRF);
 
 router.post("/updateitem", srfController.updateSRFItem);
 
+router.delete("/deletesrf", srfController.deleteSRF);
+
 router.post("/deleteitem", srfController.deleteSRFItem);
 
 router.post("/updatedcinfo", srfController.updateDCInfo);

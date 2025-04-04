@@ -14,6 +14,8 @@ router.get("/fetch-customer/:id", Authorization, customerController.fetchCustome
 
 router.post("/edit-customer", Authorization, customerController.editCustomer);
 
+router.delete("/delete-customer",Authorization,customerController.deleteCustomer);
+
 router.get(
   "/fetch_customer/:id",
   Authorization,

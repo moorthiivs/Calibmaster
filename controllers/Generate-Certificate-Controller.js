@@ -172,6 +172,15 @@ const generate = async (req, res, next) => {
             order: [["srf_item_id", "ASC"]]
         });
 
+
+        const itemCount = await Item.count({
+            where: {
+              srf_id: srf_id,
+              rstatus: 1
+            }
+        });
+          
+
         // return res.json({ item });
 
         if (!item) {
@@ -260,7 +269,7 @@ const generate = async (req, res, next) => {
         
         const srf = item.srf.dataValues.srf_number;
         
-        const certificate_number = `SSPI/${new Date().getFullYear().toString().slice(-2)}/${srf}/${master_quantity}`;
+        const certificate_number = `SSPI/${new Date().getFullYear().toString().slice(-2)}/${srf}/${itemCount}`;
 
         const masterDescription = m_description;
         const masterMake = m_make;
@@ -509,8 +518,8 @@ const generate = async (req, res, next) => {
         const docDefinition = {
             pageSize: 'A4',
             pageOrientation: 'portrait',
-            pageMargins: [20, 130, 20, 90],
-            background: [                       // watermark 
+            pageMargins: [20, 130, 20, 70],
+            background: [                     
                 {
                     image: labLogo_1_Buffer,
                     width: 200,
@@ -528,47 +537,60 @@ const generate = async (req, res, next) => {
                         columnGap: 0,
                         columns: [
                             {
-                                width: 100,
-                                height: 100,
+                                width: 80,
+                                height: 80,
                                 image: labLogo_1_Buffer,
-                                margin: [20, 25, 0, 0]
+                                margin: [10, 25, 0, 0],
+                                
                             },
                             [
                                 {
                                     text: `${lab.lab_name.toUpperCase()}`,
                                     alignment: 'center',
-                                    fontSize: 18,
+                                    fontSize: 30,
                                     bold: true,
-                                    margin: [0, 10, 0, 0],
+                                    margin: [0, 20, 0, 0],
+                                    color:"#282B3E"
                                 },
                                 {
                                     text: lab_address,
                                     alignment: 'center',
-                                    fontSize: 9,
-                                    margin: [0, 2, 0, 0],
-                                    lineHeight: 1.1
-                                },
-                                {
-                                    text: `Mobile: ${lab.contact_number1}${lab.contact_number2 ? ` | ${lab.contact_number2}` : ''} / Website: ${lab.lab_website}`,
-                                    alignment: 'center',
-                                    fontSize: 9,
-                                    margin: [0, 2, 0, 0],
-                                    lineHeight: 1.1
-                                },
-                                {
-                                    text: `Email: ${lab.contact_email}`,
-                                    alignment: 'center',
-                                    fontSize: 9,
-                                    margin: [0, 2, 0, 0],
-                                    lineHeight: 1.1
-                                },
-                                {
-                                    text: 'CERTIFICATE OF CALIBRATION',
-                                    alignment: 'center',
-                                    fontSize: 16,
+                                    fontSize: 10,
+                                    margin: [0,3, 0, 0],
+                                    lineHeight: 1.1,
+                                    color:"#282B3E",
                                     bold: true,
-                                    margin: [0, 5, 0, 0],
-                                }
+                                },
+                                // {
+                                //     text: `Mobile: ${lab.contact_number1}${lab.contact_number2 ? ` | ${lab.contact_number2}` : ''} / Website: ${lab.lab_website}`,
+                                //     alignment: 'center',
+                                //     fontSize: 9,
+                                //     margin: [0, 2, 0, 0],
+                                //     lineHeight: 1.1
+                                // },
+                                {
+                                    text: `Mobile: ${lab.contact_number1}${lab.contact_number2 ? ` / ${lab.contact_number2}` : ''} | Email: ${lab.contact_email}`,
+                                    alignment: 'center',
+                                    fontSize: 10,
+                                    margin: [0, 3, 0, 0],
+                                    lineHeight: 1.1,
+                                    color:"#282B3E",
+                                    bold: true,
+                                },
+                                // {
+                                //     text: `Email: ${lab.contact_email}`,
+                                //     alignment: 'center',
+                                //     fontSize: 9,
+                                //     margin: [0, 5, 0, 0],
+                                //     lineHeight: 1.1
+                                // },
+                                // {
+                                //     text: 'CERTIFICATE OF CALIBRATION',
+                                //     alignment: 'center',
+                                //     fontSize: 16,
+                                //     bold: true,
+                                //     margin: [0, 5, 0, 0],
+                                // }
                             ],
                             {
                                 width: 80,
@@ -590,20 +612,21 @@ const generate = async (req, res, next) => {
                         ],
                         
                     },
-                    // {
-                    //     canvas: [{
-                    //         type: "line",
-                    //         x1: 0,
-                    //         y1: 0,
-                    //         x2: 600,
-                    //         y2: 0,
-                    //         lineWidth: 2,
-                    //         strokeColor: "black"
-                    //     }],
-                    //     margin: [0, 0, 0, 50]
-                    // },
+                    {
+                        canvas: [{
+                            type: "line",
+                            x1: 0,
+                            y1: 0,
+                            x2: 600,
+                            y2: 0,
+                            lineWidth: 2,
+                            strokeColor: "black"
+                        }],
+                        margin: [0, 0, 0, 50]
+                    },
                 ];
             },            
+
             footer: function(currentPage, pageCount) {
                 let footerContent = [
                     {
@@ -616,7 +639,7 @@ const generate = async (req, res, next) => {
                             lineWidth: 1,
                             strokeColor: "black"
                         }],
-                        margin: [0, 0, 0, 5]
+                        margin: [0, 0, 0, 3]
                     },
                     {
                         alignment: "left",
@@ -636,92 +659,103 @@ const generate = async (req, res, next) => {
                                 width: 30 
                             } : { text: "" },
                         ],
-                        margin: [10, 10, 10, 5]
+                        margin: [10, 5, 10, 5]
                     }
                 ];
             
                 if (currentPage === pageCount) {
-                    footerContent.unshift(
-
-                        // {
-                        //     id: 'signature_part',
-                        //     alignment: 'justify',
-                        //     columns: [
-                        //         {
-                        //             ul: [
-                        //                 {
-                        //                     image: sign1LogoBuffer,
-                        //                     width: 30,
-                        //                     margin: [0, 0, 0, 0],
-                        //                     alignment: 'center'
-                        //                 },
-                        //                 { 
-                        //                     text: `${calibrated_employee_name}`, 
-                        //                     listType: 'none', 
-                        //                     fontSize: 8 
-                        //                 },
-                        //                 { 
-                        //                     text: `${calibrated_employee_role}`, 
-                        //                     listType: 'none', 
-                        //                     fontSize: 8 
-                        //                 },
-                        //                 { 
-                        //                     text: 'Calibrated By', 
-                        //                     listType: 'none', 
-                        //                     fontSize: 8 
-                        //                 }
-                        //             ],
-                        //             alignment: 'center'
-                        //         },
-                        //         sealBuffer ? { 
-                        //             image: sealBuffer, 
-                        //             width: 40, 
-                        //             margin: [0, 0, 0, 0], 
-                        //             alignment: 'center' 
-                        //         } : { text: '' },
-                        //         {
-                        //             ul: [
-                        //                 {
-                        //                     image: sign2LogoBuffer,
-                        //                     width: 30,
-                        //                     margin: [0, 0, 0, 0],
-                        //                     alignment: 'center'
-                        //                 },
-                        //                 { 
-                        //                     text: `${approved_employee_name}`, 
-                        //                     listType: 'none', 
-                        //                     fontSize: 8 
-                        //                 },
-                        //                 { 
-                        //                     text: `${approved_employee_role}`, 
-                        //                     listType: 'none', 
-                        //                     fontSize: 8 
-                        //                 },
-                        //                 { 
-                        //                     text: 'Approved by', 
-                        //                     listType: 'none', 
-                        //                     fontSize: 8 
-                        //                 }
-                        //             ],
-                        //             alignment: 'center'
-                        //         },
-                        //     ],
-                        //     margin: [0, -40, 0, 5],
-                        // },
-                        {
-                            text: "*** End of Calibration Report ***",
-                            alignment: "center",
-                            fontSize: 10,
-                            bold: true,
-                            margin: [0, 0, 0, 2]
-                        }
-                    );
+                    const signatureSection = {
+                        stack: [
+                            // {
+                            //     id: 'signature_part',
+                            //     alignment: 'justify',
+                            //     columns: [
+                            //         {
+                            //             ul: [
+                            //                 {
+                            //                     image: sign1LogoBuffer,
+                            //                     width: 30,
+                            //                     margin: [0, 0, 0, 0],
+                            //                     alignment: 'center'
+                            //                 },
+                            //                 { 
+                            //                     text: `${calibrated_employee_name}`, 
+                            //                     listType: 'none', 
+                            //                     fontSize: 8 
+                            //                 },
+                            //                 { 
+                            //                     text: `${calibrated_employee_role}`, 
+                            //                     listType: 'none', 
+                            //                     fontSize: 8 
+                            //                 },
+                            //                 { 
+                            //                     text: 'Calibrated By', 
+                            //                     listType: 'none', 
+                            //                     fontSize: 8 
+                            //                 }
+                            //             ],
+                            //             alignment: 'center'
+                            //         },
+                            //         sealBuffer ? { 
+                            //             image: sealBuffer, 
+                            //             width: 40, 
+                            //             margin: [0, 0, 0, 0], 
+                            //             alignment: 'center' 
+                            //         } : { text: '' },
+                            //         {
+                            //             ul: [
+                            //                 {
+                            //                     image: sign2LogoBuffer,
+                            //                     width: 30,
+                            //                     margin: [0, 0, 0, 0],
+                            //                     alignment: 'center'
+                            //                 },
+                            //                 { 
+                            //                     text: `${approved_employee_name}`, 
+                            //                     listType: 'none', 
+                            //                     fontSize: 8 
+                            //                 },
+                            //                 { 
+                            //                     text: `${approved_employee_role}`, 
+                            //                     listType: 'none', 
+                            //                     fontSize: 8 
+                            //                 },
+                            //                 { 
+                            //                     text: 'Approved by', 
+                            //                     listType: 'none', 
+                            //                     fontSize: 8 
+                            //                 }
+                            //             ],
+                            //             alignment: 'center'
+                            //         },
+                            //     ],
+                            //     margin: [0, -40, 0, 5],
+                            // },
+                            {
+                                text: "*** End of Calibration Report ***",
+                                alignment: "center",
+                                fontSize: 10,
+                                bold: true,
+                                margin: [0, 0, 0, 2]
+                            }
+                        ]
+                    };
+            
+                    footerContent.unshift(signatureSection);
                 }
             
                 return footerContent;
             },
             
             content: [
+
+                {
+                    text: 'CERTIFICATE OF CALIBRATION',
+                    alignment: 'center',
+                    fontSize: 16,
+                    //bold: true,
+                    margin: [0, 5, 0, 5],
+                },
                 {
                     style: 'firstTable',
                     table: {
@@ -864,7 +898,7 @@ const generate = async (req, res, next) => {
                         headerRows: 1,
                         body: [
                             [
-                                { text: 'ENVIRONMENTAL CONDITION:', decoration: 'underline' }
+                                { text: 'ENVIRONMENTAL CONDITION:', decoration: 'underline',  fontSize: 8, }
                             ]
                         ]
                     }
@@ -902,13 +936,15 @@ const generate = async (req, res, next) => {
                 },
                 {
                     style: 'eightthTable',
-                    margin: [0, 5, 0, 10],
+                    margin: [0, 5, 0, 5],
                     table: {
                         widths: ['auto', '*'],
                         body: [
                             [
-                                { text: 'CALIBRATION RESULT', decoration: 'underline' },
-                                { text: '( All Values are in mm ) :' }
+                                { text: 'CALIBRATION RESULT', decoration: 'underline',
+                                    fontSize: 8, alignment: 'center',
+                                    bold: true },
+                                { text: '( All Values are in mm ) :',fontSize: 8, alignment: 'center', bold: true }
                             ]
                         ]
                     },
@@ -947,7 +983,7 @@ const generate = async (req, res, next) => {
                 {
                     id: 'remark_part',
                     stack: [
-                        { text: 'REMARKS:', decoration: 'underline', margin: [0, 10, 0, 5] },
+                        { text: 'REMARKS:', decoration: 'underline', margin: [0, 10, 0, 5], pageBreakIfLessThan: 150  },
                         {
                             style: 'remarksList',
                             ol: remarks
@@ -962,28 +998,28 @@ const generate = async (req, res, next) => {
                             ul: [
                                 {
                                     image: sign1LogoBuffer,
-                                    width: 30,
+                                    width: 60,
                                     margin: [0, 0, 0, 0],
                                     alignment: 'center'
                                 },
                                 { text: `${calibrated_employee_name}`, listType: 'none', fontSize: 8 },
                                 { text: `${calibrated_employee_role}`, listType: 'none', fontSize: 8 },
-                                { text: 'Calibrated By', listType: 'none',fontSize: 8 }
+                                { text: 'Calibrated By', listType: 'none',fontSize: 8,bold: true }
                             ],
                             alignment: 'center'
                         },
-                        sealBuffer ? { image: sealBuffer, width: 40, margin: [0, 0, 0, 0], alignment: 'center' } : { text: '' },
+                        sealBuffer ? { image: sealBuffer, width: 60, margin: [0, 0, 0, 0], alignment: 'center' } : { text: '' },
                         {
                             ul: [
                                 {
                                     image: sign2LogoBuffer,
-                                    width: 30,
+                                    width: 60,
                                     margin: [0, 0, 0, 0],
                                     alignment: 'center'
                                 },
                                 { text: `${approved_employee_name}`, listType: 'none',    fontSize: 8 },
                                 { text: `${approved_employee_role}`, listType: 'none',    fontSize: 8 },
-                                { text: 'Approved by', listType: 'none',fontSize: 8 }
+                                { text: 'Approved by', listType: 'none',fontSize: 8, bold: true }
                             ],
                             alignment: 'center'
                         },
