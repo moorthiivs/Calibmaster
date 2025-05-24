@@ -69,14 +69,17 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         allowNull: true
       },
-
+      frequency: {
+        type: DataTypes.STRING,
+        allowNull: true
+      },
       master_list_equipments: {
         type: DataTypes.ARRAY(DataTypes.JSON),
         allowNull: false
       },
 
       remarks: {
-        type: DataTypes.ARRAY(DataTypes.STRING),
+        type: DataTypes.ARRAY(DataTypes.TEXT),
         allowNull: false
       },
     },

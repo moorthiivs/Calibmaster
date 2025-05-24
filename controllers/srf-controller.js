@@ -1,6 +1,7 @@
 const logger = require("../utils/logger");
 const srfSchema = require("../schemas/srf");
 const itemsSchema = require("../schemas/items");
+const bulkitemSchema = require("../schemas/bulkitem");
 const SRF = require("../models").srf_list;
 const Item = require("../models").srfitem;
 const User = require("../models").User;
@@ -1622,7 +1623,7 @@ const addItemtoSRF = async (req, res, next) => {
     where: { id: req.userId }
   });
 
-  try {
+  try {    
     const item = req.body.item;
     item.srf_id = srfId;
     item.status = "Not Calibrated";
@@ -1683,7 +1684,7 @@ const addBulkItemtoSRF = async (req, res, next) => {
   }
 
   // SRF Items Validation
-  const validitems = itemsSchema(req.body.items);
+  const validitems = bulkitemSchema(req.body.items);
 
   if (!validitems) {
     const error = new Error("Invalid SRF Items!!");

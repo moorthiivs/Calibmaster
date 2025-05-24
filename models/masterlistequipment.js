@@ -135,7 +135,10 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.DATE,
         allowNull: true
       },
-
+      electro_parameter:{
+        type: DataTypes.JSON,
+        allowNull: true
+      },
       remark: {
         type: DataTypes.STRING(1000),
         allowNull: true,

@@ -55,7 +55,9 @@ const create = async (req, res, next) => {
             lab_id, instrument_type_id, mainArray,
             calibration_procedure, ref_std,
             validity, traceability,
-            temperature, humidity, atmospheric_pressure, master_list_equipments, remarks,
+            temperature, humidity, atmospheric_pressure,
+            frequency,
+            master_list_equipments, remarks,
             uncertainty_master_parameters
         } = req.body;
 
@@ -67,6 +69,7 @@ const create = async (req, res, next) => {
             calibration_procedure, ref_std,
             validity, traceability,
             temperature, humidity, atmospheric_pressure,
+            frequency,
             master_list_equipments, remarks
         });
         const result = await newMasterTable.save();
@@ -92,8 +95,8 @@ const create = async (req, res, next) => {
             return res.json({ msg: false });
         }
 
-        if(result){
-            return res.status(200).json({message: true, data: result,response: 'New Define Procedure Created Successfully!!!', })
+        if (result) {
+            return res.status(200).json({ message: true, data: result, response: 'New Define Procedure Created Successfully!!!', })
         }
 
     } catch (err) {
@@ -185,10 +188,10 @@ const listProcedure = async (req, res, next) => {
     try {
 
         const { lab_id } = req.body;
-        console.log(lab_id,"message: true,");
-        
+        console.log(lab_id, "message: true,");
 
-        if (!lab_id ) {
+
+        if (!lab_id) {
             let action = "lab_id are required";
             const error = new Error(action);
             error.code = 500;
@@ -198,13 +201,13 @@ const listProcedure = async (req, res, next) => {
 
         const definedProcedures = await MasterTable.findAll({
             where: { lab_id: lab_id },
-            attributes: ['master_design_procedure_id', 'calibration_procedure'],  
+            attributes: ['master_design_procedure_id', 'calibration_procedure'],
             order: [['master_design_procedure_id', 'ASC']]
-          });
-          
+        });
 
-        return res.status(200).json({message: true, definedProcedures});
-      
+
+        return res.status(200).json({ message: true, definedProcedures });
+
     } catch (err) {
         console.log(err)
         res.status(404);
@@ -246,17 +249,18 @@ const fetch = async (req, res, next) => {
 
             const excelTable = await ProcedureResult.findOne({
                 where: {
-                    labid:lab_id,
+                    labid: lab_id,
                     srf_id,
-                    srf_item_id
-                },
+                    srf_item_id,
+                }
             })
-            
 
-            return res.json({ masterTable, 
+
+            return res.json({
+                masterTable,
                 excelTable,
                 //tableDesign, 
-                ifExistResultMasterTable: true 
+                ifExistResultMasterTable: true
             });
 
         } else {
@@ -272,14 +276,13 @@ const fetch = async (req, res, next) => {
 
             const excelTable = await calibmasterexcel.findOne({
                 where: {
-                    labid:lab_id,
+                    labid: lab_id,
                     master_design_procedure_id
                 },
             })
 
 
-            console.log(excelTable);
-            
+
 
             const { procedure_uncertainties } = masterTable;
 
@@ -303,7 +306,7 @@ const fetch = async (req, res, next) => {
             });
 
             return res.json({
-                masterTable, 
+                masterTable,
                 excelTable,
                 //tableDesign,
                 ///uncertainty_master_parameter_query,
@@ -311,7 +314,7 @@ const fetch = async (req, res, next) => {
             });
         }
     } catch (err) {
-        console.log(err)
+        console.log(err, "error")
         res.status(404);
         const error = new Error("Internal Server Error");
         next(errorHandler(error, req, res, next))
@@ -377,7 +380,7 @@ const update = async (req, res, next) => {
             master_design_procedure_id, lab_id, instrument_type_id,
             calibration_procedure, ref_std,
             validity, traceability,
-            temperature, humidity, atmospheric_pressure,
+            temperature, humidity, atmospheric_pressure, frequency,
             mainArray, master_list_equipments, remarks, uncertainty_master_parameters
         } = req.body;
 
@@ -385,7 +388,7 @@ const update = async (req, res, next) => {
             {
                 calibration_procedure, ref_std, instrument_type_id,
                 validity, traceability,
-                temperature, humidity, atmospheric_pressure, master_list_equipments, remarks
+                temperature, humidity, atmospheric_pressure, frequency, master_list_equipments, remarks
             },
             { where: { master_design_procedure_id, lab_id } }
         );
@@ -435,7 +438,7 @@ const update = async (req, res, next) => {
         //     return item;
         // });
 
-      //  const procedure_uncertainties_insert_query = await procedureUncertainties.bulkCreate(uncertainty_master_parameters);
+        //  const procedure_uncertainties_insert_query = await procedureUncertainties.bulkCreate(uncertainty_master_parameters);
 
         return res.json({
             msg: "Dynamic Tables Updated Successfully",
@@ -616,43 +619,43 @@ const duplicateDefinedProcedures = async (req, res, next) => {
 
 const deletes = async (req, res, next) => {
     try {
-      const { master_design_procedure_id } = req.body;
-  
-      // Check if the record exists
-      const masterTable = await MasterTable.findOne({
-        where: { master_design_procedure_id },
-      });
-  
-      if (!masterTable) {
-        const error = new Error("Design Procedure not found");
-        error.code = 404;
-        return errorHandler(error, req, res, next);
-      }
-  
-      // First, delete related records from child table
-      await MasterResultTable.destroy({
-        where: { master_design_procedure_id },
-      });
-  
-      // Then, delete the parent record
-      await MasterTable.destroy({
-        where: { master_design_procedure_id },
-      });
-  
-      return res.status(200).json({
-        response: "Design Procedure deleted successfully!!!",
-        code: 200,
-      });
+        const { master_design_procedure_id } = req.body;
+
+        // Check if the record exists
+        const masterTable = await MasterTable.findOne({
+            where: { master_design_procedure_id },
+        });
+
+        if (!masterTable) {
+            const error = new Error("Design Procedure not found");
+            error.code = 404;
+            return errorHandler(error, req, res, next);
+        }
+
+        // First, delete related records from child table
+        await MasterResultTable.destroy({
+            where: { master_design_procedure_id },
+        });
+
+        // Then, delete the parent record
+        await MasterTable.destroy({
+            where: { master_design_procedure_id },
+        });
+
+        return res.status(200).json({
+            response: "Design Procedure deleted successfully!!!",
+            code: 200,
+        });
     } catch (error) {
-      console.error("Error deleting Design Procedure:", error);
-      return res.status(500).json({
-        response: "Error deleting Design Procedure",
-        code: 500,
-        error: error.message,
-      });
+        console.error("Error deleting Design Procedure:", error);
+        return res.status(500).json({
+            response: "Error deleting Design Procedure",
+            code: 500,
+            error: error.message,
+        });
     }
-  };
-  
+};
+
 
 module.exports = {
     create,

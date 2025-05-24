@@ -1,0 +1,4 @@
+Cron Job attempt on SRF calibration_remainder_date_1 at Thu, May 01, 2025, 00:00:00 Total sent Mail: 0 
+Cron Job attempt on SRF calibration_remainder_date_2 at Thu, May 01, 2025, 00:00:00 Total sent Mail: 0 
+Cron Job attempt on Master Equipment calibration_remainder_date_1 at Thu, May 01, 2025, 00:00:00 Total sent Mail: 0 
+Cron Job attempt on Master Equipment calibration_remainder_date_2 at Thu, May 01, 2025, 00:00:00 Total sent Mail: 0 

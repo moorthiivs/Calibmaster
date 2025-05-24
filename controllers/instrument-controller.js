@@ -2,6 +2,7 @@ const instrument = require("../models").instrument;
 const User = require("../models").User;
 const { errorHandler } = require("../helpers/error-handler");
 const { Op } = require("sequelize");
+const InstrumentParameter = require("../models").InstrumentParameter
 
 const ListInstrument = async (req, res, next) => {
   const { lab_id } = req.body;
@@ -34,13 +35,15 @@ const createInstrument = async (req, res, next) => {
     instrument_discipline_id,
     instrument_group_id,
     lab_id,
+    ParametersData
   } = req.body;
 
   if (
     !instrument_name ||
     !instrument_uom_id ||
     !instrument_discipline_id ||
-    !instrument_group_id
+    !instrument_group_id ||
+    !ParametersData
   ) {
     let action = "All fields are required";
     const error = new Error(action);
@@ -87,6 +90,17 @@ const createInstrument = async (req, res, next) => {
     });
 
     const result = await newInstrument.save();
+
+    const parameterEntries = ParametersData.map(param => ({
+      InstrumentID: newInstrument.instrument_id,
+      Instrumentparametername: param.Instrumentparametername,
+      InstrumentUOMID: param.InstrumentUOMID,
+      InstrumentparameterUOM: param.InstrumentparameterUOM,
+      labid: lab_id,
+      CreatedBy: req.userId,
+    }));
+    await InstrumentParameter.bulkCreate(parameterEntries);
+
     return res.status(200).json(result);
   } catch (err) {
     console.log(err);
@@ -238,8 +252,159 @@ const editInstrument = async (req, res, next) => {
   }
 };
 
+const fetchOneinstrumentParameters = async (req, res, next) => {
+  try {
+    const { instrumentId } = req.params;
+
+    if (!instrumentId) {
+      return res.status(400).json({ message: "Instrument ID is required" });
+    }
+
+    const parameters = await InstrumentParameter.findAll({
+      where: { InstrumentID: instrumentId },
+      order: [['id', 'ASC']]
+    });
+    return res.status(200).json(parameters);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Failed to fetch instrument parameters" });
+  }
+};
+
+// const instrumentParametersUpdate = async (req, res, next) => {
+//   try {
+//     const { parametersData, instrument_id, labid, userid } = req.body;
+
+//     const existingData = await InstrumentParameter.findAll({
+//       where: {
+//         InstrumentID: instrument_id,
+//         labid: labid,
+//       },
+//     });
+
+//     if (existingData.length === 0) {
+//       const newEntries = parametersData.map((param) => ({
+//         InstrumentID: instrument_id,
+//         Instrumentparametername: param.Instrumentparametername,
+//         InstrumentUOMID: param.InstrumentUOMID,
+//         InstrumentparameterUOM: param.InstrumentparameterUOM,
+//         labid: labid,
+//         CreatedBy: userid,
+//       }));
+
+//       await InstrumentParameter.bulkCreate(newEntries);
+
+//       res.status(200).json({ message: "Data inserted successfully" });
+//     } else {
+//       for (const param of parametersData) {
+
+//         await InstrumentParameter.update(
+//           {
+//             Instrumentparametername: param.Instrumentparametername,
+//             InstrumentUOMID: param.InstrumentUOMID,
+//             InstrumentparameterUOM: param.InstrumentparameterUOM,
+//             UpdatedBy: userid,
+//           },
+//           {
+//             where: { id: param.id },
+//           }
+//         );
+//       }
+//       res.status(200).json({ message: "Data updated successfully" });
+//     }
+//   } catch (error) {
+//     console.log(error);
+//     res.status(500).json({ message: "An error occurred", error });
+//   }
+// };
+
+const instrumentParametersUpdate = async (req, res, next) => {
+  try {
+    const { parametersData, instrument_id, labid, userid } = req.body;
+
+    console.log(parametersData, "parametersData");
+
+    for (const param of parametersData) {
+      if (param.id) {
+        await InstrumentParameter.update(
+          {
+            Instrumentparametername: param.Instrumentparametername,
+            InstrumentUOMID: param.InstrumentUOMID || 0,
+            InstrumentparameterUOM: param.InstrumentparameterUOM || '',
+            UpdatedBy: userid,
+          },
+          {
+            where: {
+              id: param.id,
+              InstrumentID: instrument_id,
+              labid: labid,
+            },
+          }
+        );
+      } else {
+        console.log("else come");
+        await InstrumentParameter.create({
+          InstrumentID: instrument_id,
+          Instrumentparametername: param.Instrumentparametername,
+          InstrumentUOMID: param.InstrumentUOMID || 0,
+          InstrumentparameterUOM: param.InstrumentparameterUOM || '',
+          labid: labid,
+          CreatedBy: userid,
+        });
+      }
+    }
+
+    res.status(200).json({ message: "Data saved successfully" });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "An error occurred", error });
+  }
+};
+
+
+const deleteinstrumentParameter = async (req, res, next) => {
+  try {
+    const { instrument_Parameter_id, labid, userid } = req.body;
+
+    if (!instrument_Parameter_id || !labid || !userid) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    // Optional: You can first verify the record exists
+    const param = await InstrumentParameter.findOne({
+      where: {
+        id: instrument_Parameter_id,
+        labid: labid,
+      },
+    });
+
+    if (!param) {
+      return res.status(404).json({ message: "Instrument parameter not found" });
+    }
+
+    // Perform deletion
+    await InstrumentParameter.destroy({
+      where: {
+        id: instrument_Parameter_id,
+        labid: labid,
+      },
+    });
+
+    res.status(200).json({ message: "Instrument parameter deleted successfully" });
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "An error occurred", error });
+  }
+};
+
+
+
 exports.ListInstrument = ListInstrument;
 exports.createInstrument = createInstrument;
 exports.searchByName = searchByName;
 exports.fetchById = fetchById;
 exports.editInstrument = editInstrument;
+exports.fetchOneinstrumentParameters = fetchOneinstrumentParameters
+exports.instrumentParametersUpdate = instrumentParametersUpdate
+exports.deleteinstrumentParameter = deleteinstrumentParameter

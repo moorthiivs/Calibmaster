@@ -21,7 +21,8 @@ const createInstrumentType = async (req, res, next) => {
         size_spec,
         size_spec_uom_id,
         type,
-        lab_id
+        lab_id,
+        rows
     } = req.body;
 
 
@@ -65,6 +66,8 @@ const createInstrumentType = async (req, res, next) => {
                 updated_by_login_name: fetchCreater.name,
                 updated_by_user_id: req.userId,
 
+                ranges: rows,
+
                 lab_id
             });
 
@@ -100,7 +103,7 @@ const createInstrumentType = async (req, res, next) => {
                     updated_timestamp: Date.now(),
                     updated_by_login_name: fetchCreater.name,
                     updated_by_user_id: req.userId,
-
+                    ranges: rows,
                     lab_id
                 });
 
@@ -268,7 +271,7 @@ const fetchById = async (req, res, next) => {
 
     if (!instrument_type_id) {
         let action = "Instrument Type Id is required";
-        const error = new Error(action);
+        const error = new Error(action); 
         error.code = 500;
         return errorHandler(error, req, res, next);
     }
@@ -285,7 +288,7 @@ const fetchById = async (req, res, next) => {
                 "range_minimum_uom",
                 "range_maximum_uom",
                 "least_count_uom",
-                "size_spec_uom"
+                "size_spec_uom",
             ]
         });
 
@@ -323,9 +326,11 @@ const editInstrumentType = async (req, res, next) => {
         least_count_uom_id,
         size_spec,
         size_spec_uom_id,
-        type
+        type,
+        rows
     } = req.body;
 
+    
     if (!instrument_type_id || !instrument_id || !instrument_full_name) {
         let action = "Please fill required fields";
         const error = new Error(action);
@@ -368,6 +373,8 @@ const editInstrumentType = async (req, res, next) => {
                 size_spec: (size_spec) ? size_spec : null,
                 size_spec_uom_id: (size_spec_uom_id) ? size_spec_uom_id : null,
                 type,
+
+                ranges: rows,
 
                 created_timestamp: Date.now(),
                 created_by_login_name: fetchCreater.name,

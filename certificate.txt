@@ -278,11 +278,35 @@ const generate = async (req, res, next) => {
         const model = item?.model;
         const slNo = item?.serial_no;
         const idNo = item?.identification_details;
+
         let iselectroParameters = false
-        const instrumentDynamicRows = formatDynamicRowsFromOriginalRanges(item?.intrument_type?.ranges);
-        const range = item?.intrument_type?.range_minimum ?? ''
-        const lc = item?.intrument_type?.least_count ?? ''
+
+        if (item?.class || item?.meterconstant || item?.current || item?.voltage) {
+            iselectroParameters = true
+        }
+
+        const classValue = item?.class
+        const voltageValue = item?.voltage
+        const currentValue = item?.current
+        const meterconstantValue = item?.meterconstant
+
+        const instrumentRange = await instrument_range(item?.intrument_type?.ranges)
+
+        const { ranges, lcs, size } = instrumentRange
+
+        const range = item?.intrument_type?.ranges?.length
+            ? ranges // Use ranges if data exists
+            : `${item?.intrument_type?.range_minimum ?? ''} - ${item?.intrument_type?.range_maximum ?? ''} ${item?.intrument_type?.range_maximum_uom?.uom_printsysmbol ?? ''}`;
+
+        const lc = item?.intrument_type?.ranges?.length
+            ? lcs // Use lcs if data exists
+            : `${item?.intrument_type?.least_count ?? ''} ${item?.intrument_type?.least_count_uom?.uom_printsysmbol ?? ''}`;
+        
         const type = item?.intrument_type?.type;
+
+        // const range = `${item?.intrument_type?.range_minimum ?? ''} - ${item?.intrument_type?.range_maximum ?? ''} ${item?.intrument_type?.range_maximum_uom?.uom_printsysmbol ?? ''}`
+        // const lc = `${item?.intrument_type?.least_count ?? ''} ${item?.intrument_type?.least_count_uom?.uom_printsysmbol ?? ''}`;
+        // const type = item?.intrument_type?.type;
 
         // ***  Query Master Result List  *** 
         let masterResult = await masterResultTable.findOne({
@@ -299,7 +323,7 @@ const generate = async (req, res, next) => {
         }
 
         // *** Set standards details table data *** 
-        const ulr_number = masterResult?.ulr_number;
+        const ulr_number = masterResult?.ulr_number; 
         const calibration_procedure = masterResult?.calibration_procedure;
         const ref_std = masterResult?.ref_std;
         const temperature = masterResult?.temperature;
@@ -427,6 +451,9 @@ const generate = async (req, res, next) => {
 
 
         function capitalizeEachWord(params) {
+
+            console.log(params, "params");
+
             if (params === Number || params === null || params === undefined) return params
             return params
                 .split(' ')
@@ -473,44 +500,6 @@ const generate = async (req, res, next) => {
         environmentalwidths = Array(totalCols).fill(`${(100 / totalCols).toFixed(2)}%`);
 
 
-        const thirdTableBody = [
-            [
-                { text: 'DESCRIPTION:' },
-                { text: capitalizeEachWord(description) || '-', alignment: 'center' },
-                { text: 'DUC RECEIPT CONDITION:' },
-                { text: capitalizeEachWord(condition) || '-', alignment: 'center' },
-            ],
-            [
-                { text: 'MAKE:' },
-                { text: capitalizeEachWord(make) || '-', alignment: 'center' },
-                { text: 'MODEL:' },
-                { text: capitalizeEachWord(model) || '-', alignment: 'center' }
-            ],
-            // [
-            //     { text: 'SL.NO/ID.NO:' },
-            //     {
-            //         text: idNo ? `${capitalizeEachWord(slNo) || '-'} / ${capitalizeEachWord(idNo)}` : `${capitalizeEachWord(slNo) || '-'}`,
-            //         alignment: 'center'
-            //     },
-            //     { text: 'TYPE:' },
-            //     { text: type ? capitalizeEachWord(type) : '-', alignment: 'center' }
-            // ],
-            [
-                { text: 'SL.NO:' },
-                {
-                    text: capitalizeEachWord(slNo) || "-", alignment: 'center'
-                },
-                { text: 'ID.NO:' },
-                { text: capitalizeEachWord(idNo) || "-", alignment: 'center' }
-            ],
-            ...(instrumentDynamicRows || buildRangeLcTypeRow(range, lc, type)),
-            [
-                { text: 'CALIBRATION PROCEDURE & REF.STD:', alignment: 'left', colSpan: 2 },
-                {},
-                { text: `${capitalizeEachWord(calibration_procedure) || '-'} & ${ref_std || '-'}`, alignment: 'center', colSpan: 2 },
-                {}
-            ]
-        ];
 
         const docDefinition = {
             pageSize: 'A4',
@@ -539,23 +528,24 @@ const generate = async (req, res, next) => {
                                 height: 80,
                                 image: labLogo_1_Buffer,
                                 margin: [10, 25, 0, 0],
+
                             },
                             [
                                 {
                                     text: `${lab.lab_name.toUpperCase()}`,
                                     alignment: 'center',
-                                    fontSize: 20,
+                                    fontSize: 30,
                                     bold: true,
                                     margin: [0, 20, 0, 0],
-                                    color: "#002e69",
+                                    color: "#282B3E"
                                 },
                                 {
                                     text: lab_address,
                                     alignment: 'center',
-                                    fontSize: 18,
-                                    margin: [5, 3, 5, 0],
+                                    fontSize: 10,
+                                    margin: [0, 3, 0, 0],
                                     lineHeight: 1.1,
-                                    color: "#000000",
+                                    color: "#282B3E",
                                     bold: true,
                                 },
                                 // {
@@ -565,15 +555,15 @@ const generate = async (req, res, next) => {
                                 //     margin: [0, 2, 0, 0],
                                 //     lineHeight: 1.1
                                 // },
-                                // {
-                                //     text: `Mobile: ${lab.contact_number1}${lab.contact_number2 ? ` / ${lab.contact_number2}` : ''} | Email: ${lab.contact_email}`,
-                                //     alignment: 'center',
-                                //     fontSize: 10,
-                                //     margin: [0, 3, 0, 0],
-                                //     lineHeight: 1.1,
-                                //     color: "#282B3E",
-                                //     bold: true,
-                                // },
+                                {
+                                    text: `Mobile: ${lab.contact_number1}${lab.contact_number2 ? ` / ${lab.contact_number2}` : ''} | Email: ${lab.contact_email}`,
+                                    alignment: 'center',
+                                    fontSize: 10,
+                                    margin: [0, 3, 0, 0],
+                                    lineHeight: 1.1,
+                                    color: "#282B3E",
+                                    bold: true,
+                                },
                                 // {
                                 //     text: `Email: ${lab.contact_email}`,
                                 //     alignment: 'center',
@@ -619,7 +609,7 @@ const generate = async (req, res, next) => {
                             lineWidth: 2,
                             strokeColor: "black"
                         }],
-                        margin: [0, 0, 0, 30]
+                        margin: [0, 0, 0, 50]
                     },
                 ];
             },
@@ -829,7 +819,68 @@ const generate = async (req, res, next) => {
                     style: 'thirdTable',
                     table: {
                         widths: ['25%', '25%', '25%', '25%'],
-                        body: thirdTableBody
+                        body: [
+                            [
+                                { text: 'DESCRIPTION:' },
+                                { text: capitalizeEachWord(description) || '-', alignment: 'center' },
+                                { text: 'DUC RECEIPT CONDITION:' },
+                                { text: capitalizeEachWord(condition) || '-', alignment: 'center' },
+
+                            ],
+                            [
+                                { text: 'MAKE:' },
+                                { text: capitalizeEachWord(make) || '-', alignment: 'center' },
+                                { text: 'MODEL:' },
+                                { text: capitalizeEachWord(model) || '-', alignment: 'center' }
+                            ],
+                            [
+                                { text: 'RANGE:' },
+                                { text: range || '-', alignment: 'center' },
+                                { text: 'L.C:' },
+                                { text: lc || '-', alignment: 'center' }
+                            ],
+                            [
+                                { text: 'SL.NO/ID.NO:' },
+                                {
+                                    text: idNo ? `${capitalizeEachWord(slNo) || '-'} / ${capitalizeEachWord(idNo)}` : `${capitalizeEachWord(slNo) || '-'}`,
+                                    alignment: 'center'
+                                },
+                                { text: 'TYPE:' },
+                                { text: capitalizeEachWord(type) || '-', alignment: 'center' }
+                            ],
+                            ...(iselectroParameters ? [[
+                                { text: 'CLASS:' },
+                                { text: capitalizeEachWord(classValue) || '-', alignment: 'center' },
+                                { text: 'VOLTAGE:' },
+                                { text: capitalizeEachWord(voltageValue) || '-', alignment: 'center' }
+                            ]] : []),
+
+                            ...(iselectroParameters ? [[
+                                { text: 'CURRENT:' },
+                                { text: capitalizeEachWord(currentValue) || '-', alignment: 'center' },
+                                { text: 'METER CONSTANT:' },
+                                { text: capitalizeEachWord(meterconstantValue) || '-', alignment: 'center' }
+                            ]] : []),
+                            // [
+                            //     { text: 'ENVIRONMENTAL CONDITION', alignment: 'center', colSpan: 4, decoration: 'underline' },
+                            //     {}, {}, {}
+                            // ],
+                            // [
+                            //     { text: 'TEMPERATURE (°C):' },
+                            //     { text: temperature || '-', alignment: 'center' },
+                            //     { text: 'HUMIDITY (RH %):' },
+                            //     { text: humidity || '-', alignment: 'center' },
+                            //     { text: "AtmosphericPressure" },
+                            //     { text: AtmosphericPressure }
+                            // ],
+                            [
+                                { text: 'CALIBRATION PROCEDURE & REF.STD:', alignment: 'left', colSpan: 2 },
+                                {},
+                                { text: `${capitalizeEachWord(calibration_procedure) || '-'} & ${ref_std || '-'}`, alignment: 'center', colSpan: 2 },
+                                {}
+                            ],
+
+                        ]
                     },
                     layout: {
                         hLineColor: function (i, node) {
@@ -1139,16 +1190,6 @@ const verify_certificate = async (req, res, next) => {
     try {
         const { srf_item_id } = req.body;
 
-        let isGenerateCertificate = await ProcedureResult.findOne({
-            where: { srf_item_id }
-        });
-
-        // Returns true if a record exists, false otherwise
-        const isGenerated = !!isGenerateCertificate;
-
-        console.log(isGenerated);
-
-
         // ***  Query Certificate by srf_item_id ***
         let certificate = await Certificate.findOne({
             where: { srfitemId: srf_item_id },
@@ -1157,7 +1198,7 @@ const verify_certificate = async (req, res, next) => {
 
         const check = certificate?.fileName ? true : false;
 
-        return res.json({ isGenerateCertificate: isGenerated, check });
+        return res.json({ check });
     } catch (err) {
         console.log(err);
         let action = "Failed to verify certificate";
@@ -1278,112 +1319,6 @@ const instrument_range = async (datas) => {
         };
     }
 };
-
-function formatDynamicRowsFromOriginalRanges(rangesArray) {
-    if (!Array.isArray(rangesArray)) return null;
-
-    const keyValuePairs = [];
-
-    for (const obj of rangesArray) {
-        const uom = obj.InstrumentparameterUOM || '';
-        for (const [key, value] of Object.entries(obj)) {
-            if (key !== 'InstrumentUOMID' && key !== 'InstrumentparameterUOM') {
-                keyValuePairs.push({
-                    name: key.toUpperCase() + ':',
-                    value: `${value} ${uom}`.trim()
-                });
-            }
-        }
-    }
-
-    if (keyValuePairs.length === 0) return null;
-
-    const rows = [];
-    for (let i = 0; i < keyValuePairs.length; i += 2) {
-        const row = [];
-
-        const first = keyValuePairs[i];
-        row.push({ text: first.name, bold: false });
-        row.push({ text: first.value, alignment: 'center' });
-
-        if (keyValuePairs[i + 1]) {
-            const second = keyValuePairs[i + 1];
-            row.push({ text: second.name, bold: false });
-            row.push({ text: second.value, alignment: 'center' });
-        } else {
-            row.push({}, {});
-        }
-
-        rows.push(row);
-    }
-
-    return rows;
-}
-
-// function buildRangeLcTypeRow(range, lc, type) {
-//     const cells = [];
-
-//     if (range) {
-//         cells.push({ text: 'RANGE:' }, { text: range, alignment: 'center' });
-//     }
-//     if (lc) {
-//         cells.push({ text: 'L.C:', alignment: 'left' }, { text: lc, alignment: 'center' });
-//     }
-//     if (type) {
-//         cells.push({ text: 'TYPE:', alignment: 'left' }, { text: type, alignment: 'center' });
-//     }
-
-//     // Fill up remaining cells to make sure total = 4 cells (2 labels + 2 values = 4)
-//     while (cells.length < 4) {
-//         cells.push({ text: '', border: [true, true, true, true] });
-//     }
-
-//     return cells.length ? [cells] : [];
-// }
-
-function buildRangeLcTypeRow(range, lc, type) {
-    const rawCells = [];
-
-    if (range) rawCells.push({ text: 'RANGE:' }, { text: range, alignment: 'center' });
-    if (lc) rawCells.push({ text: 'L.C:', alignment: 'left' }, { text: lc, alignment: 'center' });
-    if (type) rawCells.push({ text: 'TYPE:', alignment: 'left' }, { text: type, alignment: 'center' });
-
-    const rows = [];
-
-    for (let i = 0; i < rawCells.length; i += 4) {
-        const row = rawCells.slice(i, i + 4);
-
-        while (row.length < 4) {
-            row.push({ text: '', border: [false, false, false, false] });
-        }
-
-        rows.push(row);
-    }
-
-    return rows;
-}
-
-
-function buildRangeLcRowOnly(range, lc) {
-    const cells = [];
-
-    if (range) {
-        cells.push({ text: 'RANGE:' }, { text: range, alignment: 'center' });
-    }
-    if (lc) {
-        cells.push({ text: 'L.C:', alignment: 'left' }, { text: lc, alignment: 'center' });
-    }
-
-    // Fill remaining cells to make a full row of 4 columns
-    while (cells.length < 4) {
-        cells.push({ text: '', border: [false, false, false, false] });
-    }
-
-    // Return full row only if range or lc exists
-    return cells.length > 0 && (range || lc) ? [cells] : [];
-}
-
-
 
 
 

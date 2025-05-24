@@ -1,257 +1,230 @@
-// const { HyperFormula } = require('hyperformula')
+const { HyperFormula } = require('hyperformula');
 
-// /**
-//  * Utility function to generate a PDF table body from sheet data.
-//  * @param {Object} handsontableJson - The JSON data representing the sheet.
-//  * @param {Array|Object|String} selectedSheetInput - Selected sheet as array, object, or string.
-//  * @returns {Array} - The PDF table body.
-//  */
-
-// const generatePdfFromSheet = async (handsontableJson, selectedSheetInput) => {
-//   try {
-//     const sheetNames = Object.keys(handsontableJson)
-
-//     // Extract selected sheet name based on input type
-//     let selectedSheet
-//     if (Array.isArray(selectedSheetInput)) {
-//       selectedSheet = selectedSheetInput[0]?.value
-//     } else if (
-//       selectedSheetInput &&
-//       typeof selectedSheetInput === 'object' &&
-//       selectedSheetInput.value
-//     ) {
-//       selectedSheet = selectedSheetInput.value
-//     } else {
-//       selectedSheet = selectedSheetInput
-//     }
-
-//     // Fallback to first sheet if selectedSheet is invalid
-//     if (!selectedSheet || !sheetNames.includes(selectedSheet)) {
-//       selectedSheet = sheetNames[0]
-//     }
-
-//     // Initialize HyperFormula
-//     const hfInstance = HyperFormula.buildFromSheets(handsontableJson, {
-//       licenseKey: 'internal-use-in-handsontable'
-//     })
-
-//     const sheetId = hfInstance.getSheetId(selectedSheet)
-//     const evaluatedData = hfInstance.getSheetValues(sheetId)
-
-//     // Format evaluated data
-//     const formattedData = evaluatedData.map(row =>
-//       // row.map(cell => {
-//       //   if (cell === null) return '';
-//       //   if (typeof cell === 'number') {
-//       //     return Number.isInteger(cell) ? cell.toString() : cell.toFixed(2);
-//       //   }
-//       //   return cell.toString();
-//       // })
-
-//       row.map(cell => {
-//         if (cell === null) return ''
-//         if (typeof cell === 'number') {
-//           return cell.toString() // Preserve original precision
-//         }
-//         return cell.toString()
-//       })
-//     )
-
-//     // Remove empty rows
-//     const filteredRows = formattedData.filter(row =>
-//       row.some(cell => cell.trim() !== '')
-//     )
-
-//     // Transpose to remove empty columns
-//     const transpose = matrix =>
-//       matrix[0].map((_, colIndex) => matrix.map(row => row[colIndex]))
-
-//     const transposed = transpose(filteredRows)
-
-//     const filteredColumns = transposed.filter(col =>
-//       col.some(cell => cell.trim() !== '')
-//     )
-
-//     const cleanedData = transpose(filteredColumns)
-
-//     // Build PDF table body
-//     const pdfTableBody = cleanedData.map(row =>
-//       row.map(cell => ({
-//         text: cell,
-//         alignment: 'center',
-//         fontSize: 6,
-//         margin: [1, 1, 1, 1]
-//       }))
-//     )
-
-//     return pdfTableBody
-//   } catch (error) {
-//     console.error('PDF generation error:', error)
-//     throw new Error('Failed to generate PDF table body')
-//   }
-// }
-
-// module.exports = { generatePdfFromSheet }
-
-const { HyperFormula } = require('hyperformula')
-
-/**
- * Utility function to generate PDF table bodies from sheet data, splitting at empty rows.
- * @param {Object} handsontableJson - The JSON data representing the sheet.
- * @param {Array|Object|String} selectedSheetInput - Selected sheet as array, object, or string.
- * @returns {Array} - An array of PDF table bodies (split at empty rows).
- */
-
-const generatePdfFromSheet = async (handsontableJson, selectedSheetInput) => {
+const generatePdfFromSheet = async (
+  handsontableJson,
+  MergedCells,
+  Styles,
+  selectedSheetInput
+) => {
   try {
-    const sheetNames = Object.keys(handsontableJson)
+    const sheetKey =
+      typeof selectedSheetInput === 'object'
+        ? selectedSheetInput.value
+        : selectedSheetInput;
 
-    // Extract selected sheet name
-    let selectedSheet
-    if (Array.isArray(selectedSheetInput)) {
-      selectedSheet = selectedSheetInput[0]?.value
-    } else if (selectedSheetInput?.value) {
-      selectedSheet = selectedSheetInput.value
-    } else {
-      selectedSheet = selectedSheetInput
-    }
+    const sheetData = handsontableJson[sheetKey] || [];
+    const mergedCells = MergedCells?.[sheetKey] || [];
+    const stylesArray = Styles?.[sheetKey] || [];
 
-    // Fallback to first sheet if invalid
-    if (!selectedSheet || !sheetNames.includes(selectedSheet)) {
-      selectedSheet = sheetNames[0]
-    }
+    if (!sheetData.length) return [];
 
-    // Initialize HyperFormula
     const hfInstance = HyperFormula.buildFromSheets(handsontableJson, {
-      licenseKey: 'internal-use-in-handsontable'
-    })
+      licenseKey: 'gpl-v3'
+    });
 
-    const sheetId = hfInstance.getSheetId(selectedSheet)
-    const evaluatedData = hfInstance.getSheetValues(sheetId)
+    const sheetId = hfInstance.getSheetId(sheetKey);
+    if (sheetId === undefined) {
+      throw new Error(`Sheet "${sheetKey}" not found`);
+    }
 
-    // Helper function to transpose matrix
-    const transpose = matrix =>
-      matrix[0]?.map((_, i) => matrix.map(row => row[i])) || []
+    const evaluatedDatas = hfInstance.getSheetSerialized(sheetId);
+    console.log(evaluatedDatas, 'Evaluated Data Without Rounding');
+    const evaluatedData = hfInstance.getSheetValues(sheetId);
 
-    // Format and clean data
-    const formattedData = evaluatedData.map(
-      row =>
-        row?.map(cell => {
-          if (cell == null) return ''
-          return typeof cell === 'number' ? cell.toString() : cell.toString()
-        }) || []
-    )
 
-    // Split into tables at empty rows
-    const tables = []
-    let currentTable = []
+    const maxCols = Math.max(...evaluatedData.map(row => row.length), 0);
+    const paddedData = evaluatedData.map(row => {
+      const newRow = Array(maxCols).fill('');
+      return row.concat(newRow.slice(row.length));
+    });
 
-    for (const row of formattedData) {
-      const isEmptyRow =
-        !row || row.every(cell => cell?.toString().trim() === '')
+
+    const splitTables = [];
+    let currentChunk = [];
+    let startRowIndexes = [];
+
+    paddedData.forEach((row, idx) => {
+      const isEmptyRow = row.every(cell => cell === '');
       if (isEmptyRow) {
-        if (currentTable.length > 0) {
-          tables.push(currentTable)
-          currentTable = []
+        // Split the current chunk if it has data
+        if (currentChunk.length) {
+          splitTables.push(currentChunk);
+          startRowIndexes.push(idx - currentChunk.length);
+          currentChunk = [];
         }
       } else {
-        currentTable.push(row)
+        // Add the row to the current chunk
+        currentChunk.push(row);
       }
+    });
+
+
+    if (currentChunk.length) {
+      splitTables.push(currentChunk);
+      startRowIndexes.push(paddedData.length - currentChunk.length);
     }
-    if (currentTable.length > 0) tables.push(currentTable)
 
-    // Process each table to remove empty columns
-    const processedTables = tables
-      .map(table => {
-        if (!table.length) return []
 
-        // Transpose to work with columns
-        const transposed = transpose(table)
-
-        // Filter out empty columns
-        const filteredColumns = transposed.filter(column =>
-          column.some(cell => cell?.toString().trim() !== '')
+    const cleanMergeDefinitions = (mergedCells, tableData, startRow, endRow, maxCols) => {
+      return mergedCells
+        .filter(({ row, col, rowspan, colspan }) =>
+          row >= startRow &&
+          col >= 0 &&
+          rowspan > 0 &&
+          colspan > 0 &&
+          row < endRow &&
+          col < maxCols &&
+          row + rowspan - 1 < endRow &&
+          col + colspan - 1 < maxCols
         )
-
-        // Transpose back to original format
-        return transpose(filteredColumns)
-      })
-      .filter(table => table.length > 0) // Remove any empty tables
-
-    // Convert to PDF format
-    return processedTables.map(table =>
-      table.map(row =>
-        row.map(cell => ({
-          text: cell?.toString() || '',
-          alignment: 'center',
-          fontSize: 6,
-          margin: [1, 1, 1, 1]
+        .map(({ row, col, rowspan, colspan }) => ({
+          row: row - startRow,
+          col,
+          rowspan: Math.min(rowspan, tableData.length - (row - startRow)),
+          colspan: Math.min(colspan, maxCols - col)
         }))
-      )
-    )
-  } catch (error) {
-    console.error('PDF generation error:', error)
-    throw new Error('Failed to generate PDF table body')
-  }
-}
+        .filter((cell, index, self) =>
+          index === self.findIndex(c =>
+            c.row === cell.row && c.col === cell.col
+          )
+        );
+    };
 
-const generatePdfTables = async (handsontableJson, selectedSheetInput) => {
-  try {
-    const tables = await generatePdfFromSheet(
-      handsontableJson,
-      selectedSheetInput
-    )
-    const formattedTables = []
-    const maxRowsPerTable = 12 
+    return splitTables.map((tableData, chunkIndex) => {
+      const startRow = startRowIndexes[chunkIndex];
+      const endRow = startRow + tableData.length;
 
-    tables.forEach((tableData, index) => {
-      if (!tableData || !Array.isArray(tableData) || tableData.length === 0) {
-        return
-      }
+      // Apply styles to each cell
+      const tableStyles = stylesArray
+        .filter(s => s.row >= startRow && s.row < endRow)
+        .map(s => ({
+          ...s,
+          row: s.row - startRow
+        }));
 
-      const columnCount = tableData[0] ? tableData[0].length : 1;
+      const tableMergedCells = cleanMergeDefinitions(mergedCells, tableData, startRow, endRow, maxCols);
 
+      // Ensure all cells in the table have valid objects
+      const tableBody = tableData.map((row, rowIndex) =>
+        row.map((cell, colIndex) => {
+          const style = tableStyles.find(
+            s => s.row === rowIndex && s.col === colIndex
+          );
 
-      const columnWidths = Array(columnCount).fill(columnCount > 8 ? 'auto' : '*');
+          const cellStyle = {
+            text: cell?.toString() ?? '', // Ensure cell is a string
+            alignment: 'center', // Default alignment is "center"
+            bold: false,
+            color: '#000000',
+            fillColor: null,
+            noWrap: false
+          };
 
-      const tableDefinition = {
-        style: 'ninethTable',
-        margin: [0, index % 2 === 1 ? 10 : 0, 0, 2],
-        table: {
-          headerRows: 1,
-          widths: columnWidths,
-          body: tableData
-        },
-        layout: {
-          //fillColor: rowIndex => (rowIndex === 0 ? '#CCCCCC' : null),
-          hLineColor: () => '#AAA',
-          vLineColor: () => '#AAA',
-          paddingLeft: () => 5,
-          paddingRight: () => 5,
-          paddingTop: () => 2,
-          paddingBottom: () => 2
+          if (style) {
+            if (style.fontColor) cellStyle.color = style.fontColor;
+            if (style.backgroundColor) cellStyle.fillColor = style.backgroundColor;
+            if (style.bold) cellStyle.bold = true;
+            if (style.className?.includes('htLeft')) cellStyle.alignment = 'left';
+            if (style.className?.includes('htRight')) cellStyle.alignment = 'right';
+            if (style.className?.includes('htCenter')) cellStyle.alignment = 'center';
+          }
+
+          // Force alignment to center for large columns (adjust threshold as needed)
+          if (cellStyle.text.length > 20 || maxCols > 10) {
+            cellStyle.alignment = 'center';
+          }
+
+          return cellStyle;
+        })
+      );
+
+      // Apply merged cells
+      tableMergedCells.forEach(({ row, col, rowspan, colspan }) => {
+        if (
+          row >= 0 &&
+          col >= 0 &&
+          row < tableBody.length &&
+          col < tableBody[row].length &&
+          row + rowspan <= tableBody.length &&
+          col + colspan <= tableBody[row].length
+        ) {
+          tableBody[row][col].rowSpan = rowspan;
+          tableBody[row][col].colSpan = colspan;
+
+          // Mark merged cells (except the first one) as empty
+          for (let r = row; r < row + rowspan; r++) {
+            for (let c = col; c < col + colspan; c++) {
+              if (r !== row || c !== col) {
+                if (tableBody[r] && tableBody[r][c]) {
+                  tableBody[r][c] = {};
+                }
+              }
+            }
+          }
+        }
+      });
+
+      // Skip empty columns during PDF generation
+      const nonEmptyColumnIndexes = [];
+      for (let colIndex = 0; colIndex < maxCols; colIndex++) {
+        const isNonEmptyColumn = tableBody.some(row => row[colIndex]?.text !== '');
+        if (isNonEmptyColumn) {
+          nonEmptyColumnIndexes.push(colIndex);
         }
       }
 
+      const finalTableBody = tableBody.map(row =>
+        nonEmptyColumnIndexes.map(colIndex => row[colIndex])
+      );
 
-      if (index % 2 === 1) {
 
-        if (tables[index - 1]?.length > maxRowsPerTable) {
-          tableDefinition.pageBreak = 'before'
-        }
-      } else if (index % 2 === 0 && index > 0) {
-        // Normal case: apply break after every two tables
-        tableDefinition.pageBreak = 'before'
+
+      const columnCount = nonEmptyColumnIndexes.length;
+      const widths = columnCount > 10 ? Array(columnCount).fill('auto') : Array(columnCount).fill('*');
+
+      //const widths = columnCount > 10 ? Array(columnCount).fill('4.5%') : Array(columnCount).fill('*');
+
+      return {
+        columns: [
+          {
+            width: "*",
+            table: {
+              headerRows: 1,
+              widths,
+              body: finalTableBody
+            },
+            layout: {
+              hLineWidth: (i, node) => i === 0 || i === node.table.body.length ? 0.5 : 0.2,
+              vLineWidth: () => 0.2,
+              hLineColor: () => '#cccccc',
+              vLineColor: () => '#cccccc',
+              paddingLeft: () => 2,
+              paddingRight: () => 2,
+              paddingTop: () => 3,
+              paddingBottom: () => 3
+            },
+            fontSize: 6,
+            dontBreakRows: true,
+            pageBreak: 'avoid',
+            style: 'ninethTable',
+            margin: columnCount > 10 ? [50, 2, 50, 5] : [0, 2, 0, 2],
+          }
+        ],
+        columnGap: 0,
+        alignment: 'center'
+      };
+
+    });
+  } catch (err) {
+    console.error('Error generating PDF:', err);
+    return [
+      {
+        text: `Error generating table: ${err.message}`,
+        color: 'red',
+        margin: [0, 10, 0, 10]
       }
-
-      formattedTables.push(tableDefinition)
-    })
-
-    return formattedTables
-  } catch (error) {
-    console.error('Error in PDF table generation:', error)
-    return []
+    ];
   }
-}
+};
 
-module.exports = { generatePdfFromSheet, generatePdfTables }
+module.exports = { generatePdfFromSheet };

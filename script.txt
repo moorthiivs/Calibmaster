@@ -1,0 +1,57 @@
+DO $$
+DECLARE
+    rec RECORD;
+    v_ranges JSONB;
+BEGIN
+    FOR rec IN 
+        SELECT 
+            it.instrument_type_id,
+            it.range_minimum,
+            it.range_maximum,
+            it.range_maximum_uom_id,
+            it.least_count,
+            it.least_count_uom_id,
+            it.size_spec,
+            it.size_spec_uom_id,
+            u1.uom_printsysmbol AS range_uom,
+            u2.uom_printsysmbol AS least_count_uom,
+            u3.uom_printsysmbol AS size_spec_uom
+        FROM public.instrument_types it
+        LEFT JOIN public."UOMs" u1 ON u1.uom_id = it.range_maximum_uom_id
+        LEFT JOIN public."UOMs" u2 ON u2.uom_id = it.least_count_uom_id
+        LEFT JOIN public."UOMs" u3 ON u3.uom_id = it.size_spec_uom_id
+    LOOP
+        v_ranges := '[]'::JSONB;
+
+        IF rec.range_minimum IS NOT NULL AND rec.range_maximum IS NOT NULL AND rec.range_uom IS NOT NULL THEN
+            v_ranges := v_ranges || jsonb_build_object(
+                'Range', rec.range_minimum::TEXT || '-' || rec.range_maximum::TEXT,
+                'InstrumentUOMID', rec.range_maximum_uom_id,
+                'InstrumentparameterUOM', rec.range_uom
+            );
+        END IF;
+
+        IF rec.least_count IS NOT NULL AND rec.least_count_uom IS NOT NULL THEN
+            v_ranges := v_ranges || jsonb_build_object(
+                'Least Count', rec.least_count::TEXT,
+                'InstrumentUOMID', rec.least_count_uom_id,
+                'InstrumentparameterUOM', rec.least_count_uom
+            );
+        END IF;
+
+        IF rec.size_spec IS NOT NULL AND rec.size_spec_uom IS NOT NULL THEN
+            v_ranges := v_ranges || jsonb_build_object(
+                'Size', rec.size_spec::TEXT,
+                'InstrumentUOMID', rec.size_spec_uom_id,
+                'InstrumentparameterUOM', rec.size_spec_uom
+            );
+        END IF;
+
+        -- Only update if v_ranges is NOT an empty array
+        IF jsonb_array_length(v_ranges) > 0 THEN
+            UPDATE public.instrument_types
+            SET ranges = v_ranges
+            WHERE instrument_type_id = rec.instrument_type_id;
+        END IF;
+    END LOOP;
+END $$;

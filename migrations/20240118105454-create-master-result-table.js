@@ -103,7 +103,7 @@ module.exports = {
       },
 
       remarks: {
-        type: Sequelize.ARRAY(Sequelize.STRING),
+        type: Sequelize.ARRAY(Sequelize.TEXT),
         allowNull: false
       },
 

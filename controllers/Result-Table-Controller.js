@@ -8,22 +8,22 @@ const { errorHandler } = require("../helpers/error-handler");
 const { where } = require("sequelize");
 
 const create = async (req, res, next) => {
- 
+
     try {
- 
+
         const {
             lab_id, instrument_type_id, srf_id, srf_item_id, master_design_procedure_id,
             calibration_procedure, ref_std,
             validity, traceability,
-            temperature, humidity, atmospheric_pressure, ulr_number,
+            temperature, humidity, atmospheric_pressure, frequency, ulr_number,
             master_list_equipments, remarks, calibrated_employee_id, approved_employee_id,
-            userid, ExceljsonData, PrintonCertificate, FileName
+            userid, ExceljsonData, PrintonCertificate, FileName, cmeid
         } = req.body;
+
 
         const ifExistsMasterTable = await MasterTable.findOne({
             where: { srf_id, srf_item_id }
         });
-
 
         if (ifExistsMasterTable) {
 
@@ -31,33 +31,44 @@ const create = async (req, res, next) => {
                 {
                     calibration_procedure, ref_std, instrument_type_id,
                     validity, traceability,
-                    temperature, humidity, atmospheric_pressure, ulr_number,
+                    temperature, humidity, atmospheric_pressure, frequency, ulr_number,
                     master_list_equipments, remarks, calibrated_employee_id, approved_employee_id
                 },
                 { where: { lab_id, srf_id, srf_item_id, } }
             );
 
+            // save excel json here
 
-             // save excel json here
+            if (ExceljsonData) {
+                const { sheets, merges, styles } = ExceljsonData
+                const ProcedureResultTable = await ProcedureResult.update(
+                    {
+                        ExcelData: sheets,
+                        Mergedcell: merges,
+                        Styles: styles,
+                        updatedby: userid,
+                        print_on_certificate: PrintonCertificate,
+                    },
+                    { where: { labid: lab_id, srf_id, srf_item_id, } }
+                )
 
-             const ProcedureResultTable = await ProcedureResult.update(
-                {
-                    ExcelData:ExceljsonData,
-                    updatedby:userid,
-                    print_on_certificate:PrintonCertificate,
-                },
-                { where: { labid:lab_id, srf_id, srf_item_id, } }
-             )
-             
-             if(ProcedureResultTable){
-                // return res.json(mainArray);
-                   return res.json({ msg: "Result Tables Updated Successfully", masterTableUpdate });
+                // if (ProcedureResultTable) {
+                //     // return res.json(mainArray);
+                //     return res.json({ msg: "Result Tables Updated Successfully", masterTableUpdate });
 
-             }
+                // }
+
+
+            }
+
+
+            return res.json({ msg: "Result Tables Updated Successfully", masterTableUpdate });
 
 
 
         } else {
+
+            const { sheets, merges, styles } = ExceljsonData
 
             const newMasterTable = new MasterTable({
                 lab_id, instrument_type_id, srf_id, srf_item_id,
@@ -65,7 +76,7 @@ const create = async (req, res, next) => {
                 calibration_procedure, ref_std,
                 unique_id: new Date().getTime(),
                 validity, traceability,
-                temperature, humidity, atmospheric_pressure, ulr_number,
+                temperature, humidity, atmospheric_pressure, frequency, ulr_number,
                 master_list_equipments, remarks, calibrated_employee_id, approved_employee_id
             });
             const result = await newMasterTable.save();
@@ -76,16 +87,19 @@ const create = async (req, res, next) => {
 
                 const newProcedureResultTable = new ProcedureResult({
                     FileName,
-                    ExcelData:ExceljsonData,
+                    ExcelData: sheets,
+                    Mergedcell: merges,
+                    Styles: styles,
                     srf_id,
                     srf_item_id,
-                    labid:lab_id,
-                    print_on_certificate:PrintonCertificate,
+                    labid: lab_id,
+                    print_on_certificate: PrintonCertificate,
                     createdby: userid,
-                    master_design_procedure_id
+                    master_design_procedure_id,
+                    cmeid
                 });
                 const result = await newProcedureResultTable.save();
-        
+
                 return res.json({ msg: "Result Tables Added Successfully" });
             } else {
                 const error = new Error("Failed To Add Result Tables");
@@ -94,14 +108,14 @@ const create = async (req, res, next) => {
                 return errorHandler(error, req, res, next);
             }
         }
-        
-        
+
+
 
 
 
 
     } catch (err) {
-        console.log(err); 
+        console.log(err);
         const error = new Error("Something went wrong");
         error.code = 500;
         error.path = "--";
@@ -169,7 +183,7 @@ const update = async (req, res, next) => {
             master_result_table_id, lab_id, instrument_type_id,
             calibration_procedure, ref_std,
             validity, traceability,
-            temperature, humidity, atmospheric_pressure, ulr_number,
+            temperature, humidity, atmospheric_pressure, frequency, ulr_number,
             master_list_equipments, remarks, calibrated_employee_id, approved_employee_id,
             mainArray
         } = req.body;
@@ -178,7 +192,7 @@ const update = async (req, res, next) => {
             {
                 calibration_procedure, ref_std, instrument_type_id,
                 validity, traceability,
-                temperature, humidity, atmospheric_pressure, ulr_number,
+                temperature, humidity, atmospheric_pressure, frequency, ulr_number,
                 master_list_equipments, remarks, calibrated_employee_id, approved_employee_id
             },
             { where: { master_result_table_id, lab_id } }

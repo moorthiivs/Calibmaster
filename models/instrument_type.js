@@ -52,7 +52,7 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.DECIMAL,
         allowNull: true,
       },
-      
+
       type: {
         type: DataTypes.STRING,
         allowNull: true,
@@ -82,7 +82,12 @@ module.exports = (sequelize, DataTypes) => {
       updated_by_user_id: {
         type: DataTypes.STRING,
         allowNull: true
-      }
+      },
+      ranges: {
+        type: DataTypes.JSON, 
+        allowNull: true, 
+        defaultValue: [], // Default to an empty array
+      }, 
     },
     {
       sequelize,

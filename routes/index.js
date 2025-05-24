@@ -64,6 +64,8 @@ const Authorization = require("../middleware/check-auth");
 
 const CalibMasterExcel = require('./calibmaster-excel-routes')
 
+const InstrumentVariantsType = require('./instrument-variant-type-routes')
+
 //Routes of the APP
 router.use("/api/heartbeat", heartbeatRoute);
 router.use("/api/users", usersRoutes);
@@ -143,6 +145,9 @@ router.use("/api/quotation", Authorization, QuotationRoutes);
 // Calibmaster Excel
 ///router.use('/api/calibmasterexcel/', Authorization, CalibMasterExcel)
 router.use('/api/calibmasterexcel/',  CalibMasterExcel)
+
+router.use('/api/instrumentvariantstype/',  InstrumentVariantsType)
+
 
 router.get("/*", (req, res) => {
     const frontendPath = path.join(__dirname + "../../public/index.html");

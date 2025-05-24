@@ -32,10 +32,14 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: true,
       defaultValue: []
     },
+    HiddenSheets: {
+      type: DataTypes.JSON,
+      allowNull: true
+    },
     labid: {
-      type: DataTypes.INTEGER, 
-      allowNull: true  
-    },    
+      type: DataTypes.INTEGER,
+      allowNull: true
+    },
     master_design_procedure_id: {
       type: DataTypes.INTEGER,
       allowNull: true
@@ -51,7 +55,7 @@ module.exports = (sequelize, DataTypes) => {
   }, {
     sequelize,
     modelName: 'CalibmasterExcel',
-    tableName: 'CalibmasterExcels', 
+    tableName: 'CalibmasterExcels',
   });
   return CalibmasterExcel;
 };

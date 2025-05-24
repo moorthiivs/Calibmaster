@@ -1,5 +1,6 @@
 const calibmasterexcel = require('../models').CalibmasterExcel
 const MasterTable = require('../models').master_design_procedure
+const ProcedureResult = require('../models').ProcedureResult
 const { errorHandler } = require('../helpers/error-handler')
 const fs = require('fs')
 const path = require('path')
@@ -10,7 +11,7 @@ calibmasterexcel.belongsTo(MasterTable, {
   targetKey: 'master_design_procedure_id'
 })
 
-function decodeBase64Image (dataString) {
+function decodeBase64Image(dataString) {
   var matches = dataString.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/),
     response = {}
   if (matches.length !== 3) {
@@ -22,7 +23,7 @@ function decodeBase64Image (dataString) {
   return response
 }
 
-function StoreProcedureImages (images, fromId) {
+function StoreProcedureImages(images, fromId) {
   let imgFileNames = images.map(imageData => {
     try {
       const isExists = fs.existsSync(`public/procedure_images/${imageData}`)
@@ -96,35 +97,83 @@ const CreateCalibmasterExcel = async (req, res, next) => {
 
     let savedImages = null;
     if (diagram_image && diagram_image.length > 0) {
-      savedImages = StoreProcedureImages(diagram_image, userId);
+      //savedImages = StoreProcedureImages(diagram_image, userId);
+      const imageArray = Array.isArray(diagram_image) ? diagram_image : [diagram_image];
+      savedImages = StoreProcedureImages(imageArray, userId);
     }
 
     const workbook = xlsx.readFile(uploadPath);
     const sheetNames = workbook.SheetNames;
 
-    const allSheetsData = {};
-    sheetNames.forEach((sheetName) => {
-      const sheet = workbook.Sheets[sheetName];
-      const jsonData = [];
+    // const allSheetsData = {};
+    // sheetNames.forEach((sheetName) => {
+    //   const sheet = workbook.Sheets[sheetName];
+    //   const jsonData = [];
 
-      if (sheet && sheet["!ref"]) {
-        const range = xlsx.utils.decode_range(sheet["!ref"]);
-        for (let r = range.s.r; r <= range.e.r; r++) {
-          const row = [];
-          for (let c = range.s.c; c <= range.e.c; c++) {
-            const addr = xlsx.utils.encode_cell({ r, c });
-            const cell = sheet[addr];
-            if (cell) {
-              row.push(cell.f ? `=${cell.f}` : cell.v !== undefined ? cell.v : "");
-            } else {
-              row.push("");
+    //   if (sheet && sheet["!ref"]) {
+    //     const range = xlsx.utils.decode_range(sheet["!ref"]);
+    //     for (let r = range.s.r; r <= range.e.r; r++) {
+    //       const row = [];
+    //       for (let c = range.s.c; c <= range.e.c; c++) {
+    //         const addr = xlsx.utils.encode_cell({ r, c });
+    //         const cell = sheet[addr];
+    //         if (cell) {
+    //           row.push(cell.f ? `=${cell.f}` : cell.v !== undefined ? cell.v : "");
+    //         } else {
+    //           row.push("");
+    //         }
+    //       }
+    //       jsonData.push(row);
+    //     }
+    //   }
+
+    //   allSheetsData[sheetName] = jsonData;
+    // });
+
+    let sheetData = {};
+    let mergedCellsData = {};
+
+    const allSheetsData = {
+      sheets: sheetData,
+      merges: mergedCellsData
+    };
+
+    workbook.SheetNames.forEach(sheetName => {
+      const worksheet = workbook.Sheets[sheetName];
+      const range = worksheet['!ref'] ? xlsx.utils.decode_range(worksheet['!ref']) : { e: { r: 0, c: 0 } };
+      const cellData = [];
+
+      for (let r = 0; r <= range.e.r; r++) {
+        const row = [];
+        for (let c = 0; c <= range.e.c; c++) {
+          const cellAddress = xlsx.utils.encode_cell({ r, c });
+          const cell = worksheet[cellAddress];
+
+          if (cell) {
+            // For formula cells, return the formula with = prefix
+            if (cell.f) {
+              row.push(`=${cell.f}`);
             }
+            // For regular cells, return the value
+            else {
+              row.push(cell.v !== undefined ? cell.v : null);
+            }
+          } else {
+            row.push(null);
           }
-          jsonData.push(row);
         }
+        cellData.push(row);
       }
 
-      allSheetsData[sheetName] = jsonData;
+      const mergedCells = (worksheet['!merges'] || []).map(merge => ({
+        row: merge.s.r,
+        col: merge.s.c,
+        rowspan: merge.e.r - merge.s.r + 1,
+        colspan: merge.e.c - merge.s.c + 1
+      }));
+
+      sheetData[sheetName] = cellData;
+      mergedCellsData[sheetName] = mergedCells;
     });
 
     const newEntry = await calibmasterexcel.create({
@@ -192,7 +241,7 @@ const FetchOneCalibmasterExcel = async (req, res, next) => {
     const { lab_id, master_design_procedure_id } = req.body
 
     let result = await calibmasterexcel.findOne({
-      attributes: ['cmeid', 'FileName', 'ExcelData'],
+      attributes: ['cmeid', 'FileName', 'ExcelData', 'HiddenSheets'],
       where: { labid: lab_id, master_design_procedure_id }
     })
 
@@ -218,7 +267,7 @@ const FetchOneCalibmasterExcel = async (req, res, next) => {
 
 const updateCalibmasterExcel = async (req, res, next) => {
   try {
-    const { lab_id, userid, ExcelJson, master_design_procedure_id, Fileid } =
+    const { lab_id, userid, ExcelJson, master_design_procedure_id, Fileid, selectedHiddenSheets } =
       req.body
 
     if ((!lab_id, !userid, !ExcelJson, !master_design_procedure_id, !Fileid)) {
@@ -230,7 +279,8 @@ const updateCalibmasterExcel = async (req, res, next) => {
     const masterTableUpdate = await calibmasterexcel.update(
       {
         ExcelData: ExcelJson,
-        updatedby: userid
+        HiddenSheets: selectedHiddenSheets,
+        updatedby: userid,
       },
       {
         where: {
@@ -240,6 +290,35 @@ const updateCalibmasterExcel = async (req, res, next) => {
         }
       }
     )
+    if (selectedHiddenSheets) {
+      const existingRecord = await ProcedureResult.findOne({
+        where: {
+          master_design_procedure_id,
+          labid: lab_id,
+          cmeid: Fileid
+        }
+      })
+
+      if (existingRecord) {
+        await ProcedureResult.update(
+          {
+            HiddenSheets: selectedHiddenSheets,
+          },
+          {
+            where: {
+              master_design_procedure_id,
+              labid: lab_id,
+              cmeid: Fileid
+            }
+          }
+        )
+      }
+      console.log(existingRecord, "existingRecord");
+
+    }
+
+
+
 
     if (masterTableUpdate) {
       const updatedJson = await calibmasterexcel.findOne({

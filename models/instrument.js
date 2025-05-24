@@ -92,6 +92,12 @@ module.exports = (sequelize, DataTypes) => {
       onDelete: "CASCADE",
       foreignKey: "lab_id",
     });
+
+    instrument.hasMany(models.InstrumentParameter, {
+      foreignKey: 'InstrumentID',
+      as: 'parameters',
+      onDelete: 'CASCADE'
+    });
   };
 
   return instrument;

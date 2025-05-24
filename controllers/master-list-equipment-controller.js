@@ -88,7 +88,7 @@ const create = async (req, res, next) => {
                 error.code = 500;
                 return errorHandler(error, req, res, next);
             }
-
+            
             const newMasterListEquipment = new MasterListEquipment(req.body);
             const result = await newMasterListEquipment.save();
 

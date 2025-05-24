@@ -16,6 +16,7 @@ const GetDueDateCount = async (req, res, next) => {
         const query = await Item.findAll({
             where: {
                 lab_id: labId,
+                rstatus: 1,
                 [Op.and]: [
                     literal(`EXTRACT(YEAR FROM calibration_due_date) = ${selectedYear}`)
                 ]
@@ -60,6 +61,7 @@ const CalibrationDuedateItems = async (req, res, next) => {
         const query = await Item.findAll({
             where: {
                 lab_id: labId,
+                rstatus: 1,
                 [Op.and]: [
                     Sequelize.where(Sequelize.fn('DATE', Sequelize.col('calibration_due_date')), date)
                 ]

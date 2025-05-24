@@ -12,7 +12,16 @@ module.exports = {
         type: Sequelize.STRING
       },
       ExcelData: {
-        type: Sequelize.JSON
+        type: Sequelize.JSON,
+        
+      },
+      Mergedcell: {
+        type: Sequelize.JSON,
+        allowNull: true,
+      },
+      Styles: {
+        type: Sequelize.JSON,
+        allowNull: true,
       },
       srf_id: {
         type: Sequelize.INTEGER
