@@ -85,6 +85,6 @@ app.use((error, req, res, next) => {
 //Port on which the server will be exposed
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT);
-
-logger.info("app is running");
+app.listen(PORT, () => {
+  logger.info(`App is running on port ${PORT}`);
+});

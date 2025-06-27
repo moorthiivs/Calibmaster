@@ -15,6 +15,10 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: false,
     },
+    observationFileName: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
     rstatus: {
       type: DataTypes.INTEGER,
       allowNull: false,

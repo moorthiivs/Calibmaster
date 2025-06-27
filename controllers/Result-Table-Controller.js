@@ -17,7 +17,9 @@ const create = async (req, res, next) => {
             validity, traceability,
             temperature, humidity, atmospheric_pressure, frequency, ulr_number,
             master_list_equipments, remarks, calibrated_employee_id, approved_employee_id,
-            userid, ExceljsonData, PrintonCertificate, FileName, cmeid
+            userid, ExceljsonData, PrintonCertificate, FileName, cmeid,
+            ObservationCertificate,
+            selectedFormatdoc
         } = req.body;
 
 
@@ -32,7 +34,8 @@ const create = async (req, res, next) => {
                     calibration_procedure, ref_std, instrument_type_id,
                     validity, traceability,
                     temperature, humidity, atmospheric_pressure, frequency, ulr_number,
-                    master_list_equipments, remarks, calibrated_employee_id, approved_employee_id
+                    master_list_equipments, remarks, calibrated_employee_id, approved_employee_id,
+                    document_format: selectedFormatdoc
                 },
                 { where: { lab_id, srf_id, srf_item_id, } }
             );
@@ -40,25 +43,20 @@ const create = async (req, res, next) => {
             // save excel json here
 
             if (ExceljsonData) {
-                const { sheets, merges, styles } = ExceljsonData
+                const { sheets, merges, styles, decimalPrecision
+                } = ExceljsonData
                 const ProcedureResultTable = await ProcedureResult.update(
                     {
                         ExcelData: sheets,
                         Mergedcell: merges,
                         Styles: styles,
+                        decimalPrecision,
                         updatedby: userid,
                         print_on_certificate: PrintonCertificate,
+                        print_on_observation: ObservationCertificate || null
                     },
                     { where: { labid: lab_id, srf_id, srf_item_id, } }
                 )
-
-                // if (ProcedureResultTable) {
-                //     // return res.json(mainArray);
-                //     return res.json({ msg: "Result Tables Updated Successfully", masterTableUpdate });
-
-                // }
-
-
             }
 
 
@@ -68,7 +66,8 @@ const create = async (req, res, next) => {
 
         } else {
 
-            const { sheets, merges, styles } = ExceljsonData
+            const { sheets, merges, styles, decimalPrecision
+            } = ExceljsonData
 
             const newMasterTable = new MasterTable({
                 lab_id, instrument_type_id, srf_id, srf_item_id,
@@ -77,7 +76,8 @@ const create = async (req, res, next) => {
                 unique_id: new Date().getTime(),
                 validity, traceability,
                 temperature, humidity, atmospheric_pressure, frequency, ulr_number,
-                master_list_equipments, remarks, calibrated_employee_id, approved_employee_id
+                master_list_equipments, remarks, calibrated_employee_id, approved_employee_id,
+                document_format: selectedFormatdoc
             });
             const result = await newMasterTable.save();
 
@@ -90,10 +90,12 @@ const create = async (req, res, next) => {
                     ExcelData: sheets,
                     Mergedcell: merges,
                     Styles: styles,
+                    decimalPrecision,
                     srf_id,
                     srf_item_id,
                     labid: lab_id,
                     print_on_certificate: PrintonCertificate,
+                    print_on_observation: ObservationCertificate || null,
                     createdby: userid,
                     master_design_procedure_id,
                     cmeid

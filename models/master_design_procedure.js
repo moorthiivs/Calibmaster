@@ -53,11 +53,13 @@ module.exports = (sequelize, DataTypes) => {
       },
 
       temperature: {
-        type: DataTypes.STRING,
+        //type: DataTypes.STRING,
+        type: DataTypes.JSON,
         allowNull: true,
       },
       humidity: {
-        type: DataTypes.STRING,
+        //type: DataTypes.STRING,
+        type: DataTypes.JSON,
         allowNull: true,
       },
       atmospheric_pressure: {
@@ -68,7 +70,11 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         allowNull: true
       },
-      
+      document_format: {
+        type: DataTypes.JSON,
+        allowNull: true
+      },
+
       master_list_equipments: {
         type: DataTypes.ARRAY(DataTypes.JSON),
         allowNull: false

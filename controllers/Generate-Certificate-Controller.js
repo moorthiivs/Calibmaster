@@ -26,6 +26,7 @@ const resultTable = require("../models").result_table;
 
 
 const { ProcedureResult } = require('../models');
+const EParameter = require("../models").EParameter
 
 const { generatePdfFromSheet, generatePdfTables } = require('../utils/pdfUtils');
 
@@ -59,6 +60,7 @@ ProcedureResult.belongsTo(calibmasterexcel, {
 // Error Handler 
 const { errorHandler } = require("../helpers/error-handler");
 const { generateImageContent } = require("../utils/ProcedureImage");
+const { generateObservationReport } = require("../utils/generateObservationReport");
 
 async function imageToBuffer(imagePath) {
     try {
@@ -112,6 +114,21 @@ const sendMail = async (srfItemsQuery, filePath) => {
     }
 }
 
+
+const isValid = (value) => {
+    if (value === null || value === undefined) return false;
+
+    if (typeof value === 'string' && value.trim() === '') return false;
+
+    if (Array.isArray(value) && value.length === 0) return false;
+
+    if (typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === 0) return false;
+
+    return true;
+};
+
+
+
 const footerLongText = "The Calibration Certificate is valid only for the condition of the received DUC at the time under the stated condition of calibration. The calibration certificate shall not be reproduced in full without written approval of Lab Management. DUC: Device Under Calibration. Calibration Measurement are traceable to SI Units through unbroken chain of calibration from competent laboratory.Recommended due date for calibration is provided by customer.";
 
 const generate = async (req, res, next) => {
@@ -123,7 +140,8 @@ const generate = async (req, res, next) => {
 
     try {
 
-        const certificate_number = new Date().getTime();
+        //const certificate_number = new Date().getTime();
+
 
         const excelTable = await ProcedureResult.findOne({
             where: {
@@ -131,7 +149,7 @@ const generate = async (req, res, next) => {
                 srf_id,
                 srf_item_id
             },
-            attributes: ["ExcelData", "print_on_certificate", "Mergedcell", "Styles"],
+            attributes: ["ExcelData", "print_on_certificate", "print_on_observation", "Mergedcell", "Styles", "decimalPrecision"],
             include: [{
                 model: calibmasterexcel,
                 as: 'CalibmasterExcel',
@@ -140,26 +158,51 @@ const generate = async (req, res, next) => {
             }]
         });
 
-
+        
+        const EParameterData = await EParameter.findOne({
+            where:{
+                lab_id:`'${lab_id}'`
+            }
+        })
+        
         const procedureimages = excelTable.CalibmasterExcel ? excelTable.CalibmasterExcel.diagram_image : null;
 
         const imageContent = await generateImageContent(procedureimages);
 
-        //Extract the ExcelData object
+        // Extract relevant data
         const excelData = excelTable.dataValues.ExcelData;
+        const mergedCells = excelTable.dataValues.Mergedcell;
+        const Styles = excelTable.dataValues.Styles;
+        const decimalPoint = excelTable.dataValues.decimalPrecision;
+        const selectedSheet_Cert = excelTable.dataValues.print_on_certificate;
+        const selectedSheet_Obs = excelTable.dataValues.print_on_observation;
 
-        const mergedCells = excelTable.dataValues.Mergedcell
+        const ExcelProcedureTablelayout = {
+            hLineWidth: (i, node) => i === 0 || i === node.table.body.length ? 0.5 : 0.2,
+            vLineWidth: () => 0.2,
+            hLineColor: () => '#cccccc',
+            vLineColor: () => '#cccccc',
+            paddingLeft: () => 2,
+            paddingRight: () => 2,
+            paddingTop: () => 3,
+            paddingBottom: () => 3
+        };
+        const observationTablelayout = {
+            hLineWidth: () => 0.2,
+            vLineWidth: () => 0.2,
+            hLineColor: () => '#000000',
+            vLineColor: () => '#000000'
+        };
 
-        const Styles = excelTable.dataValues.Styles
+        // Generate table content for both certificate and observation
+        const ExcelProcedureTable = await generatePdfFromSheet(excelData, mergedCells, Styles, selectedSheet_Cert, decimalPoint, ExcelProcedureTablelayout, fontSize = 6);
+        const observationTable = isValid(selectedSheet_Obs) ? await generatePdfFromSheet(excelData, mergedCells, Styles, selectedSheet_Obs, decimalPoint, observationTablelayout, fontSize = 6) : null
 
-        const selectedSheet = excelTable.dataValues.print_on_certificate;
-        const ExcelProcedureTable = await generatePdfFromSheet(excelData, mergedCells, Styles, selectedSheet);
-
+        // Validate generation
         if (!ExcelProcedureTable) {
             throw new Error("Failed to generate PDF tables from Excel data.");
         }
 
-        //const excelProcedureTables = await generatePdfTables(excelData, selectedSheet);
 
         // ***  Query SRF-Items by srf_item_id *** 
         let item = await Item.findOne({
@@ -213,8 +256,6 @@ const generate = async (req, res, next) => {
             groupName = group?.group_details || null;
         }
 
-
-
         const itemCount = await Item.count({
             where: {
                 srf_id: srf_id,
@@ -222,9 +263,6 @@ const generate = async (req, res, next) => {
             }
         });
 
-
-
-        // return res.json({ item });
 
         if (!item) {
             let action = "SRF-Item is not available";
@@ -302,8 +340,8 @@ const generate = async (req, res, next) => {
         const ulr_number = masterResult?.ulr_number;
         const calibration_procedure = masterResult?.calibration_procedure;
         const ref_std = masterResult?.ref_std;
-        const temperature = masterResult?.temperature;
-        const humidity = masterResult?.humidity;
+        const temperature = masterResult?.temperature?.mean + '°C';
+        const humidity = masterResult?.humidity?.mean + '%';
         const AtmosphericPressure = masterResult?.atmospheric_pressure
         const Frequency = masterResult?.frequency
         const remark = masterResult?.remarks;
@@ -328,9 +366,7 @@ const generate = async (req, res, next) => {
 
         const yearRange = `${prevYear.toString().slice(-2)}-${currentYear.toString().slice(-2)}`;
 
-        //const certificate_number = `TICS/${yearRange}/${srf}/${itemCount}`;
-
-        //const certificate_number = `SSPI/${new Date().getFullYear().toString().slice(-2)}/${srf}/${itemCount}`;
+        const certificate_number = `DCPL/CAL/${yearRange}/${srf}`;
 
         const masterDescription = m_description;
         const masterMake = m_make;
@@ -468,11 +504,7 @@ const generate = async (req, res, next) => {
 
         environmentalbody.push(headerRow);
         environmentalbody.push(secondRow);
-
-        // Step 3: Calculate column widths
         environmentalwidths = Array(totalCols).fill(`${(100 / totalCols).toFixed(2)}%`);
-
-
         const thirdTableBody = [
             [
                 { text: 'DESCRIPTION:' },
@@ -486,15 +518,6 @@ const generate = async (req, res, next) => {
                 { text: 'MODEL:' },
                 { text: capitalizeEachWord(model) || '-', alignment: 'center' }
             ],
-            // [
-            //     { text: 'SL.NO/ID.NO:' },
-            //     {
-            //         text: idNo ? `${capitalizeEachWord(slNo) || '-'} / ${capitalizeEachWord(idNo)}` : `${capitalizeEachWord(slNo) || '-'}`,
-            //         alignment: 'center'
-            //     },
-            //     { text: 'TYPE:' },
-            //     { text: type ? capitalizeEachWord(type) : '-', alignment: 'center' }
-            // ],
             [
                 { text: 'SL.NO:' },
                 {
@@ -580,13 +603,6 @@ const generate = async (req, res, next) => {
                                 //     fontSize: 9,
                                 //     margin: [0, 5, 0, 0],
                                 //     lineHeight: 1.1
-                                // },
-                                // {
-                                //     text: 'CERTIFICATE OF CALIBRATION',
-                                //     alignment: 'center',
-                                //     fontSize: 16,
-                                //     bold: true,
-                                //     margin: [0, 5, 0, 0],
                                 // }
                             ],
                             {
@@ -623,7 +639,6 @@ const generate = async (req, res, next) => {
                     },
                 ];
             },
-
             footer: function (currentPage, pageCount) {
                 let footerContent = [
                     {
@@ -670,23 +685,15 @@ const generate = async (req, res, next) => {
                                 columns: [
                                     {
                                         ul: [
-                                            // {
-                                            //     image: sign1LogoBuffer,
-                                            //     width: 40,
-                                            //     margin: [0, 0, 0, 0],
-                                            //     alignment: 'center'
-                                            // },
                                             {
                                                 text: `${calibrated_employee_name}`,
                                                 listType: 'none',
                                                 fontSize: 8,
-                                                //bold: true,
                                             },
                                             {
                                                 text: `${calibrated_employee_role}`,
                                                 listType: 'none',
                                                 fontSize: 8,
-                                                //bold: true,
                                             },
                                             {
                                                 text: 'Calibrated By',
@@ -697,31 +704,17 @@ const generate = async (req, res, next) => {
                                         ],
                                         alignment: 'center'
                                     },
-                                    // sealBuffer ? { 
-                                    //     image: sealBuffer, 
-                                    //     width: 40, 
-                                    //     margin: [0, 0, 0, 0], 
-                                    //     alignment: 'center' 
-                                    // } : { text: '' },
                                     {
                                         ul: [
-                                            // {
-                                            //     image: sign2LogoBuffer,
-                                            //     width: 40,
-                                            //     margin: [0, 0, 0, 0],
-                                            //     alignment: 'center'
-                                            // },
                                             {
                                                 text: `${approved_employee_name}`,
                                                 listType: 'none',
                                                 fontSize: 8,
-                                                //bold: true,
                                             },
                                             {
                                                 text: `${approved_employee_role}`,
                                                 listType: 'none',
                                                 fontSize: 8,
-                                                //bold: true,
                                             },
                                             {
                                                 text: 'Authorized By',
@@ -750,7 +743,6 @@ const generate = async (req, res, next) => {
 
                 return footerContent;
             },
-
             content: [
                 {
                     text: 'CERTIFICATE OF CALIBRATION',
@@ -820,7 +812,6 @@ const generate = async (req, res, next) => {
                     },
                     layout: {
                         hLineColor: function (i, node) {
-                            //return (i === 0 ||i === node.table.body.length) ? 'white' : 'black';
                             return (i === node.table.body.length) ? 'white' : 'white';
                         },
                     }
@@ -867,7 +858,6 @@ const generate = async (req, res, next) => {
                     table: {
                         widths: Array(iselectroParameters ? 9 : 8).fill(iselectroParameters ? '12.5%' : '14.28%'),
                         body: [
-                            // Header Row
                             [
                                 { text: 'DESCRIPTION', alignment: 'center', bold: true },
                                 { text: 'MAKE', alignment: 'center', bold: true },
@@ -880,7 +870,6 @@ const generate = async (req, res, next) => {
                                     ? [{ text: 'Parameters', alignment: 'center', bold: true }]
                                     : [])
                             ],
-                            // Data Rows
                             ...standard_details_Table.map(item => {
                                 const row = [
                                     { text: item.m_description || '-', alignment: 'center' },
@@ -910,7 +899,7 @@ const generate = async (req, res, next) => {
                 },
                 {
                     style: 'eightthTable',
-                    margin: [0, 5, 0, 5],
+                    margin: [0, 5, 0, 0],
                     table: {
                         widths: ['auto', '*'],
                         body: [
@@ -921,18 +910,13 @@ const generate = async (req, res, next) => {
                                     bold: true
                                 },
                                 { text: `${disciplineName} - ${groupName}`, fontSize: 7, alignment: 'center', bold: true }
-                                // { text: '( All Values are in mm ) :', fontSize: 8, alignment: 'center', bold: true }
-
                             ]
                         ]
                     },
                     layout: 'noBorders'
                 },
                 ...imageContent,
-                // ...ExcelProcedureTable,
                 ...(Array.isArray(ExcelProcedureTable) ? ExcelProcedureTable : []),
-
-
                 {
                     ...(remarks?.length > 0 && {
                         id: 'remark_part',
@@ -1032,6 +1016,20 @@ const generate = async (req, res, next) => {
 
         };
 
+        const observationFileName = isValid(selectedSheet_Obs) ? await generateObservationReport(
+            fs, path, printer,
+            observationTable,
+            observationTablelayout,
+            item, masterResult,
+            lab,
+            certificate_number,
+            calibrated_employee_name,
+            approved_employee_name,
+            instrumentDynamicRows,
+            standard_details_Table,
+            EParameterData?.dataValues
+        ) : null
+
         // Create PDF
         const pdfDoc = printer.createPdfKitDocument(docDefinition);
         const chunks = [];
@@ -1047,6 +1045,7 @@ const generate = async (req, res, next) => {
 
             const newCertificate = new Certificate({
                 fileName: fileName,
+                observationFileName: observationFileName || null,
                 rstatus: 1,
                 srfitemId: srf_item_id,
             });
@@ -1106,26 +1105,21 @@ const generate = async (req, res, next) => {
     }
 }
 
+
 const download = async (req, res, next) => {
 
     try {
-
-        const { srf_item_id } = req.body;
-
+        const { srf_item_id, type } = req.body;
         // ***  Query Certificate by srf_item_id ***
         let certificate = await Certificate.findOne({
             where: { srfitemId: srf_item_id },
             order: [['createdAt', 'DESC']]
         });
-
-        const fileName = certificate?.fileName;
-
-        const docPath = path.join(__dirname, "..", "certificates", fileName);
-
+        const fileName = type === 'calibration' ? certificate?.fileName : certificate?.observationFileName;
+        const docPath = type === 'calibration' ? path.join(__dirname, "..", "certificates", fileName) : path.join(__dirname, "..", "certificates/Observation", fileName);
         return res.sendFile(docPath);
     } catch (err) {
         console.log(err);
-
         let action = "Failed to download certificate";
         const error = new Error(action);
         error.code = 500;
@@ -1146,8 +1140,6 @@ const verify_certificate = async (req, res, next) => {
         // Returns true if a record exists, false otherwise
         const isGenerated = !!isGenerateCertificate;
 
-        console.log(isGenerated);
-
 
         // ***  Query Certificate by srf_item_id ***
         let certificate = await Certificate.findOne({
@@ -1157,7 +1149,10 @@ const verify_certificate = async (req, res, next) => {
 
         const check = certificate?.fileName ? true : false;
 
-        return res.json({ isGenerateCertificate: isGenerated, check });
+        const check_uncertainty = certificate?.fileName ? true : false;
+        const check_observation = certificate?.observationFileName ? true : false
+
+        return res.json({ isGenerateCertificate: isGenerated, check, check_uncertainty, check_observation });
     } catch (err) {
         console.log(err);
         let action = "Failed to verify certificate";
@@ -1236,48 +1231,6 @@ const standard_details_tableData = async (master_list_equipments) => {
     return result;
 }
 
-const instrument_range = async (datas) => {
-    try {
-        // Initialize result object
-        const result = {
-            ranges: [],
-            lcs: [],
-            size: []
-        };
-
-        datas.forEach((data) => {
-            // Process ranges
-            let range = `${data.rangeMin} - ${data.rangeMax} ${data.rangeUomname}`;
-            result.ranges.push(range);
-
-            // Process LC
-            if (data.lc && data.lcUOMname) {
-                let lc = `${data.lc} ${data.lcUOMname}`;
-                result.lcs.push(lc);
-            }
-
-            // Process Size
-            if (data.size && data.sizeUomname) {
-                let size = `${data.size} ${data.sizeUomname}`;
-                result.size.push(size);
-            }
-        });
-
-        // Join the arrays into comma-separated strings
-        return {
-            ranges: result.ranges.join("\n"),
-            lcs: result.lcs.join("\n"),
-            size: result.size.join("\n")
-        };
-    } catch (error) {
-        console.log(error);
-        return {
-            ranges: "",
-            lcs: "",
-            size: ""
-        };
-    }
-};
 
 function formatDynamicRowsFromOriginalRanges(rangesArray) {
     if (!Array.isArray(rangesArray)) return null;
@@ -1320,26 +1273,6 @@ function formatDynamicRowsFromOriginalRanges(rangesArray) {
     return rows;
 }
 
-// function buildRangeLcTypeRow(range, lc, type) {
-//     const cells = [];
-
-//     if (range) {
-//         cells.push({ text: 'RANGE:' }, { text: range, alignment: 'center' });
-//     }
-//     if (lc) {
-//         cells.push({ text: 'L.C:', alignment: 'left' }, { text: lc, alignment: 'center' });
-//     }
-//     if (type) {
-//         cells.push({ text: 'TYPE:', alignment: 'left' }, { text: type, alignment: 'center' });
-//     }
-
-//     // Fill up remaining cells to make sure total = 4 cells (2 labels + 2 values = 4)
-//     while (cells.length < 4) {
-//         cells.push({ text: '', border: [true, true, true, true] });
-//     }
-
-//     return cells.length ? [cells] : [];
-// }
 
 function buildRangeLcTypeRow(range, lc, type) {
     const rawCells = [];
@@ -1362,29 +1295,6 @@ function buildRangeLcTypeRow(range, lc, type) {
 
     return rows;
 }
-
-
-function buildRangeLcRowOnly(range, lc) {
-    const cells = [];
-
-    if (range) {
-        cells.push({ text: 'RANGE:' }, { text: range, alignment: 'center' });
-    }
-    if (lc) {
-        cells.push({ text: 'L.C:', alignment: 'left' }, { text: lc, alignment: 'center' });
-    }
-
-    // Fill remaining cells to make a full row of 4 columns
-    while (cells.length < 4) {
-        cells.push({ text: '', border: [false, false, false, false] });
-    }
-
-    // Return full row only if range or lc exists
-    return cells.length > 0 && (range || lc) ? [cells] : [];
-}
-
-
-
 
 
 const convertFilepathtoBlob = async (filePath, originalFileName) => {

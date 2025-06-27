@@ -267,14 +267,16 @@ const FetchOneCalibmasterExcel = async (req, res, next) => {
 
 const updateCalibmasterExcel = async (req, res, next) => {
   try {
-    const { lab_id, userid, ExcelJson, master_design_procedure_id, Fileid, selectedHiddenSheets } =
-      req.body
+    const { lab_id, userid, ExcelJson, master_design_procedure_id, Fileid, selectedHiddenSheets } = req.body
 
     if ((!lab_id, !userid, !ExcelJson, !master_design_procedure_id, !Fileid)) {
       return res
         .status(400)
         .json({ message: 'User ID, Lab ID, and Excel file are required.' })
     }
+
+    console.log(selectedHiddenSheets,"selectedHiddenSheets");
+    
 
     const masterTableUpdate = await calibmasterexcel.update(
       {
@@ -290,6 +292,9 @@ const updateCalibmasterExcel = async (req, res, next) => {
         }
       }
     )
+
+    console.log(masterTableUpdate);
+    
     if (selectedHiddenSheets) {
       const existingRecord = await ProcedureResult.findOne({
         where: {

@@ -26,6 +26,8 @@ module.exports = (sequelize, DataTypes) => {
       srf_id: DataTypes.INTEGER,
       srf_item_id: DataTypes.INTEGER,
       print_on_certificate: DataTypes.JSON,
+      print_on_observation: DataTypes.JSON,
+      decimalPrecision: DataTypes.JSON,
       labid: DataTypes.INTEGER,
       master_design_procedure_id: DataTypes.INTEGER,
       createdby: DataTypes.INTEGER,

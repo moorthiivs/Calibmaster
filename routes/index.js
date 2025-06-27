@@ -66,6 +66,11 @@ const CalibMasterExcel = require('./calibmaster-excel-routes')
 
 const InstrumentVariantsType = require('./instrument-variant-type-routes')
 
+const MasterListDoc = require('./masterListDoc.routes')
+const MasterListDocDetail = require('./masterListDocDetailRoutes')
+const MasterListDocFormat = require('./masterListDocFormatRoutes')
+
+
 //Routes of the APP
 router.use("/api/heartbeat", heartbeatRoute);
 router.use("/api/users", usersRoutes);
@@ -144,9 +149,16 @@ router.use("/api/quotation", Authorization, QuotationRoutes);
 
 // Calibmaster Excel
 ///router.use('/api/calibmasterexcel/', Authorization, CalibMasterExcel)
-router.use('/api/calibmasterexcel/',  CalibMasterExcel)
+router.use('/api/calibmasterexcel/', CalibMasterExcel)
 
-router.use('/api/instrumentvariantstype/',  InstrumentVariantsType)
+router.use('/api/instrumentvariantstype/', InstrumentVariantsType)
+
+
+router.use('/api/master-list-docs/', Authorization, MasterListDoc)
+
+router.use('/api/master-list-docs-details/', Authorization, MasterListDocDetail)
+
+router.use('/api/master-list-docs-format/', Authorization, MasterListDocFormat)
 
 
 router.get("/*", (req, res) => {

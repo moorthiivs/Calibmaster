@@ -2,7 +2,7 @@
     "development": {
         "username": "postgres",
         "password": "root",
-        "database": "Calibmaster",
+        "database": "PaPwork",
         "host": "127.0.0.1",
         "dialect": "postgres",
         "logging": false
@@ -19,34 +19,6 @@
         "password": "root",
         "database": "Calibmaster",
         "host": "127.0.0.1",
-        "dialect": "postgres"
-    },
-    "local": {
-        "username": "sspinstruments26admin",
-        "password": "cLvG8PTuS2bTwxf58pK4",
-        "database": "releasev5-calibmaster-ssp",
-        "host": "ssp-instruments-v5-calibmaster-customerportal-db.postgres.database.azure.com",
-        "dialect": "postgres"
-    },
-    "pap": {
-        "username": "papworksadmin",
-        "password": "hd005TFx6SbTPz3qk",
-        "database": "releasev5-calibmaster-pap",
-        "host": "pap-works-calibmaster-customerportal-db.postgres.database.azure.com",
-        "dialect": "postgres"
-    },
-    "": {
-        "username": "trial24dbadmin",
-        "password": "UCDQtk1eklb4QVr8cRZ5",
-        "database": "releasev4-calibmaster-trial-v2",
-        "host": "trial-v2-iviewsense-calibmaster-customerportal-db.postgres.database.azure.com",
-        "dialect": "postgres"
-    },
-    "Darsh": {
-        "username": "darsh25admin",
-        "password": "ajhmY8rCcEte54TAlg5q",
-        "database": "releasev5-calibmaster-darsh",
-        "host": "darsh-calibration-calibmaster-customerportal-db.postgres.database.azure.com",
         "dialect": "postgres"
     }
 }

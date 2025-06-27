@@ -58,6 +58,7 @@ const create = async (req, res, next) => {
             temperature, humidity, atmospheric_pressure,
             frequency,
             master_list_equipments, remarks,
+            selectedFormatdoc,
             uncertainty_master_parameters
         } = req.body;
 
@@ -70,7 +71,8 @@ const create = async (req, res, next) => {
             validity, traceability,
             temperature, humidity, atmospheric_pressure,
             frequency,
-            master_list_equipments, remarks
+            master_list_equipments, remarks,
+            document_format: selectedFormatdoc
         });
         const result = await newMasterTable.save();
 
@@ -119,7 +121,7 @@ const findAllList = async (req, res, next) => {
             },
             include: ["instrument_type"],
             order: [
-                ['master_design_procedure_id', 'ASC']
+                ['master_design_procedure_id', 'DESC']
             ],
         });
         return res.json(masterTables);
@@ -188,7 +190,6 @@ const listProcedure = async (req, res, next) => {
     try {
 
         const { lab_id } = req.body;
-        console.log(lab_id, "message: true,");
 
 
         if (!lab_id) {
@@ -202,7 +203,7 @@ const listProcedure = async (req, res, next) => {
         const definedProcedures = await MasterTable.findAll({
             where: { lab_id: lab_id },
             attributes: ['master_design_procedure_id', 'calibration_procedure'],
-            order: [['master_design_procedure_id', 'ASC']]
+            order: [['master_design_procedure_id', 'DESC']]
         });
 
 
@@ -214,7 +215,7 @@ const listProcedure = async (req, res, next) => {
         const error = new Error("Internal Server Error");
         next(errorHandler(error, req, res, next))
     }
-}
+} 
 
 const fetch = async (req, res, next) => {
 
@@ -381,14 +382,16 @@ const update = async (req, res, next) => {
             calibration_procedure, ref_std,
             validity, traceability,
             temperature, humidity, atmospheric_pressure, frequency,
-            mainArray, master_list_equipments, remarks, uncertainty_master_parameters
+            mainArray, master_list_equipments, remarks, uncertainty_master_parameters,
+            selectedFormatdoc
         } = req.body;
 
         const masterTableUpdate = await MasterTable.update(
             {
                 calibration_procedure, ref_std, instrument_type_id,
                 validity, traceability,
-                temperature, humidity, atmospheric_pressure, frequency, master_list_equipments, remarks
+                temperature, humidity, atmospheric_pressure, frequency, master_list_equipments, remarks,
+                document_format: selectedFormatdoc
             },
             { where: { master_design_procedure_id, lab_id } }
         );

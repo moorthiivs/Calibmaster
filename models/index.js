@@ -2,14 +2,17 @@
 
 const fs = require('fs');
 const path = require('path');
-const Sequelize = require('sequelize'); 
+const Sequelize = require('sequelize');
 const process = require('process');
+require('dotenv').config();
 const basename = path.basename(__filename);
-const env = process.env.NODE_ENV || 'development'; 
+const env = process.env.NODE_ENV || 'development';
+console.log(env);
+
 const config = require(__dirname + '/../config/config.json')[env];
 const { NODE_ENV } = require('../utils/config');
 const db = {};
- 
+
 let sequelize;
 
 // if (NODE_ENV === "development") {
@@ -21,7 +24,7 @@ if (config.use_env_variable) {
 } else {
   sequelize = new Sequelize(config.database, config.username, config.password, config);
 }
-
+ 
 fs
   .readdirSync(__dirname)
   .filter(file => {

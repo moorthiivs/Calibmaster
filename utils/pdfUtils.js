@@ -1,14 +1,17 @@
-const { HyperFormula } = require('hyperformula');
+const { HyperFormula } = require("hyperformula");
 
 const generatePdfFromSheet = async (
   handsontableJson,
   MergedCells,
   Styles,
-  selectedSheetInput
+  selectedSheetInput,
+  decimalPoint,
+  Layout,
+  fontSize
 ) => {
   try {
     const sheetKey =
-      typeof selectedSheetInput === 'object'
+      typeof selectedSheetInput === "object"
         ? selectedSheetInput.value
         : selectedSheetInput;
 
@@ -16,10 +19,24 @@ const generatePdfFromSheet = async (
     const mergedCells = MergedCells?.[sheetKey] || [];
     const stylesArray = Styles?.[sheetKey] || [];
 
+    let decimalPointArray = {};
+
+    if (decimalPoint && typeof decimalPoint === "object") {
+      const allPrecisions = {};
+
+      for (const [sheetName, sheetPrecision] of Object.entries(decimalPoint)) {
+        for (const [cellKey, value] of Object.entries(sheetPrecision)) {
+          allPrecisions[cellKey] = value;
+        }
+      }
+
+      decimalPointArray = allPrecisions;
+    }
+
     if (!sheetData.length) return [];
 
     const hfInstance = HyperFormula.buildFromSheets(handsontableJson, {
-      licenseKey: 'gpl-v3'
+      licenseKey: "gpl-v3",
     });
 
     const sheetId = hfInstance.getSheetId(sheetKey);
@@ -28,23 +45,21 @@ const generatePdfFromSheet = async (
     }
 
     const evaluatedDatas = hfInstance.getSheetSerialized(sheetId);
-    console.log(evaluatedDatas, 'Evaluated Data Without Rounding');
+    //console.log(evaluatedDatas, 'Evaluated Data Without Rounding');
     const evaluatedData = hfInstance.getSheetValues(sheetId);
 
-
-    const maxCols = Math.max(...evaluatedData.map(row => row.length), 0);
-    const paddedData = evaluatedData.map(row => {
-      const newRow = Array(maxCols).fill('');
+    const maxCols = Math.max(...evaluatedData.map((row) => row.length), 0);
+    const paddedData = evaluatedData.map((row) => {
+      const newRow = Array(maxCols).fill("");
       return row.concat(newRow.slice(row.length));
     });
-
 
     const splitTables = [];
     let currentChunk = [];
     let startRowIndexes = [];
 
     paddedData.forEach((row, idx) => {
-      const isEmptyRow = row.every(cell => cell === '');
+      const isEmptyRow = row.every((cell) => cell === "");
       if (isEmptyRow) {
         // Split the current chunk if it has data
         if (currentChunk.length) {
@@ -58,35 +73,40 @@ const generatePdfFromSheet = async (
       }
     });
 
-
     if (currentChunk.length) {
       splitTables.push(currentChunk);
       startRowIndexes.push(paddedData.length - currentChunk.length);
     }
 
-
-    const cleanMergeDefinitions = (mergedCells, tableData, startRow, endRow, maxCols) => {
+    const cleanMergeDefinitions = (
+      mergedCells,
+      tableData,
+      startRow,
+      endRow,
+      maxCols
+    ) => {
       return mergedCells
-        .filter(({ row, col, rowspan, colspan }) =>
-          row >= startRow &&
-          col >= 0 &&
-          rowspan > 0 &&
-          colspan > 0 &&
-          row < endRow &&
-          col < maxCols &&
-          row + rowspan - 1 < endRow &&
-          col + colspan - 1 < maxCols
+        .filter(
+          ({ row, col, rowspan, colspan }) =>
+            row >= startRow &&
+            col >= 0 &&
+            rowspan > 0 &&
+            colspan > 0 &&
+            row < endRow &&
+            col < maxCols &&
+            row + rowspan - 1 < endRow &&
+            col + colspan - 1 < maxCols
         )
         .map(({ row, col, rowspan, colspan }) => ({
           row: row - startRow,
           col,
           rowspan: Math.min(rowspan, tableData.length - (row - startRow)),
-          colspan: Math.min(colspan, maxCols - col)
+          colspan: Math.min(colspan, maxCols - col),
         }))
-        .filter((cell, index, self) =>
-          index === self.findIndex(c =>
-            c.row === cell.row && c.col === cell.col
-          )
+        .filter(
+          (cell, index, self) =>
+            index ===
+            self.findIndex((c) => c.row === cell.row && c.col === cell.col)
         );
     };
 
@@ -96,42 +116,92 @@ const generatePdfFromSheet = async (
 
       // Apply styles to each cell
       const tableStyles = stylesArray
-        .filter(s => s.row >= startRow && s.row < endRow)
-        .map(s => ({
+        .filter((s) => s.row >= startRow && s.row < endRow)
+        .map((s) => ({
           ...s,
-          row: s.row - startRow
+          row: s.row - startRow,
         }));
 
-      const tableMergedCells = cleanMergeDefinitions(mergedCells, tableData, startRow, endRow, maxCols);
+      const tableMergedCells = cleanMergeDefinitions(
+        mergedCells,
+        tableData,
+        startRow,
+        endRow,
+        maxCols
+      );
 
       // Ensure all cells in the table have valid objects
       const tableBody = tableData.map((row, rowIndex) =>
         row.map((cell, colIndex) => {
           const style = tableStyles.find(
-            s => s.row === rowIndex && s.col === colIndex
+            (s) => s.row === rowIndex && s.col === colIndex
           );
 
+          let formattedText = "";
+          let numericValue = null;
+
+          if (
+            decimalPoint &&
+            typeof decimalPoint === "object" &&
+            decimalPoint[sheetKey]
+          ) {
+            const key = `${startRow + rowIndex}-${colIndex}`;
+            const decimalPlaces = decimalPoint[sheetKey][key];
+
+            if (decimalPlaces != null) {
+              const parsed = parseFloat(cell);
+              if (!isNaN(parsed)) {
+                numericValue = parsed;
+                formattedText = parsed.toFixed(decimalPlaces);
+              }
+            }
+          }
+
+          if (formattedText === "") {
+            formattedText = (cell ?? "").toString();
+          }
+
+          if (formattedText.length > 30) {
+            formattedText = formattedText.slice(0, 30) + "…";
+          }
+
           const cellStyle = {
-            text: cell?.toString() ?? '', // Ensure cell is a string
-            alignment: 'center', // Default alignment is "center"
+            text: formattedText,
+            alignment: "center",
             bold: false,
-            color: '#000000',
+            color: "#000000",
             fillColor: null,
-            noWrap: false
+            noWrap: false,
           };
 
           if (style) {
             if (style.fontColor) cellStyle.color = style.fontColor;
-            if (style.backgroundColor) cellStyle.fillColor = style.backgroundColor;
+            if (style.backgroundColor)
+              cellStyle.fillColor = style.backgroundColor;
             if (style.bold) cellStyle.bold = true;
-            if (style.className?.includes('htLeft')) cellStyle.alignment = 'left';
-            if (style.className?.includes('htRight')) cellStyle.alignment = 'right';
-            if (style.className?.includes('htCenter')) cellStyle.alignment = 'center';
+
+            if (typeof style.className === "string") {
+              if (style.className.includes("htLeft"))
+                cellStyle.alignment = "left";
+              if (style.className.includes("htRight"))
+                cellStyle.alignment = "right";
+              if (style.className.includes("htCenter"))
+                cellStyle.alignment = "center";
+            }
           }
+
+          // if (style) {
+          //   if (style.fontColor) cellStyle.color = style.fontColor;
+          //   if (style.backgroundColor) cellStyle.fillColor = style.backgroundColor;
+          //   if (style.bold) cellStyle.bold = true;
+          //   if (style.className?.includes('htLeft')) cellStyle.alignment = 'left';
+          //   if (style.className?.includes('htRight')) cellStyle.alignment = 'right';
+          //   if (style.className?.includes('htCenter')) cellStyle.alignment = 'center';
+          // }
 
           // Force alignment to center for large columns (adjust threshold as needed)
           if (cellStyle.text.length > 20 || maxCols > 10) {
-            cellStyle.alignment = 'center';
+            cellStyle.alignment = "center";
           }
 
           return cellStyle;
@@ -167,22 +237,35 @@ const generatePdfFromSheet = async (
       // Skip empty columns during PDF generation
       const nonEmptyColumnIndexes = [];
       for (let colIndex = 0; colIndex < maxCols; colIndex++) {
-        const isNonEmptyColumn = tableBody.some(row => row[colIndex]?.text !== '');
+        const isNonEmptyColumn = tableBody.some(
+          (row) => row[colIndex]?.text !== ""
+        );
         if (isNonEmptyColumn) {
           nonEmptyColumnIndexes.push(colIndex);
         }
       }
 
-      const finalTableBody = tableBody.map(row =>
-        nonEmptyColumnIndexes.map(colIndex => row[colIndex])
+      const finalTableBody = tableBody.map((row) =>
+        nonEmptyColumnIndexes.map((colIndex) => row[colIndex])
       );
 
-
-
       const columnCount = nonEmptyColumnIndexes.length;
-      const widths = columnCount > 10 ? Array(columnCount).fill('auto') : Array(columnCount).fill('*');
+      const widths = columnCount > 13 ? Array(columnCount).fill("auto") : Array(columnCount).fill("*");
 
-      //const widths = columnCount > 10 ? Array(columnCount).fill('4.5%') : Array(columnCount).fill('*');
+      // const maxPageWidth = 550;
+      // const fixedColWidth = 35;
+      // const estimatedTotalWidth = columnCount * fixedColWidth;
+      // let widths = [];
+      // let autoFontSize = fontSize || 8;
+      // if (estimatedTotalWidth > maxPageWidth) {
+      //   // If it's wider than page, scale column width to fit
+      //   const scaledWidth = Math.floor(maxPageWidth / columnCount);
+      //   widths = Array(columnCount).fill(scaledWidth);
+      //   autoFontSize = 6;
+      // } else {
+      //   // Fits within page, still use fixed width for consistency
+      //   widths = Array(columnCount).fill(fixedColWidth);
+      // }
 
       return {
         columns: [
@@ -191,38 +274,29 @@ const generatePdfFromSheet = async (
             table: {
               headerRows: 1,
               widths,
-              body: finalTableBody
+              body: finalTableBody,
             },
-            layout: {
-              hLineWidth: (i, node) => i === 0 || i === node.table.body.length ? 0.5 : 0.2,
-              vLineWidth: () => 0.2,
-              hLineColor: () => '#cccccc',
-              vLineColor: () => '#cccccc',
-              paddingLeft: () => 2,
-              paddingRight: () => 2,
-              paddingTop: () => 3,
-              paddingBottom: () => 3
-            },
-            fontSize: 6,
+            layout: Layout,
+            fontSize,
             dontBreakRows: true,
-            pageBreak: 'avoid',
-            style: 'ninethTable',
-            margin: columnCount > 10 ? [50, 2, 50, 5] : [0, 2, 0, 2],
-          }
+            pageBreak: "avoid",
+            style: "ninethTable",
+            margin: columnCount > 13 ? [50, 2, 50, 5] : [0, 2, 0, 2],
+            alignment: "center",
+          },
         ],
+        alignment: "center",
         columnGap: 0,
-        alignment: 'center'
       };
-
     });
   } catch (err) {
-    console.error('Error generating PDF:', err);
+    console.error("Error generating PDF:", err);
     return [
       {
         text: `Error generating table: ${err.message}`,
-        color: 'red',
-        margin: [0, 10, 0, 10]
-      }
+        color: "red",
+        margin: [0, 10, 0, 10],
+      },
     ];
   }
 };
