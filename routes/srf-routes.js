@@ -48,6 +48,10 @@ router.post("/getSrfItems", srfController.getSrfItems);
 
 router.post("/fetchSrfItem", srfController.fetchSrfItem);
 
+router.post("/findbyAssestid", srfController.findbyAssestid);
+
+router.post("/fetchOneSrfItems", srfController.fetchOneSrfItems);
+
 // *** SRF-Item Update DC Status ***
 router.put("/update-srf-items-dc-status", srfItemsDCController.updateSRFItemsDCStatus);
 router.post("/get-srf-items-dc-status", srfItemsDCController.getSRFITEMDCStatus);

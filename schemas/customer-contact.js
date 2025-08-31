@@ -24,7 +24,8 @@ const schema = {
     required: [
         "contact_title", "contact_fullname",
         "contact_email",
-        "contact_phone_1", "contact_phone_2"
+        "contact_phone_1", 
+        //"contact_phone_2"
     ]
 };
 

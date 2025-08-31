@@ -19,7 +19,8 @@ const create = async (req, res, next) => {
             master_list_equipments, remarks, calibrated_employee_id, approved_employee_id,
             userid, ExceljsonData, PrintonCertificate, FileName, cmeid,
             ObservationCertificate,
-            selectedFormatdoc
+            selectedFormatdoc,
+            WitnessbyData
         } = req.body;
 
 
@@ -35,7 +36,7 @@ const create = async (req, res, next) => {
                     validity, traceability,
                     temperature, humidity, atmospheric_pressure, frequency, ulr_number,
                     master_list_equipments, remarks, calibrated_employee_id, approved_employee_id,
-                    document_format: selectedFormatdoc
+                    document_format: selectedFormatdoc, witnessed_by: WitnessbyData
                 },
                 { where: { lab_id, srf_id, srf_item_id, } }
             );
@@ -77,10 +78,9 @@ const create = async (req, res, next) => {
                 validity, traceability,
                 temperature, humidity, atmospheric_pressure, frequency, ulr_number,
                 master_list_equipments, remarks, calibrated_employee_id, approved_employee_id,
-                document_format: selectedFormatdoc
+                document_format: selectedFormatdoc, WitnessbyData
             });
             const result = await newMasterTable.save();
-
             if (result) {
 
                 // save excel json here

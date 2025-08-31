@@ -323,7 +323,7 @@ const instrumentParametersUpdate = async (req, res, next) => {
     const { parametersData, instrument_id, labid, userid } = req.body;
 
     console.log(parametersData, "parametersData");
-
+      
     for (const param of parametersData) {
       if (param.id) {
         await InstrumentParameter.update(

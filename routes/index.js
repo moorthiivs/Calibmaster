@@ -70,6 +70,15 @@ const MasterListDoc = require('./masterListDoc.routes')
 const MasterListDocDetail = require('./masterListDocDetailRoutes')
 const MasterListDocFormat = require('./masterListDocFormatRoutes')
 
+const certificateFormat = require('./certificate-format-routes')
+
+const InwardReport = require('./inward-report')
+
+const Dashboard = require('./dashboard-routes')
+
+const MakeModel = require('./makeModel.routes')
+
+const DataStorage = require('./Data-storage-routes')
 
 //Routes of the APP
 router.use("/api/heartbeat", heartbeatRoute);
@@ -159,6 +168,17 @@ router.use('/api/master-list-docs/', Authorization, MasterListDoc)
 router.use('/api/master-list-docs-details/', Authorization, MasterListDocDetail)
 
 router.use('/api/master-list-docs-format/', Authorization, MasterListDocFormat)
+
+
+router.use('/api/certificate-format/', Authorization, certificateFormat)
+
+router.use('/api/inward-report/', Authorization, InwardReport)
+
+router.use('/api/dashboard/', Authorization, Dashboard)
+
+router.use('/api/makemodel/', Authorization, MakeModel)
+
+router.use('/api/data-storage/', Authorization, DataStorage)
 
 
 router.get("/*", (req, res) => {

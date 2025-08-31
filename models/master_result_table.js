@@ -86,6 +86,14 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.ARRAY(DataTypes.TEXT),
         allowNull: false
       },
+      witnessed_by: {
+        type: DataTypes.JSON,
+        allowNull: true
+      },
+      deletedby_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true
+      }
     },
     {
       sequelize,

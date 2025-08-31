@@ -45,6 +45,27 @@ module.exports = {
         setting_description: "This setting is used to generating certificates pdf",
         setting_value: "NO"
       },
+      {
+        cmssetting_id: '5',
+        setting_name: "SIGNATURE_PRINT_CERTIFICATE",
+        setting_lable: "SIGNATURE PRINT CERTIFICATE",
+        setting_description: "Determines whether the signature should be printed on the certificate PDF.",
+        setting_value: "NO"
+      },
+      {
+        cmssetting_id: '6',
+        setting_name: "SEAL_PRINT_CERTIFICATE",
+        setting_lable: "SEAL PRINT CERTIFICATE",
+        setting_description: "Determines whether the seal should be printed on the certificate PDF.",
+        setting_value: "NO"
+      },
+      {
+        cmssetting_id: '7',
+        setting_name: "WITNESSBY_PRINT_CERTIFICATE",
+        setting_lable: "Witness By Print on Certificate",
+        setting_description: "Determines whether 'Witness By' should be printed on the certificate PDF.",
+        setting_value: "NO"
+      }
     ], { ignoreDuplicates: true, });
   },
 

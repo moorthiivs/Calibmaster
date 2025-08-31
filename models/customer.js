@@ -100,6 +100,11 @@ module.exports = (sequelize, DataTypes) => {
       calibmaster_customer_id: {
         type: DataTypes.STRING,
         allowNull: false
+      },
+
+      contract_days: {
+        type: DataTypes.INTEGER,
+        allowNull: true
       }
     },
     {
@@ -124,6 +129,8 @@ module.exports = (sequelize, DataTypes) => {
       onDelete: "CASCADE",
       foreignKey: "customer_id",
     });
+
+    customer.hasMany(models.srf_list, { foreignKey: 'customer_id' });
   };
 
   return customer;

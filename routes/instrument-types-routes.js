@@ -14,4 +14,9 @@ router.get("/fetch/:id", Authorization, instrumentTypeController.fetchById);
 
 router.post("/edit", Authorization, instrumentTypeController.editInstrumentType);
 
+router.post("/filter", Authorization, instrumentTypeController.filterInstrumentTypes);
+
+router.post("/listCategoryofInstruments", Authorization, instrumentTypeController.listCategoryofInstruments);
+
+
 module.exports = router;

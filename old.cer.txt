@@ -1,0 +1,46 @@
+
+const updatedRequiredFields = injectDynamicDateFields(format.required_fields);
+
+const baseData = {};
+for (const field of updatedRequiredFields) {
+    baseData[field.name] = field.value;
+}
+
+// Step 3: Add real-time values (like SRF, itemCount)
+baseData.srf = srf; // real srf from DB
+baseData.itemCount = itemCount.toString(); // dynamic count
+
+const now = new Date();
+const year = now.getFullYear();
+const month = (now.getMonth() + 1).toString().padStart(2, "0");
+const startOfMonth = `${year}-${month}-01`;
+const endOfMonth = `${year}-${month}-31`;
+const customerId = item?.srf?.customer_id;
+
+const existingCount = await Customer.findAll({
+    where: {
+        customer_id: customerId, created_timestamp: {
+            [Op.between]: [new Date(startOfMonth), new Date(endOfMonth)],
+        },
+    },
+});
+
+const monthCustomer = (existingCount.length + 1).toString().padStart(2, "0");
+baseData.monthCustomer = monthCustomer;
+
+// Inject back to required fields
+const index = updatedRequiredFields.findIndex(f => f.name === "monthCustomer");
+if (index >= 0) {
+    updatedRequiredFields[index].value = monthCustomer;
+} else {
+    updatedRequiredFields.push({ name: "monthCustomer", value: monthCustomer });
+}
+
+// Step 4: Generate final number
+const certificate_number = generateCertificateNumber(format.format_template, baseData) || '-'
+
+// Step 5: Update both required_fields and preview in DB
+await CertificateFormat.update({
+    required_fields: updatedRequiredFields,
+    preview: certificate_number,
+}, { where: { lab_id } });

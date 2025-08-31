@@ -12,25 +12,52 @@ exports.createMasterListDoc = async (req, res, next) => {
             startDate,
             endDate,
         } = req.body;
+
+        if (!docName || !revisionNo || !startDate || !endDate || !labId || !createdBy) {
+            return res.status(400).json({ message: 'Missing required fields' });
+        }
+
+        const normalizedDocName = docName.trim().toLowerCase();
+        const normalizedRevision = revisionNo.trim().toLowerCase();
+
+        const existing = await MasterListDoc.findOne({
+            where: {
+                mslDocName: normalizedDocName,
+                mslDocRevisionNo: normalizedRevision,
+                labId,
+            },
+        });
+
+        if (existing) {
+            return res.status(400).json({
+                message: 'A document with this name and revision already exists in your lab.',
+            });
+        }
+
+        // Create new document
         const newDoc = await MasterListDoc.create({
-            mslDocName: docName,
-            mslDocRevisionNo: revisionNo,
+            mslDocName: normalizedDocName,
+            mslDocRevisionNo: normalizedRevision,
             mslRevDateStart: startDate,
             mslRevDateEnd: endDate,
             labId,
-            createdBy
+            createdBy,
         });
 
-        res.status(201).json({ message: 'Master List Doc created successfully', data: newDoc });
+        return res.status(201).json({
+            message: 'Master List Document created successfully',
+            data: newDoc,
+        });
     } catch (err) {
-        console.error(err);
-        const error = new Error("Something went wrong");
-        error.code = 500;
-        error.path = "/api/master-list-docs/create";
-        return errorHandler(error, req, res, next);
+        console.error('Error in createMasterListDoc:', err);
 
+        const error = new Error('Something went wrong while creating the document');
+        error.code = 500;
+        error.path = '/api/master-list-docs/create';
+        return errorHandler(error, req, res, next);
     }
 };
+
 
 exports.fecthAllMasterListDoc = async (req, res, next) => {
     try {

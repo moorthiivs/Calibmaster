@@ -18,6 +18,9 @@ const createCustomer = async (req, res, next) => {
         return errorHandler(error, req, res, next);
     }
 
+    console.log(req.body, "req.body.contract_days");
+
+
     var calibmaster_customer_id = new Date().getTime();
     req.body.calibmaster_customer_id = calibmaster_customer_id;
 
@@ -34,6 +37,7 @@ const createCustomer = async (req, res, next) => {
     customerObj.country = req.body.customer.country;
     customerObj.pincode = req.body.customer.pincode;
     customerObj.gst_number = req.body.customer.gst_number;
+    customerObj.contract_days = req.body.customer.contract_days;
 
     // *** Customer Parent Data Validation
     const validCustomer = customerSchema(customerObj);
@@ -60,7 +64,7 @@ const createCustomer = async (req, res, next) => {
     // return res.json({ validCustomerContact });
 
     if (!validCustomerContact) {
-        let action = "Please fill the required customer contact fields !!!";
+        let action = "Please fill the required customer contact fields !";
         const error = new Error(action);
         error.code = 500;
         return errorHandler(error, req, res, next);
@@ -285,6 +289,8 @@ const editCustomer = async (req, res, next) => {
     customerObj.country = req.body.customer.country;
     customerObj.pincode = req.body.customer.pincode;
     customerObj.gst_number = req.body.customer.gst_number;
+    customerObj.contract_days = req.body.customer.contract_days;
+
 
     // *** Customer Parent Data Validation
     const validCustomer = customerSchema(customerObj);
@@ -447,11 +453,11 @@ const fetchCustomer_Company = async (req, res, next) => {
 
 const deleteCustomer = async (req, res, next) => {
     try {
-        
+
     } catch (error) {
-        
+
         console.log(error);
-        
+
     }
 }
 

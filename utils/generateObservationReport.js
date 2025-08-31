@@ -21,7 +21,7 @@ async function generateObservationReport(
   const baseTableBody = [
     [
       {
-        text: `Formats : ${masterResult?.document_format?.formatName}`,
+        text: `Formats : ${masterResult?.document_format?.formatName || "-"}`,
         colSpan: 2,
         bold: true,
       },
@@ -33,15 +33,15 @@ async function generateObservationReport(
     ],
     [
       { text: "Section No. :", bold: true },
-      { text: masterResult?.document_format?.sectionNo || "PAF-FT-28" },
+      { text: masterResult?.document_format?.sectionNo || "-" },
       { text: "Revision No. :", bold: true },
       { text: masterResult?.document_format?.revNo || "0" },
       { text: "Revision Date :", bold: true },
       {
         text: masterResult?.document_format?.revStartDate
           ? new Date(
-              masterResult?.document_format?.revStartDate
-            ).toLocaleDateString("en-GB")
+            masterResult?.document_format?.revStartDate
+          ).toLocaleDateString("en-GB")
           : "---",
       },
     ],
@@ -50,7 +50,7 @@ async function generateObservationReport(
       { text: item?.srf?.srf_number || "-", colSpan: 2 },
       {},
       { text: "Calibrated at:", bold: true },
-      { text: "Onsite", colSpan: 2 },
+      { text: "LAB", colSpan: 2 },
       {},
     ],
     [
@@ -105,6 +105,11 @@ async function generateObservationReport(
   ];
 
   function formatInstrumentRowsSmartSplitColspan(rows, maxCols = 6) {
+
+    if (!Array.isArray(rows)) {
+      console.error("Error: formatInstrumentRowsSmartSplitColspan expected 'rows' to be an array but received:", rows);
+      return []; 
+    }
     const formatted = [];
 
     for (const row of rows) {
@@ -293,9 +298,8 @@ async function generateObservationReport(
           margin: [0, 10, 0, 5],
         },
         {
-          text: `Calibration Procedure : ${
-            masterResult?.calibration_procedure || "-"
-          }`,
+          text: `Calibration Procedure : ${masterResult?.calibration_procedure || "-"
+            }`,
           style: "tableHeadings",
           bold: true,
           margin: [0, 0, 0, 0],

@@ -28,9 +28,9 @@ module.exports = (sequelize, DataTypes) => {
       srf_type: {
         type: DataTypes.STRING,
         allowNull: false,
-      },
+      },  
       srf_date: {
-        type: DataTypes.DATEONLY,
+        type: DataTypes.DATE,
         allowNull: false,
       },
       srf_number: {
@@ -139,7 +139,10 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         allowNull: true
       },
-
+      deletedby_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true
+      }
     },
     {
       sequelize,
@@ -163,6 +166,9 @@ module.exports = (sequelize, DataTypes) => {
       onDelete: "CASCADE",
       foreignKey: "customer_id",
     });
+
+    srf_list.hasMany(models.srfitem, { foreignKey: 'srf_id' });
+    srf_list.belongsTo(models.User, { as: "deletedByUser", foreignKey: "deletedby_id" });
   };
 
   return srf_list;

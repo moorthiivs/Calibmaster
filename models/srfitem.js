@@ -65,7 +65,7 @@ module.exports = (sequelize, DataTypes) => {
       },
 
       dispatch_date: {
-        type: DataTypes.DATEONLY,
+        type: DataTypes.DATE,
         allowNull: true,
       },
       dispatch_dc: {
@@ -203,6 +203,27 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         allowNull: true
       },
+      deletedby_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true
+      },
+      inward_no: {
+        type: DataTypes.STRING,
+        allowNull: true
+      },
+      calibrationAt: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      labtype: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      ranges: {
+        type: DataTypes.JSON,
+        allowNull: true,
+      }
+
     },
     {
       sequelize,
@@ -234,6 +255,7 @@ module.exports = (sequelize, DataTypes) => {
       foreignKey: "intrument_type_id"
     });
 
+    srfitem.belongsTo(models.User, { as: "deletedByUser", foreignKey: "deletedby_id" });
   };
 
   return srfitem;

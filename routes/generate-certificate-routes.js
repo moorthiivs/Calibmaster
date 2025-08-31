@@ -12,4 +12,6 @@ router.post("/verify_certificate", GenerateCertificatesController.verify_certifi
 
 router.get("/standard_details", GenerateCertificatesController.standard_details);
 
+router.get("/bulkDownload_Certificate", GenerateCertificatesController.bulkDownload_Certificate)
+
 module.exports = router;

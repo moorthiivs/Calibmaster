@@ -2,16 +2,16 @@
     "development": {
         "username": "postgres",
         "password": "root",
-        "database": "PaPwork",
+        "database": "Sansera",
         "host": "127.0.0.1",
         "dialect": "postgres",
         "logging": false
     },
     "test": {
-        "username": "calib67hadmin",
-        "password": "dBtrAAI2p75xBipNmCD05sYxp35Z680",
-        "database": "releasev4-calibmaster-sansera",
-        "host": "sansera-engineering-calibmaster-customerportal-db.postgres.database.azure.com",
+        "username": "trial24dbadmin",
+        "password": "UCDQtk1eklb4QVr8cRZ5",
+        "database": "releasev4-calibmaster-trial-v2",
+        "host": "trial-v2-iviewsense-calibmaster-customerportal-db.postgres.database.azure.com",
         "dialect": "postgres"
     },
     "production": {
@@ -19,6 +19,7 @@
         "password": "root",
         "database": "Calibmaster",
         "host": "127.0.0.1",
-        "dialect": "postgres"
+        "dialect": "postgres",
+        "logging": false
     }
 }

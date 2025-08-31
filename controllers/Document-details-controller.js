@@ -3,6 +3,16 @@ const { MasterListDocDetail } = require('../models');
 
 exports.createDocDetail = async (req, res, next) => {
     try {
+
+        const existing = await MasterListDocDetail.findOne({
+            where: req.body
+        });
+
+        if (existing) {
+            return res.status(400).json({
+                message: 'A document format with the same Format Name and Section Name already exists.'
+            });
+        }
         const detail = await MasterListDocDetail.create(req.body);
         res.status(201).json(detail);
     } catch (err) {

@@ -89,7 +89,7 @@ const schema = {
 
     "uncertainity_consider_flag",
 
-    "customer_id"
+    "customer_id",
   ],
   additionalProperties: false,
 };

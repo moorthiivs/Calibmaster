@@ -84,10 +84,15 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: true
       },
       ranges: {
-        type: DataTypes.JSON, 
-        allowNull: true, 
+        type: DataTypes.JSON,
+        allowNull: true,
         defaultValue: [], // Default to an empty array
-      }, 
+      },
+      labtype: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+
     },
     {
       sequelize,

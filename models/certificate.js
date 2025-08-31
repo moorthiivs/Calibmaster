@@ -19,6 +19,10 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: true,
     },
+    draftFileName: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
     rstatus: {
       type: DataTypes.INTEGER,
       allowNull: false,

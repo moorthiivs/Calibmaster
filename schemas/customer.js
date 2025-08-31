@@ -35,6 +35,9 @@ const schema = {
 
         gst_number: {
             type: "string",
+        },
+        contract_days: {
+            type: "number"
         }
     },
     required: [

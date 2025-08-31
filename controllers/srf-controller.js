@@ -19,6 +19,9 @@ const ejs = require('ejs');
 
 const { sendMailHandler } = require("../helpers/mailSend");
 const { errorHandler } = require("../helpers/error-handler");
+const generateInwardNumber = require("../utils/generateInwardNumber");
+
+const { format } = require('date-fns');
 
 let err;
 
@@ -31,6 +34,8 @@ const addSRFHandler = async (req, res, next) => {
   let userId = req.userId;
   const sessionId = req.sessionId;
   let isError = false;
+
+  //console.log(req.body);
 
   if (!req.body || !req.body.srf || !req.body.items || !req.body.labId) {
     isError = true;
@@ -68,8 +73,11 @@ const addSRFHandler = async (req, res, next) => {
 
   currentSRF.amend_no = req.body.srf.amend_no;
   currentSRF.amend_date = (req.body.srf.amend_date) ? req.body.srf.amend_date : null;
+  // currentSRF.calibrationAt = req.body.srf.Calibrationat
+  //currentSRF.customer_code = req.body.srf.customer_code
 
   let sendsrf = req.body.srf.sendsrf;
+  let srfDate = req.body.srf.date || new Date()
 
   // ! SRF Parent Table Validation
   const validsrf = srfSchema(currentSRF);
@@ -159,38 +167,78 @@ const addSRFHandler = async (req, res, next) => {
   // *** Creating SRF-Items ***
   let insertedItems;
   try {
-    const items = req.body.items.map((v, i) => ({
+    // const items = req.body.items.map((v, i) => ({
 
-      srf_id: newSRF.srf_id,
-      srf_item_no: i + 1,
+    //   srf_id: newSRF.srf_id,
+    //   srf_item_no: i + 1,
 
-      make: v.make,
-      model: v.model,
-      serial_no: v.serialno,
-      identification_details: v.idno,
+    //   make: v.make,
+    //   model: v.model,
+    //   serial_no: v.serialno,
+    //   identification_details: v.idno,
 
-      remarks: v.remarks,
-      reminder_frequency: (v.reminder_frequency) ? v.reminder_frequency : 0,
-      frequency_days: (v.frequency_days) ? v.frequency_days : null,
-      status: "Not Calibrated",
+    //   remarks: v.remarks,
+    //   reminder_frequency: (v.reminder_frequency) ? v.reminder_frequency : 0,
+    //   frequency_days: (v.frequency_days) ? v.frequency_days : null,
+    //   status: "Not Calibrated",
 
-      rstatus: 1,
-      lab_id: req.body.labId,
-      intrument_type_id: v.masterlistId,
+    //   rstatus: 1,
+    //   lab_id: req.body.labId,
+    //   intrument_type_id: v.masterlistId,
 
-      created_timestamp: Date.now(),
-      created_by_login_name: fetchCreater.name,
-      created_by_user_id: req.userId,
+    //   created_timestamp: Date.now(),
+    //   created_by_login_name: fetchCreater.name,
+    //   created_by_user_id: req.userId,
 
-      updated_timestamp: Date.now(),
-      updated_by_login_name: fetchCreater.name,
-      updated_by_user_id: req.userId
+    //   updated_timestamp: Date.now(),
+    //   updated_by_login_name: fetchCreater.name,
+    //   updated_by_user_id: req.userId
 
+    // }));
+    //insertedItems = await Item.bulkCreate(items, { returning: true });
+    // return res.json({ insertedItems });
+    isError = false;
+    const items = await Promise.all(req.body.items.map(async (v, i) => {
+      const inwardNumber = await generateInwardNumber(
+        srfDate,
+        v.name,
+        Item,
+        req.body.labId
+      );
+
+      return {
+        srf_id: newSRF.srf_id,
+        srf_item_no: i + 1,
+        inward_no: inwardNumber,
+        make: v.make,
+        model: v.model,
+        serial_no: v.serialno,
+        identification_details: v.idno,
+
+        remarks: v.remarks,
+        reminder_frequency: v.reminder_frequency || 0,
+        frequency_days: v.frequency_days || null,
+        status: "Not Calibrated",
+
+        rstatus: 1,
+        lab_id: req.body.labId,
+        intrument_type_id: v.masterlistId,
+
+        created_timestamp: Date.now(),
+        created_by_login_name: fetchCreater.name,
+        created_by_user_id: req.userId,
+
+        updated_timestamp: Date.now(),
+        updated_by_login_name: fetchCreater.name,
+        updated_by_user_id: req.userId,
+        calibrationAt: v.calibrationAt,
+        labtype: v.labtype,
+        ranges: v.ranges
+      };
     }));
 
     insertedItems = await Item.bulkCreate(items, { returning: true });
-    // return res.json({ insertedItems });
-    isError = false;
+
 
   } catch (err) {
     isError = true;
@@ -292,7 +340,10 @@ const addSRFHandler = async (req, res, next) => {
     modifiedsno = "" + srf.srf_number;
   }
 
-  let srfid = srf.lab.symbol + "/" + srf.srf_date.slice(0, 4) + "/" + srf.srf_type + modifiedsno;
+  let year = format(new Date(srf.srf_date), "yyyy");
+  let srfid = `${srf.lab.symbol}/${year}/${srf.srf_type}${modifiedsno}`;
+
+  //let srfid = srf.lab.symbol + "/" + srf.srf_date.slice(0, 4) + "/" + srf.srf_type + modifiedsno;
   lab = srf.lab;
 
   // ! *** Starting Excel File ***
@@ -404,7 +455,8 @@ const addSRFHandler = async (req, res, next) => {
   worksheet.getCell("H8").border = {
     right: { style: "thin" },
   };
-  worksheet.getCell("H8").value = srf.srf_date.split("-").reverse().join("-");
+  //worksheet.getCell("H8").value = srf.srf_date.split("-").reverse().join("-");
+  worksheet.getCell("H8").value = format(new Date(srf.srf_date), "dd-MM-yyyy");
   worksheet.mergeCells("A9:H9");
   worksheet.getCell("A9").border = {
     top: { style: "thin" },
@@ -1012,7 +1064,8 @@ const addSRFHandler = async (req, res, next) => {
       right: { style: "thin" },
       bottom: { style: "thin" },
     };
-    worksheet.getCell("H63").value = srf?.srf_date?.split("-")?.reverse()?.join("-");
+    //worksheet.getCell("H63").value = srf?.srf_date?.split("-")?.reverse()?.join("-");
+    worksheet.getCell("H63").value = format(new Date(srf.srf_date), "dd-MM-yyyy");
     worksheet.getRow(64).height = 22;
     worksheet.getRow(64).style.alignment = {
       vertical: "middle",
@@ -1558,7 +1611,7 @@ const getSrfItems = async (req, res, next) => {
         { model: instrument_type, as: "intrument_type" },
         { model: SRF, as: "srf", include: "customer" }
       ],
-      order: [["srf_item_id", "ASC"]]
+      order: [["srf_item_id", "DESC"]]
     });
 
     let counter = 1;
@@ -1610,6 +1663,13 @@ const addItemtoSRF = async (req, res, next) => {
     return errorHandler(error, req, res, next);
   }
 
+  const inwardNumber = await generateInwardNumber(
+    srf.srf_date,
+    req.body.item.name,
+    Item,
+    req.body.labId
+  );
+
   //SRF Items Validation
   // const validitem = itemSchema(req.body.item);
   // if (!validitem) {
@@ -1623,7 +1683,7 @@ const addItemtoSRF = async (req, res, next) => {
     where: { id: req.userId }
   });
 
-  try {    
+  try {
     const item = req.body.item;
     item.srf_id = srfId;
     item.status = "Not Calibrated";
@@ -1637,6 +1697,8 @@ const addItemtoSRF = async (req, res, next) => {
     item.updated_timestamp = Date.now();
     item.updated_by_login_name = fetchCreater.name;
     item.updated_by_user_id = req.userId;
+
+    item.inward_no = inwardNumber
 
     let newitem = new Item(item);
     await newitem.save();
@@ -1807,6 +1869,10 @@ const updateSRFItem = async (req, res, next) => {
         // rstatus: 1,
       },
     });
+
+
+    console.log(req.body.item, "req.body.item");
+
 
     if (item) {
       await item.update(req.body.item);
@@ -2192,17 +2258,35 @@ const deleteSRF = async (req, res, next) => {
     return errorHandler(error, req, res, next);
   }
 
-  const { srf_id, labId } = req.body;
+  const { srf_id, labId, deletedby } = req.body;
 
   try {
-    // Delete dependent records from srfitems first
-    await Item.destroy({
-      where: { srf_id: srf_id }
-    });
+    // Soft delete items
+    await Item.update(
+      {
+        rstatus: 0,
+        deletedby_id: deletedby
+      },
+      {
+        where: { srf_id: srf_id }
+      }
+    );
 
-    // Now delete from srf_lists
-    await SRF.destroy({
-      where: { srf_id: srf_id, lab_id: labId }
+    // Soft delete srf
+    await SRF.update(
+      {
+        rstatus: 0,
+        deletedby_id: deletedby
+      },
+      {
+        where: { srf_id: srf_id, lab_id: labId }
+      }
+    );
+
+    return res.status(201).json({
+      status: "SUCCESS",
+      code: 201,
+      message: "SRF Item Deleted Successfully",
     });
 
   } catch (err) {
@@ -2211,25 +2295,20 @@ const deleteSRF = async (req, res, next) => {
     error.code = 500;
     return errorHandler(error, req, res, next);
   }
-
-  return res.status(201).json({
-    status: "SUCCESS",
-    code: 201,
-    message: "SRF Item Deleted Successfully",
-  });
 };
+
 
 
 // *** Delete SRF Item 
 const deleteSRFItem = async (req, res, next) => {
 
-  if (!req.body || !req.body.srf_id || !req.body.srf_item_id || !req.body.lab_id) {
+  if (!req.body || !req.body.srf_id || !req.body.srf_item_id || !req.body.lab_id || !req.body.userId) {
     const error = new Error("Missing required fields");
     error.code = 500;
     return errorHandler(error, req, res, next);
   }
 
-  const { srf_id, srf_item_id, lab_id } = req.body;
+  const { srf_id, srf_item_id, lab_id, userId } = req.body;
 
   try {
 
@@ -2240,6 +2319,7 @@ const deleteSRFItem = async (req, res, next) => {
     if (query) {
       await query.update({
         rstatus: 0,
+        deletedby_id: userId
       });
     }
   } catch (err) {
@@ -2597,6 +2677,84 @@ const fetchSrfItem = async (req, res, next) => {
 };
 
 
+
+const findbyAssestid = async (req, res, next) => {
+  try {
+    const { lab_id, labType, assetId } = req.body;
+
+    if (!lab_id || !labType || !assetId) {
+      const error = new Error("lab_id, labType, and assetId are required");
+      error.code = 400;
+      return errorHandler(error, req, res, next);
+    }
+
+    const item = await Item.findOne({
+      where: {
+        lab_id: lab_id,
+        labtype: labType,
+        identification_details: assetId,
+        rstatus: 1
+      },
+      include: ["intrument_type"]
+    });
+
+    if (!item) {
+      return res.status(404).json({
+        status: "FAILED",
+        code: 404,
+        message: "Item not found"
+      });
+    }
+
+    return res.status(200).json({
+      status: "SUCCESS",
+      code: 200,
+      message: "Item fetched successfully",
+      data: item
+    });
+
+  } catch (error) {
+    console.log(error);
+    const err = new Error("Failed to fetch item details");
+    err.code = 500;
+    err.path = "findItemWith";
+    return errorHandler(err, req, res, next);
+  }
+};
+
+
+const fetchOneSrfItems = async (req, res, next) => {
+
+  const { lab_id, srf_item_id, srf_id } = req.body;
+
+  if (!lab_id && !srf_item_id && !srf_id) {
+    let action = "Lab id is required";
+    const error = new Error(action);
+    error.code = 500;
+    return errorHandler(error, req, res, next);
+  }
+
+  try {
+    let items = await Item.findOne({
+      where: { lab_id, rstatus: 1, srf_item_id, srf_id },
+    });
+
+    return res.status(200).json({
+      status: "SUCCESS",
+      code: 200,
+      message: "SRF Details Fetched Successfully",
+      data: items
+    });
+  } catch (err) {
+    console.log(err);
+    let action = "Something went wrong, please try again";
+    const error = new Error(action);
+    error.code = 500;
+    return errorHandler(error, req, res, next);
+  }
+}
+
+
 exports.getfilteredSRFItems = getfilteredSRFItems;
 exports.updatePaymentInfo = updatePaymentInfo;
 exports.updateInvoiceInfo = updateInvoiceInfo;
@@ -2612,3 +2770,6 @@ exports.getSRFs = getSRFs;
 exports.addSRFHandler = addSRFHandler;
 exports.getSrfItems = getSrfItems;
 exports.fetchSrfItem = fetchSrfItem;
+exports.findbyAssestid = findbyAssestid;
+
+exports.fetchOneSrfItems = fetchOneSrfItems
