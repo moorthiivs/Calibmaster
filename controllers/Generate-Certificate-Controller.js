@@ -619,6 +619,13 @@ const generate = async (req, res, next) => {
             "This is a computer-generated certificate and has been digitally signed by an authorized signatory."
         ];
 
+        const headerHeight = 130;
+
+        // Your logo size (fit height) — you already know it
+        const logoFit = 85;
+
+        // Compute dynamic top margin to vertically center
+        const topMargin = Math.max(0, (headerHeight - logoFit) / 2);
 
         const docDefinition = {
             pageSize: 'A4',
@@ -649,9 +656,9 @@ const generate = async (req, res, next) => {
                                 stack: [
                                     labLogo_1_Buffer ? {
                                         image: labLogo_1_Buffer,
-                                        fit: [85, 85],
+                                        fit: [logoFit, logoFit],
                                         alignment: 'center',
-                                        margin: [0, 15, 0, 0] // only vertical tweak now
+                                        margin: [0, topMargin, 0, 0] // only vertical tweak now
                                     } : { text: '' },
                                 ],
                             },
@@ -713,7 +720,7 @@ const generate = async (req, res, next) => {
                                     },
                                     nablBuffer ? {
                                         image: nablBuffer,
-                                        fit: [80, 80],  
+                                        fit: [80, 80],
                                         alignment: 'right',
                                         margin: [0, 5, 0, 0],
                                     } : { text: '' },
