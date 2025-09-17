@@ -1,11 +1,11 @@
 const MasterTable = require("../models").master_result_table;
 const Dynamicdesign = require("../models").result_table;
 
-
+const Item = require("../models").srfitem;
 const { ProcedureResult } = require('../models');
 
 const { errorHandler } = require("../helpers/error-handler");
-const { where } = require("sequelize");
+const { where, Op } = require("sequelize");
 
 const create = async (req, res, next) => {
 
@@ -29,6 +29,26 @@ const create = async (req, res, next) => {
         });
 
         if (ifExistsMasterTable) {
+
+
+            // 🔍 Check duplicate ulr_number
+            const existingULR = await Item.findOne({
+                where: {
+                    url_number: ulr_number,
+                    lab_id: Number(lab_id),
+                    srf_id: { [Op.ne]: Number(srf_id) },
+                    srf_item_id: { [Op.ne]: Number(srf_item_id) }, // Exclude current item
+                },
+            });
+
+            if (existingULR) {
+                return res.status(400).json({ error: "Duplicate ULR Number found!" });
+            }
+
+            const itemupdate = await Item.update(
+                { url_number: ulr_number, },
+                { where: { lab_id: Number(lab_id), srf_id: Number(srf_id), srf_item_id: Number(srf_item_id) } }
+            );
 
             const masterTableUpdate = await MasterTable.update(
                 {

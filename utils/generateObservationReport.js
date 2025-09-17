@@ -108,7 +108,7 @@ async function generateObservationReport(
 
     if (!Array.isArray(rows)) {
       console.error("Error: formatInstrumentRowsSmartSplitColspan expected 'rows' to be an array but received:", rows);
-      return []; 
+      return [];
     }
     const formatted = [];
 
@@ -213,35 +213,68 @@ async function generateObservationReport(
     ]) || []),
   ];
 
+  // const EnvironmentalCondition = [
+  //   [
+  //     {
+  //       text: "Environmental Condition",
+  //       colSpan: 5,
+  //       bold: true,
+  //       fillColor: "#eeeeee",
+  //       alignment: "center",
+  //     },
+  //     {},
+  //     {},
+  //     {},
+  //     {},
+  //   ],
+  //   [
+  //     { text: "Temperature °C", bold: true },
+  //     { text: "Start", bold: true },
+  //     { text: masterResult?.temperature?.start || "20.4" },
+  //     { text: "End", bold: true },
+  //     { text: masterResult?.temperature?.end || "20.4" },
+  //   ],
+  //   [
+  //     { text: "Humidity % RH", bold: true },
+  //     { text: "Start", bold: true },
+  //     { text: masterResult?.humidity?.start || "48%" },
+  //     { text: "End", bold: true },
+  //     { text: masterResult?.humidity?.end || "48%" },
+  //   ],
+  // ];
+
+
   const EnvironmentalCondition = [
     [
       {
         text: "Environmental Condition",
-        colSpan: 5,
+        colSpan: 7,
         bold: true,
         fillColor: "#eeeeee",
         alignment: "center",
       },
-      {},
-      {},
-      {},
-      {},
+      {}, {}, {}, {}, {}, {},
     ],
     [
       { text: "Temperature °C", bold: true },
-      { text: "Start", bold: true },
-      { text: masterResult?.temperature?.start || "20.4" },
-      { text: "End", bold: true },
-      { text: masterResult?.temperature?.end || "20.4" },
+      { text: "Start", bold: true, alignment: "center" },
+      { text: masterResult?.temperature?.start || "-", alignment: "center" },
+      { text: "Middle", bold: true, alignment: "center" },
+      { text: masterResult?.temperature?.middle || "-", alignment: "center" },
+      { text: "End", bold: true, alignment: "center" },
+      { text: masterResult?.temperature?.end || "-", alignment: "center" },
     ],
     [
       { text: "Humidity % RH", bold: true },
-      { text: "Start", bold: true },
-      { text: masterResult?.humidity?.start || "48%" },
-      { text: "End", bold: true },
-      { text: masterResult?.humidity?.end || "48%" },
+      { text: "Start", bold: true, alignment: "center" },
+      { text: masterResult?.humidity?.start || "-", alignment: "center" },
+      { text: "Middle", bold: true, alignment: "center" },
+      { text: masterResult?.humidity?.middle || "-", alignment: "center" },
+      { text: "End", bold: true, alignment: "center" },
+      { text: masterResult?.humidity?.end || "-", alignment: "center" },
     ],
   ];
+
 
   try {
     const docDefinition = {
@@ -316,7 +349,7 @@ async function generateObservationReport(
         {
           style: "Tables",
           table: {
-            widths: ["*", "*", "*", "*", "*"],
+            widths: ["*", "*", "*", "*", "*", "*", "*"],
             body: EnvironmentalCondition,
           },
           margin: [0, 10, 0, 10],

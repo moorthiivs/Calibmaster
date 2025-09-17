@@ -222,8 +222,11 @@ module.exports = (sequelize, DataTypes) => {
       ranges: {
         type: DataTypes.JSON,
         allowNull: true,
+      },
+      instrument_type_at_calibration: {
+        type: DataTypes.STRING,
+        allowNull: true,
       }
-
     },
     {
       sequelize,

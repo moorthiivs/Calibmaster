@@ -410,11 +410,12 @@ const generate = async (req, res, next) => {
         const slNo = item?.serial_no;
         const idNo = item?.identification_details;
         let iselectroParameters = false
+        const type = item?.instrument_type_at_calibration || item?.intrument_type?.type;
         //const instrumentDynamicRows = formatDynamicRowsFromOriginalRanges(item?.intrument_type?.ranges, masterResult.witnessed_by);
-        const instrumentDynamicRows = formatDynamicRowsFromOriginalRanges(item?.ranges, masterResult.witnessed_by, isEnabled);
+        const instrumentDynamicRows = formatDynamicRowsFromOriginalRanges(item?.ranges, masterResult.witnessed_by, isEnabled, type);
         const range = item?.intrument_type?.range_minimum ?? ''
         const lc = item?.intrument_type?.least_count ?? ''
-        const type = item?.intrument_type?.type;
+
 
 
         // *** Set standards details table data *** 
@@ -1577,15 +1578,78 @@ function capitalizeFirstLetter(str) {
         .join(' ');
 }
 
-function formatDynamicRowsFromOriginalRanges(rangesArray, masterResult = [], isEnabled) {
+// function formatDynamicRowsFromOriginalRanges(rangesArray, masterResult = [], isEnabled) {
 
+//     if (!Array.isArray(rangesArray)) return null;
+
+//     const keyValuePairs = [];
+
+//     for (const obj of rangesArray) {
+//         // const uom = obj.InstrumentparameterUOM || '';
+
+//         const uom = (obj.InstrumentparameterUOM && obj.InstrumentparameterUOM.toString().toLowerCase() !== 'select')
+//             ? obj.InstrumentparameterUOM
+//             : '';
+//         for (const [key, value] of Object.entries(obj)) {
+//             if (key !== 'InstrumentUOMID' && key !== 'InstrumentparameterUOM') {
+//                 keyValuePairs.push({
+//                     name: key.toUpperCase() + ':',
+//                     value: `${value} ${uom}`.trim()
+//                 });
+//             }
+//         }
+//     }
+
+
+//     // Add Witnessed By row
+//     if (isEnabled("WITNESSBY_PRINT_CERTIFICATE") && masterResult?.length > 0) {
+//         //const witnessNames = masterResult.map(w => w.name).filter(Boolean).join(', ');
+//         const witnessNames = masterResult.map(w => {
+//             if (w.name && w.designation) {
+//                 return `${capitalizeEachWord(w.name)} - (${capitalizeEachWord(w.designation)})`;
+//             } else if (w.name) {
+//                 return capitalizeEachWord(w.name);
+//             }
+//             return null;
+//         })
+//             .filter(Boolean)
+//             .join(', ');
+//         keyValuePairs.push({
+//             name: 'WITNESSED BY:',
+//             value: capitalizeEachWord(witnessNames)
+//         });
+//     }
+
+//     if (keyValuePairs.length === 0) return null;
+
+//     const rows = [];
+//     for (let i = 0; i < keyValuePairs.length; i += 2) {
+//         const row = [];
+
+//         const first = keyValuePairs[i];
+//         row.push({ text: first.name, bold: false });
+//         row.push({ text: first.value, alignment: 'center' });
+
+//         if (keyValuePairs[i + 1]) {
+//             const second = keyValuePairs[i + 1];
+//             row.push({ text: second.name, bold: false });
+//             row.push({ text: second.value, alignment: 'center' });
+//         } else {
+//             row.push({}, {}); // fill remaining columns if odd entry
+//         }
+
+//         rows.push(row);
+//     }
+
+//     return rows;
+// }
+
+function formatDynamicRowsFromOriginalRanges(rangesArray, masterResult = [], isEnabled, type) {
     if (!Array.isArray(rangesArray)) return null;
 
     const keyValuePairs = [];
 
     for (const obj of rangesArray) {
-        // const uom = obj.InstrumentparameterUOM || '';
-
         const uom = (obj.InstrumentparameterUOM && obj.InstrumentparameterUOM.toString().toLowerCase() !== 'select')
             ? obj.InstrumentparameterUOM
             : '';
@@ -1599,10 +1663,8 @@ function formatDynamicRowsFromOriginalRanges(rangesArray, masterResult = [], isE
         }
     }
 
-
     // Add Witnessed By row
     if (isEnabled("WITNESSBY_PRINT_CERTIFICATE") && masterResult?.length > 0) {
-        //const witnessNames = masterResult.map(w => w.name).filter(Boolean).join(', ');
         const witnessNames = masterResult.map(w => {
             if (w.name && w.designation) {
                 return `${capitalizeEachWord(w.name)} - (${capitalizeEachWord(w.designation)})`;
@@ -1613,9 +1675,18 @@ function formatDynamicRowsFromOriginalRanges(rangesArray, masterResult = [], isE
         })
             .filter(Boolean)
             .join(', ');
+
         keyValuePairs.push({
             name: 'WITNESSED BY:',
             value: capitalizeEachWord(witnessNames)
+        });
+    }
+
+    // ➕ Add Instrument Type row
+    if (type) {
+        keyValuePairs.push({
+            name: 'INSTRUMENT TYPE:',
+            value: type
         });
     }
 
@@ -1642,6 +1713,7 @@ function formatDynamicRowsFromOriginalRanges(rangesArray, masterResult = [], isE
 
     return rows;
 }
+
 
 function buildRangeLcTypeRow(range, lc, type, masterResult = {}, isEnabled) {
     const rawCells = [];
