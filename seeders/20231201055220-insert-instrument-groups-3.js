@@ -32,7 +32,7 @@ module.exports = {
       {
         instrument_group_id: '14',
         instrument_discipline_id: '3',
-        group_details: 'Dimension (Basic-Measuring Instrument, Gauges etc.)'
+        group_details: 'BASIC INSTRUMENT & GAUGE.'
       },
       {
         instrument_group_id: '15',

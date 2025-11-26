@@ -129,7 +129,7 @@ const updateEmployee = async (req, res, next) => {
 
         const { lab_id, employee_id, employee_title, employee_full_name, employee_role, employee_enable } = req.body
 
-         
+
 
         if (!lab_id || !employee_id || !employee_title || !employee_full_name || !employee_role || !employee_enable) {
             const error = new Error("Please follow lab guidelines");
@@ -145,6 +145,8 @@ const updateEmployee = async (req, res, next) => {
         if (findEmployeeMaster) {
 
             let updateData = ""
+
+            console.log(req?.file?.filename, "req?.file?.filename");
 
             if (req?.file?.filename) {
                 updateData = {
@@ -169,7 +171,7 @@ const updateEmployee = async (req, res, next) => {
             return errorHandler(error, req, res, next);
         }
     } catch (err) {
-        //console.log(err);
+        console.log(err);
         const error = new Error("Something went wrong, please try again");
         error.code = 500;
         error.path = "/api/uom/edit";

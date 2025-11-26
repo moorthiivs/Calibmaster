@@ -24,7 +24,7 @@ module.exports = {
       },
       {
         instrument_discipline_id: '3',
-        instrument_discipline: 'MECHANICAL'
+        instrument_discipline: 'MECHANICAL DIMENSION'
       },
       {
         instrument_discipline_id: '4',

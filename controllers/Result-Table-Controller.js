@@ -15,8 +15,8 @@ const create = async (req, res, next) => {
             lab_id, instrument_type_id, srf_id, srf_item_id, master_design_procedure_id,
             calibration_procedure, ref_std,
             validity, traceability,
-            temperature, humidity, atmospheric_pressure, frequency, ulr_number,
-            master_list_equipments, remarks, calibrated_employee_id, approved_employee_id,
+            temperature, humidity, atmospheric_pressure, frequency, ulr_number, description, inwardNumber,
+            master_list_equipments, remarks, calibrated_employee_id, approved_employee_id, authorizedby_employee_id,
             userid, ExceljsonData, PrintonCertificate, FileName, cmeid,
             ObservationCertificate,
             selectedFormatdoc,
@@ -31,31 +31,68 @@ const create = async (req, res, next) => {
         if (ifExistsMasterTable) {
 
 
-            // 🔍 Check duplicate ulr_number
-            const existingULR = await Item.findOne({
-                where: {
-                    url_number: ulr_number,
-                    lab_id: Number(lab_id),
-                    srf_id: { [Op.ne]: Number(srf_id) },
-                    srf_item_id: { [Op.ne]: Number(srf_item_id) }, // Exclude current item
-                },
-            });
+            if (ulr_number) {
 
-            if (existingULR) {
-                return res.status(400).json({ error: "Duplicate ULR Number found!" });
+                const existingULR = await Item.findOne({
+                    where: {
+                        url_number: ulr_number,
+                        lab_id: Number(lab_id),
+                        // srf_id: { [Op.ne]: Number(srf_id) },
+                        // srf_item_id: { [Op.ne]: Number(srf_item_id) },
+                        [Op.not]: { srf_id: Number(srf_id), srf_item_id: Number(srf_item_id) },
+                    },
+                });
+
+
+                if (existingULR) {
+                    return res.status(400).json({ error: "Duplicate ULR Number found!" });
+                }
+
+                // ✅ Update only if ulr_number has value
+                await Item.update(
+                    { url_number: ulr_number },
+                    {
+                        where: {
+                            lab_id: Number(lab_id),
+                            srf_id: Number(srf_id),
+                            srf_item_id: Number(srf_item_id),
+                        },
+                    }
+                );
             }
 
-            const itemupdate = await Item.update(
-                { url_number: ulr_number, },
-                { where: { lab_id: Number(lab_id), srf_id: Number(srf_id), srf_item_id: Number(srf_item_id) } }
-            );
+            if (inwardNumber) {
+                const existingInwardNo = await Item.findOne({
+                    where: {
+                        inward_no: inwardNumber,
+                        lab_id: Number(lab_id),
+                        // srf_id: { [Op.ne]: Number(srf_id) },
+                        // srf_item_id: { [Op.ne]: Number(srf_item_id) },
+                        [Op.not]: { srf_id: Number(srf_id), srf_item_id: Number(srf_item_id) },
+                    },
+                });
+                if (existingInwardNo) {
+                    return res.status(400).json({ error: "Duplicate Inward Number found!" });
+                }
+
+                await Item.update(
+                    { inward_no: inwardNumber },
+                    {
+                        where: {
+                            lab_id: Number(lab_id),
+                            srf_id: Number(srf_id),
+                            srf_item_id: Number(srf_item_id),
+                        },
+                    }
+                );
+            }
 
             const masterTableUpdate = await MasterTable.update(
                 {
                     calibration_procedure, ref_std, instrument_type_id,
                     validity, traceability,
-                    temperature, humidity, atmospheric_pressure, frequency, ulr_number,
-                    master_list_equipments, remarks, calibrated_employee_id, approved_employee_id,
+                    temperature, humidity, atmospheric_pressure, frequency, ulr_number, description,
+                    master_list_equipments, remarks, calibrated_employee_id, approved_employee_id, authorizedby_employee_id,
                     document_format: selectedFormatdoc, witnessed_by: WitnessbyData
                 },
                 { where: { lab_id, srf_id, srf_item_id, } }
@@ -96,8 +133,8 @@ const create = async (req, res, next) => {
                 calibration_procedure, ref_std,
                 unique_id: new Date().getTime(),
                 validity, traceability,
-                temperature, humidity, atmospheric_pressure, frequency, ulr_number,
-                master_list_equipments, remarks, calibrated_employee_id, approved_employee_id,
+                temperature, humidity, atmospheric_pressure, frequency, ulr_number, description,
+                master_list_equipments, remarks, calibrated_employee_id, approved_employee_id, authorizedby_employee_id,
                 document_format: selectedFormatdoc, WitnessbyData
             });
             const result = await newMasterTable.save();

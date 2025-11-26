@@ -22,6 +22,10 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
         defaultValue: "",
       },
+      format_no: {
+        type: DataTypes.JSON,
+        allowNull: false,
+      },
     },
     {
       tableName: "certificate_formats",

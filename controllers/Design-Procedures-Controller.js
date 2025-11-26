@@ -11,7 +11,7 @@ const procedureUncertainties = require("../models").procedure_uncertainties;
 const { ProcedureResult } = require('../models');
 
 const calibmasterexcel = require('../models').CalibmasterExcel
-
+const Item = require("../models").srfitem;
 const { errorHandler } = require("../helpers/error-handler");
 
 
@@ -59,7 +59,8 @@ const create = async (req, res, next) => {
             frequency,
             master_list_equipments, remarks,
             selectedFormatdoc,
-            uncertainty_master_parameters
+            uncertainty_master_parameters,
+            description
         } = req.body;
 
         // TODO: Create Parent-Table Id
@@ -72,7 +73,9 @@ const create = async (req, res, next) => {
             temperature, humidity, atmospheric_pressure,
             frequency,
             master_list_equipments, remarks,
-            document_format: selectedFormatdoc
+            document_format: selectedFormatdoc,
+            description
+
         });
         const result = await newMasterTable.save();
 
@@ -215,7 +218,7 @@ const listProcedure = async (req, res, next) => {
         const error = new Error("Internal Server Error");
         next(errorHandler(error, req, res, next))
     }
-} 
+}
 
 const fetch = async (req, res, next) => {
 
@@ -256,10 +259,17 @@ const fetch = async (req, res, next) => {
                 }
             })
 
+            const itemdata = await Item.findOne({
+                where: {
+                    srf_id, srf_item_id,
+                    lab_id
+                },
+            })
 
             return res.json({
                 masterTable,
                 excelTable,
+                itemdata,
                 //tableDesign, 
                 ifExistResultMasterTable: true
             });
@@ -282,7 +292,12 @@ const fetch = async (req, res, next) => {
                 },
             })
 
-
+            const itemdata = await Item.findOne({
+                where: {
+                    srf_id, srf_item_id,
+                    lab_id
+                },
+            })
 
 
             const { procedure_uncertainties } = masterTable;
@@ -309,6 +324,7 @@ const fetch = async (req, res, next) => {
             return res.json({
                 masterTable,
                 excelTable,
+                itemdata,
                 //tableDesign,
                 ///uncertainty_master_parameter_query,
                 ifExistResultMasterTable: false
@@ -383,7 +399,8 @@ const update = async (req, res, next) => {
             validity, traceability,
             temperature, humidity, atmospheric_pressure, frequency,
             mainArray, master_list_equipments, remarks, uncertainty_master_parameters,
-            selectedFormatdoc
+            selectedFormatdoc,
+            description
         } = req.body;
 
         const masterTableUpdate = await MasterTable.update(
@@ -391,7 +408,7 @@ const update = async (req, res, next) => {
                 calibration_procedure, ref_std, instrument_type_id,
                 validity, traceability,
                 temperature, humidity, atmospheric_pressure, frequency, master_list_equipments, remarks,
-                document_format: selectedFormatdoc
+                document_format: selectedFormatdoc, description
             },
             { where: { master_design_procedure_id, lab_id } }
         );

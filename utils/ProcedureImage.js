@@ -1,17 +1,8 @@
 const path = require('path');
-const imageDataURI = require('image-data-uri');
-/**
- * @param {Array} procedureimages 
- * @returns {Promise<Array>} 
- */
-async function imageToBuffer(imagePath) {
-    try {
-        return await imageDataURI.encodeFromFile(imagePath);
-    } catch (error) {
-        console.error('Image conversion error:', error);
-        return false;
-    }
-}
+const fs = require('fs');
+const { imageSize } = require('image-size');
+
+
 
 // async function generateImageContent(procedureimages) {
 //     const content = [];
@@ -23,7 +14,7 @@ async function imageToBuffer(imagePath) {
 //     try {
 //         const imageBuffers = await Promise.all(
 //             procedureimages
-//                 .filter(image => typeof image === 'string') // Filter out non-string values
+//                 .filter(image => typeof image === 'string')
 //                 .map(async (image) => {
 //                     try {
 //                         const imagePath = path.resolve(__dirname, `../public/procedure_images/${image.trim()}`);
@@ -38,38 +29,27 @@ async function imageToBuffer(imagePath) {
 //         const validImageBuffers = imageBuffers.filter(buffer => buffer !== false);
 
 //         if (validImageBuffers.length > 0) {
-//             // Smaller image sizes
-//             const singleImageSize = [90, 90];
-//             const multiImageSize = [70, 70];  
-
-//             content.push({
-//                 stack: [
-//                     {
-//                         text: 'PROCEDURE DIAGRAM',
-//                         alignment: 'center',
-//                         bold: true,
-//                         fontSize: 9, // Smaller font size
-//                         margin: [0, 0, 0, 3] // Tighter margin
-//                     },
-//                     validImageBuffers.length === 1 ? {
-//                         alignment: 'center',
-//                         image: validImageBuffers[0],
-//                         fit: singleImageSize,
-//                         margin: [0, 0, 0, 10] // Reduced margin
-//                     } : {
-//                         columns: validImageBuffers.map((imageData) => ({
+//             for (const imageData of validImageBuffers) {
+//                 content.push({
+//                     stack: [
+//                         {
+//                             text: 'PROCEDURE DIAGRAM',
+//                             alignment: 'center',
+//                             bold: true,
+//                             fontSize: 10,
+//                             margin: [0, 0, 0, 5]
+//                         },
+//                         {
 //                             image: imageData,
-//                             fit: multiImageSize,
-//                             alignment: 'center'
-//                         })),
-//                         columnGap: 10, // Smaller gap between images
-//                         alignment: 'center',
-//                         margin: [0, 0, 0, 10] // Reduced margin
-//                     }
-//                 ],
-//                 alignment: 'center',
-//                 margin: [0, 10, 0, 10] // Tighter vertical margins
-//             });
+//                             width: 500, // Adjust width to fit A4 with some padding (max ~550)
+//                             alignment: 'center',
+//                             margin: [0, 0, 0, 15]
+//                         }
+//                     ],
+//                     alignment: 'center',
+//                     margin: [0, 10, 0, 10]
+//                 });
+//             }
 //         }
 //     } catch (error) {
 //         console.error('Error generating image content:', error);
@@ -77,6 +57,33 @@ async function imageToBuffer(imagePath) {
 
 //     return content;
 // }
+
+
+
+async function imageToBuffer(imagePath) {
+    try {
+        if (!fs.existsSync(imagePath)) {
+            console.error(`❌ File not found: ${imagePath}`);
+            return false;
+        }
+
+        const fileBuffer = fs.readFileSync(imagePath);
+        const ext = path.extname(imagePath).toLowerCase().replace('.', '');
+
+        // ✅ Supported formats
+        const allowedTypes = ['jpg', 'jpeg', 'png', 'webp'];
+        if (!allowedTypes.includes(ext)) {
+            console.error(`❌ Unsupported file type: ${ext} -> ${imagePath}`);
+            return false;
+        }
+
+        return `data:image/${ext};base64,${fileBuffer.toString('base64')}`;
+    } catch (error) {
+        console.error('❌ Error converting image to base64:', error);
+        return false;
+    }
+}
+
 
 async function generateImageContent(procedureimages) {
     const content = [];
@@ -88,36 +95,124 @@ async function generateImageContent(procedureimages) {
     try {
         const imageBuffers = await Promise.all(
             procedureimages
-                .filter(image => typeof image === 'string')
+                .filter(image => typeof image === 'string' && image.trim() !== '')
                 .map(async (image) => {
                     try {
                         const imagePath = path.resolve(__dirname, `../public/procedure_images/${image.trim()}`);
-                        return await imageToBuffer(imagePath);
+
+                        if (!fs.existsSync(imagePath)) {
+                            console.warn(`⚠️ Skipping missing image: ${imagePath}`);
+                            return false;
+                        }
+
+                        const fileBuffer = fs.readFileSync(imagePath);
+                        let dimensions;
+                        try {
+                            dimensions = imageSize(fileBuffer);
+                        } catch (error) {
+                            console.error(`❌ Failed to read dimensions for ${image}:`, error);
+                            return false;
+                        }
+
+                        const buffer = await imageToBuffer(imagePath);
+                        if (!buffer) return false;
+
+                        return { buffer, dimensions };
                     } catch (error) {
-                        console.error(`Error loading image ${image}:`, error);
+                        console.error(`❌ Error loading image ${image}:`, error);
                         return false;
                     }
                 })
         );
 
-        const validImageBuffers = imageBuffers.filter(buffer => buffer !== false);
+        const validImages = imageBuffers.filter(Boolean);
 
-        if (validImageBuffers.length > 0) {
-            for (const imageData of validImageBuffers) {
+        if (validImages.length === 1) {
+            // ✅ Single Image → Print normally
+            const img = validImages[0];
+            const maxWidth = 450;
+            let finalWidth = Math.min(img.dimensions.width, maxWidth);
+            let finalHeight = (img.dimensions.height / img.dimensions.width) * finalWidth;
+
+            content.push({
+                stack: [
+                    // {
+                    //     text: 'PROCEDURE DIAGRAM',
+                    //     alignment: 'center',
+                    //     bold: true,
+                    //     fontSize: 10,
+                    //     margin: [0, 0, 0, 5]
+                    // },
+                    {
+                        image: img.buffer,
+                        width: finalWidth,
+                        height: finalHeight,
+                        alignment: 'center',
+                        margin: [0, 0, 0, 5]
+                    }
+                ],
+                alignment: 'center',
+                margin: [0, 10, 0, 5]
+            });
+        }
+        else if (validImages.length === 2) {
+            // ✅ Two Images → Side by Side
+            const maxWidthPerImage = 220; // Half of A4 width roughly (500 / 2 - 15)
+            const row = [];
+
+            for (const img of validImages) {
+                let width = Math.min(img.dimensions.width, maxWidthPerImage);
+                let height = (img.dimensions.height / img.dimensions.width) * width;
+
+                row.push({
+                    image: img.buffer,
+                    width,
+                    height,
+                    margin: [5, 0, 5, 0],
+                    alignment: 'center'
+                });
+            }
+
+            content.push({
+                stack: [
+                    // {
+                    //     text: 'PROCEDURE DIAGRAM',
+                    //     alignment: 'center',
+                    //     bold: true,
+                    //     fontSize: 10,
+                    //     margin: [0, 0, 0, 5]
+                    // },
+                    {
+                        columns: row,
+                        columnGap: 10,
+                        alignment: 'center',
+                        margin: [0, 0, 0, 15]
+                    }
+                ],
+                alignment: 'center',
+                margin: [0, 10, 0, 10]
+            });
+        } else {
+            for (const img of validImages) {
+                const maxWidth = 450;
+                let finalWidth = Math.min(img.dimensions.width, maxWidth);
+                let finalHeight = (img.dimensions.height / img.dimensions.width) * finalWidth;
+
                 content.push({
                     stack: [
+                        // {
+                        //     text: 'PROCEDURE DIAGRAM',
+                        //     alignment: 'center',
+                        //     bold: true,
+                        //     fontSize: 10,
+                        //     margin: [0, 0, 0, 5]
+                        // },
                         {
-                            text: 'PROCEDURE DIAGRAM',
+                            image: img.buffer,
+                            width: finalWidth,
+                            height: finalHeight,
                             alignment: 'center',
-                            bold: true,
-                            fontSize: 10,
-                            margin: [0, 0, 0, 5]
-                        },
-                        {
-                            image: imageData,
-                            width: 500, // Adjust width to fit A4 with some padding (max ~550)
-                            alignment: 'center',
-                            margin: [0, 0, 0, 15]
+                            margin: [0, 0, 0, 10]
                         }
                     ],
                     alignment: 'center',
@@ -126,7 +221,7 @@ async function generateImageContent(procedureimages) {
             }
         }
     } catch (error) {
-        console.error('Error generating image content:', error);
+        console.error('❌ Error generating image content:', error);
     }
 
     return content;

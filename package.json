@@ -30,6 +30,7 @@
     "html-to-pdfmake": "^2.5.1",
     "hyperformula": "^3.0.0",
     "image-data-uri": "^2.0.1",
+    "image-size": "^2.0.2",
     "joi": "^17.12.3",
     "jquery-csv": "^1.0.21",
     "jsonwebtoken": "^8.5.1",

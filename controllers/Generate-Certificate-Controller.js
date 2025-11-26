@@ -37,8 +37,10 @@ const CMSsettingsPermissions = require("../models").cmssettings_permissions;
 const PdfPrinter = require('pdfmake');
 const moment = require('moment-timezone');
 const archiver = require("archiver");
-
 const signatureDate = moment().tz('Asia/Kolkata').format('DD-MM-YYYY hh:mm A');
+const { format } = require('date-fns')
+
+
 const fonts = {
     Roboto: {
         normal: path.join(__dirname, '../fonts/Roboto-Regular.ttf'),
@@ -135,54 +137,6 @@ const isValid = (value) => {
 
 
 
-function injectDynamicDateFields(requiredFields, customDate = new Date()) {
-    const now = customDate;
-    const fullYear = now.getFullYear(); // e.g., 2025
-    const shortYear = fullYear.toString().slice(-2);
-    const prevYear = fullYear - 1;
-    const prevShort = prevYear.toString().slice(-2);
-    const nextYear = fullYear + 1;
-    const nextShort = nextYear.toString().slice(-2);
-    const month = (now.getMonth() + 1).toString().padStart(2, "0");
-
-    // Determine what kind of yearRange was previously used (short or long)
-    const existingYearRange = requiredFields.find((f) => f.name === "yearRange")?.value || "";
-    let newYearRange;
-
-    if (/^\d{2}-\d{2}$/.test(existingYearRange)) {
-        newYearRange = `${prevShort}-${shortYear}`;
-    } else if (/^\d{2}-\d{2}$/.test(existingYearRange)) {
-        newYearRange = `${shortYear}-${nextShort}`;
-    } else {
-        newYearRange = `${prevYear}-${fullYear}`;
-    }
-
-    const dynamicFields = {
-        month,
-        year: shortYear,
-        yearRange: newYearRange,
-    };
-
-    const updatedFields = requiredFields.map((field) => {
-        if (dynamicFields[field.name]) {
-            return {
-                ...field,
-                value: dynamicFields[field.name],
-            };
-        }
-        return field;
-    });
-
-    return updatedFields;
-}
-
-
-function generateCertificateNumber(template, data) {
-    return template.replace(/{{(.*?)}}/g, (_, key) => {
-        return data[key] ?? `{{${key}}}`;
-    });
-}
-
 const footerLongText = "The Calibration Certificate is valid only for the condition of the received DUC at the time under the stated condition of calibration. The calibration certificate shall not be reproduced in full without written approval of Lab Management. DUC: Device Under Calibration. Calibration Measurement are traceable to SI Units through unbroken chain of calibration from competent laboratory.Recommended due date for calibration is provided by customer.";
 
 const generate = async (req, res, next) => {
@@ -197,11 +151,11 @@ const generate = async (req, res, next) => {
 
         //const certificate_number = new Date().getTime();
 
-        const format = await CertificateFormat.findOne({
+        const Certformat = await CertificateFormat.findOne({
             where: { lab_id },
         });
 
-        if (!format) {
+        if (!Certformat) {
             return res.status(404).json({ message: "Certificate Number format not found" });
         }
 
@@ -254,25 +208,27 @@ const generate = async (req, res, next) => {
         const selectedSheet_Obs = excelTable.dataValues.print_on_observation;
 
         const ExcelProcedureTablelayout = {
-            hLineWidth: (i, node) => i === 0 || i === node.table.body.length ? 0.5 : 0.2,
-            vLineWidth: () => 0.2,
-            hLineColor: () => '#cccccc',
-            vLineColor: () => '#cccccc',
+            hLineWidth: (i, node) => i === 0 || i === node.table.body.length ? 1 : 1,
+            vLineWidth: () => 1,
+            // hLineColor: () => '#cccccc',
+            // vLineColor: () => '#cccccc',
+            hLineColor: () => '#000000',
+            vLineColor: () => '#000000',
             paddingLeft: () => 2,
             paddingRight: () => 2,
             paddingTop: () => 3,
             paddingBottom: () => 3
         };
         const observationTablelayout = {
-            hLineWidth: () => 0.2,
-            vLineWidth: () => 0.2,
+            hLineWidth: () => 0.7,
+            vLineWidth: () => 0.7,
             hLineColor: () => '#000000',
             vLineColor: () => '#000000'
         };
 
         // Generate table content for both certificate and observation
-        const ExcelProcedureTable = await generatePdfFromSheet(excelData, mergedCells, Styles, selectedSheet_Cert, decimalPoint, ExcelProcedureTablelayout, fontSize = 6);
-        const observationTable = isValid(selectedSheet_Obs) ? await generatePdfFromSheet(excelData, mergedCells, Styles, selectedSheet_Obs, decimalPoint, observationTablelayout, fontSize = 6) : null
+        const ExcelProcedureTable = await generatePdfFromSheet(excelData, mergedCells, Styles, selectedSheet_Cert, decimalPoint, ExcelProcedureTablelayout, fontSize = 7);
+        const observationTable = isValid(selectedSheet_Obs) ? await generatePdfFromSheet(excelData, mergedCells, Styles, selectedSheet_Obs, decimalPoint, observationTablelayout, fontSize = 7) : null
 
         // Validate generation
         if (!ExcelProcedureTable) {
@@ -363,36 +319,57 @@ const generate = async (req, res, next) => {
         else
             customer_address += '.';
 
-        let date_of_issue = reportGenerateDate || new Date().toLocaleDateString("en-GB", { timeZone: "Asia/Kolkata" });
-        //let date_of_issue = (item?.srf?.issue_date) ? item?.srf?.issue_date : "--";
-        let received_date = item?.srf?.customer_dc_date;
-        let cal_date = item?.calibration_done_date;
-        let due_date = item?.calibration_due_date;
+        // let date_of_issue = reportGenerateDate || new Date().toLocaleDateString("en-GB", { timeZone: "Asia/Kolkata" });
+        // //let date_of_issue = (item?.srf?.issue_date) ? item?.srf?.issue_date : "--";
+        // let received_date = item?.srf?.customer_dc_date;
+        // let cal_date = item?.calibration_done_date;
+        // let due_date = item?.calibration_due_date;
         const condition = item?.remarks;
 
-        if (received_date != null) {
-            received_date = new Date(received_date).toLocaleDateString('en-GB'); // Formats as DD/MM/YYYY
-        } else {
-            received_date = "-";
-        }
+        // if (received_date != null) {
+        //     received_date = new Date(received_date).toLocaleDateString('en-GB'); // Formats as DD/MM/YYYY
+        // } else {
+        //     received_date = "-";
+        // }
 
-        if (cal_date != null) {
-            cal_date = new Date(cal_date).toLocaleDateString('en-GB'); // Formats as DD/MM/YYYY
-        } else {
-            cal_date = "-";
-        }
+        // if (cal_date != null) {
+        //     cal_date = new Date(cal_date).toLocaleDateString('en-GB'); // Formats as DD/MM/YYYY
+        // } else {
+        //     cal_date = "-";
+        // }
 
-        if (due_date != null) {
-            due_date = new Date(due_date).toLocaleDateString('en-GB'); // Formats as DD/MM/YYYY
-        } else {
-            due_date = "-";
-        }
+        // if (due_date != null) {
+        //     due_date = new Date(due_date).toLocaleDateString('en-GB'); // Formats as DD/MM/YYYY
+        // } else {
+        //     due_date = "-";
+        // }
+
+
+        // date_of_issue → if reportGenerateDate exists, format it, else take today's date
+        let date_of_issue = reportGenerateDate
+            ? format(new Date(reportGenerateDate), "dd-MM-yyyy")
+            : format(new Date(), "dd-MM-yyyy");
+
+        // received_date
+        let received_date = item?.srf?.customer_dc_date
+            ? format(new Date(item.srf.customer_dc_date), "dd-MM-yyyy")
+            : "--";
+
+        // cal_date
+        let cal_date = item?.calibration_done_date
+            ? format(new Date(item.calibration_done_date), "dd-MM-yyyy")
+            : "--";
+
+        // due_date
+        let due_date = item?.calibration_due_date
+            ? format(new Date(item.calibration_due_date), "dd-MM-yyyy")
+            : "--";
 
 
         // ***  Query Master Result List  *** 
         let masterResult = await masterResultTable.findOne({
             where: { lab_id, srf_id, srf_item_id },
-            include: ["calibrated_employee_master", "approved_employee_master",]
+            include: ["calibrated_employee_master", "approved_employee_master", "authorizedby_employee_master"]
         });
         // return res.json(masterResult);
 
@@ -420,8 +397,11 @@ const generate = async (req, res, next) => {
 
         // *** Set standards details table data *** 
         const ulr_number = masterResult?.ulr_number;
-        const calibration_procedure = masterResult?.calibration_procedure;
-        const ref_std = masterResult?.ref_std;
+        const procedure_desc = masterResult?.description || '';
+        const ref_std = masterResult?.ref_std ? `This Method is based on ${masterResult.ref_std}` : '';
+        const calibration_procedure_name = masterResult?.calibration_procedure || '';
+
+
         const temperature = isValid(masterResult?.temperature?.mean) ? masterResult?.temperature?.mean + '°C' : 'N/A';
         const humidity = isValid(masterResult?.humidity?.mean) ? masterResult?.humidity?.mean + '%' : 'N/A';
         const AtmosphericPressure = masterResult?.atmospheric_pressure
@@ -429,6 +409,10 @@ const generate = async (req, res, next) => {
         const remark = masterResult?.remarks;
         const remarks = Array.isArray(remark) ? remark.map(r => r.replace(/\s+/g, ' ').trim()) : [];
 
+
+        const calibration_procedure = [procedure_desc, ref_std, calibration_procedure_name]
+            .filter(part => part.trim() !== '')
+            .join(' As per ');
 
         // *** Create Format for Master list Equipments ***
         let masterListEquipment = await standard_details(masterResult?.master_list_equipments);
@@ -454,11 +438,11 @@ const generate = async (req, res, next) => {
             item,
             srf,
             itemCount,
-            format, // this should be a CertificateFormat row, with `required_fields` and `format_template`
-            CertificateFormat, // this should be the Sequelize model
+            //Certformat, // this should be a CertificateFormat row, with `required_fields` and `format_template`
+            //CertificateFormat, // this should be the Sequelize model
             Item, // this should be the Sequelize model
-            Customer,
-            srf_item_id
+            //Customer,
+            labId: lab_id
         });
 
 
@@ -485,6 +469,11 @@ const generate = async (req, res, next) => {
         let approved_employee_name = approved_employee_master.employee_full_name;
         let approved_employee_role = approved_employee_master.employee_role;
         let approved_employee_signature = approved_employee_master.employee_signature;
+
+        let authorized_employee_master = await masterResult.authorizedby_employee_master;
+        let authorized_employee_name = authorized_employee_master?.employee_full_name;
+        let authorized_employee_role = authorized_employee_master?.employee_role;
+        let authorized_employee_signature = authorized_employee_master?.employee_signature;
 
         let lab_address = [
             lab.address1?.replace(/,\s*$/, '').trim(),
@@ -547,41 +536,69 @@ const generate = async (req, res, next) => {
         const sign2LogoBuffer = await imageToBuffer(sign2LogoPath);
 
 
-        let environmentalwidths = [];
         let environmentalbody = [];
 
-        // Step 1: Build the main row
-        let secondRow = [
-            { text: 'TEMPERATURE (°C):' },
-            { text: temperature || '-', alignment: 'center' },
-            { text: 'HUMIDITY (RH %):' },
-            { text: humidity || '-', alignment: 'center' }
+        // Default values
+        const defaultTemp = "20 ± 2°C";
+        const defaultRH = "50 ± 10%";
+
+        // Row1 (TEMP & RH defaults)
+        let row1 = [
+            { text: 'TEMP', alignment: 'center', bold: true },
+            { text: defaultTemp, alignment: 'center' },
+            { text: 'RH', alignment: 'center', bold: true },
+            { text: defaultRH, alignment: 'center' },
+        ];
+
+        // Row2 (Actual Values)
+        let row2 = [
+            { text: 'ACTUAL', alignment: 'center', bold: true },
+            { text: `${temperature || '-'}`, alignment: 'center' },
+            { text: 'ACTUAL', alignment: 'center', bold: true },
+            { text: `${humidity || '-'}`, alignment: 'center' },
         ];
 
         if (AtmosphericPressure) {
-            secondRow.push({ text: 'ATMOSPHERIC PRESSURE (mbar):' });
-            secondRow.push({ text: AtmosphericPressure || '-', alignment: 'center' });
-        }
-        if (Frequency) {
-            secondRow.push({ text: 'FREQUENCY (Hz):' });
-            secondRow.push({ text: Frequency || '-', alignment: 'center' });
+            row1.push(
+                { text: 'ATMOSPHERIC PRESSURE (mbar)', alignment: 'center', bold: true },
+                { text: AtmosphericPressure, alignment: 'center' }
+            );
+            row2.push(
+                { text: 'ACTUAL', alignment: 'center', bold: true },
+                { text: `${AtmosphericPressureActual || '-'}`, alignment: 'center' }
+            );
         }
 
-        // Step 2: Match colSpan and filler cells for the header
-        const totalCols = secondRow.length;
+        if (Frequency) {
+            row1.push(
+                { text: 'FREQUENCY (Hz)', alignment: 'center', bold: true },
+                { text: Frequency, alignment: 'center' }
+            );
+            row2.push(
+                { text: 'ACTUAL', alignment: 'center', bold: true },
+                { text: `${FrequencyActual || '-'}`, alignment: 'center' }
+            );
+        }
+
+        const totalCols = row1.length;
+
         const headerRow = [
             {
-                text: 'ENVIRONMENTAL CONDITION',
+                text: 'ENVIRONMENTAL CONDITIONS',
                 alignment: 'center',
                 colSpan: totalCols,
-                decoration: 'underline'
+                bold: true
             },
             ...Array(totalCols - 1).fill({})
         ];
 
         environmentalbody.push(headerRow);
-        environmentalbody.push(secondRow);
-        environmentalwidths = Array(totalCols).fill(`${(100 / totalCols).toFixed(2)}%`);
+        environmentalbody.push(row1);
+        environmentalbody.push(row2);
+
+        // equal widths
+        let environmentalwidths = Array(totalCols).fill("*");
+
         const thirdTableBody = [
             [
                 { text: 'DESCRIPTION:' },
@@ -604,10 +621,23 @@ const generate = async (req, res, next) => {
                 { text: capitalizeEachWord(idNo) || "-", alignment: 'center' }
             ],
             ...(instrumentDynamicRows || buildRangeLcTypeRow(range, lc, type, masterResult, isEnabled)),
+            // [
+            //     { text: 'CALIBRATION PROCEDURE & REF.STD:', alignment: 'left', colSpan: 2 },
+            //     {},
+            //     { text: `${capitalizeEachWord(calibration_procedure) || '-'}`, alignment: 'center', colSpan: 2 },
+            //     {}
+            // ],
             [
-                { text: 'CALIBRATION PROCEDURE & REF.STD:', alignment: 'left', colSpan: 2 },
+                { text: 'CALIBRATION PROCEDURE :', alignment: 'left', bold: true },
+
+                {
+                    colSpan: 3,
+                    alignment: 'left',
+                    stack: [
+                        capitalizeEachWord(calibration_procedure) || '-'
+                    ]
+                },
                 {},
-                { text: `${capitalizeEachWord(calibration_procedure) || '-'} & ${ref_std || '-'}`, alignment: 'center', colSpan: 2 },
                 {}
             ]
         ];
@@ -628,237 +658,350 @@ const generate = async (req, res, next) => {
         // Compute dynamic top margin to vertically center
         const topMargin = Math.max(0, (headerHeight - logoFit) / 2);
 
+
+        const Dc_Number = await item?.srf?.dataValues?.customer_dc ?? item?.dispatch_dc ?? "N/A";
+
+
+        const format_no_cert = Certformat?.format_no?.certificate_format_no
+            ? (item?.labtype === "NABL"
+                ? Certformat.format_no.certificate_format_no.nabl
+                : Certformat.format_no.certificate_format_no.nonNabl)
+            : item?.labtype === "NABL"
+                ? "LAB/F/25/ Rev:07"
+                : "LAB/F/26/ Rev:01";
+
+        const format_no_obser = Certformat?.format_no?.observation_format_no
+            ? (item?.labtype === "NABL"
+                ? Certformat.format_no.observation_format_no.nabl
+                : Certformat.format_no.observation_format_no.nonNabl)
+            : item?.labtype === "NABL"
+                ? "LAB/F/25A/ Rev:04"
+                : "LAB/F/26A/ Rev:01";
+
+        const isNABL = item?.labtype === "NABL" ? true : false
+
+        const headerMargin = item?.labtype === "NABL" ? 93 : 88
         const docDefinition = {
             pageSize: 'A4',
             pageOrientation: 'portrait',
-            pageMargins: [20, 130, 20, 70],
+            pageMargins: [10, headerMargin, 10, 125],
             background: (currentPage, pageSize) => {
-                return {
-                    image: labLogo_1_Buffer,
-                    width: 200,
-                    height: 300,
-                    opacity: 0.1,
-                    absolutePosition: {
-                        x: (pageSize.width - 200) / 2,
-                        y: (pageSize.height - 300) / 2
-                    }
-                };
-            },
-            header: function (currentPage, pageCount) {
+                // return {
+                //     image: labLogo_1_Buffer,
+                //     width: 200,
+                //     height: 300,
+                //     opacity: 0.1,
+                //     absolutePosition: {
+                //         x: (pageSize.width - 200) / 2,
+                //         y: (pageSize.height - 300) / 2
+                //     }
+                // };
                 return [
                     {
-                        alignment: 'justify',
-                        columnGap: 0,
-                        columns: [
-                            // LEFT LOGO (Lab Logo)
-                            {
-                                width: 100,              // slightly wider column
-                                margin: [5, 0, 0, 0],   // <-- pushes the whole logo column inward
-                                stack: [
-                                    labLogo_1_Buffer ? {
-                                        image: labLogo_1_Buffer,
-                                        fit: [logoFit, logoFit],
-                                        alignment: 'center',
-                                        margin: [0, topMargin, 0, 0] // only vertical tweak now
-                                    } : { text: '' },
-                                ],
-                            },
+                        canvas: [
+                            { type: 'line', x1: 10, y1: 10, x2: 585, y2: 10, lineWidth: 1 },   // Top line (10 from top)
+                            { type: 'line', x1: 10, y1: 10, x2: 10, y2: 830, lineWidth: 1 },   // Left line (10 from left)
+                            { type: 'line', x1: 10, y1: 830, x2: 585, y2: 830, lineWidth: 1 }, // Bottom line (10 from bottom)
+                            { type: 'line', x1: 585, y1: 10, x2: 585, y2: 830, lineWidth: 1 }  // Right line (10 from right)
+                        ]
 
-                            // CENTER BLOCK (Lab Name & Address)
-
-                            [
-                                {
-                                    text: `${lab.lab_name.toUpperCase()}`,
-                                    alignment: 'center',
-                                    fontSize: 20,
-                                    bold: true,
-                                    margin: [0, 20, 0, 0],
-                                    color: "#002e69",
-                                },
-                                {
-                                    text: lab_address,
-                                    alignment: 'center',
-                                    fontSize: 18,
-                                    margin: [5, 3, 5, 0],
-                                    lineHeight: 1.1,
-                                    color: "#000000",
-                                    bold: true,
-                                },
-                                // {
-                                //     text: `Mobile: ${lab.contact_number1}${lab.contact_number2 ? ` | ${lab.contact_number2}` : ''} / Website: ${lab.lab_website}`,
-                                //     alignment: 'center',
-                                //     fontSize: 9,
-                                //     margin: [0, 2, 0, 0],
-                                //     lineHeight: 1.1
-                                // },
-                                // {
-                                //     text: `Mobile: ${lab.contact_number1}${lab.contact_number2 ? ` / ${lab.contact_number2}` : ''} | Email: ${lab.contact_email}`,
-                                //     alignment: 'center',
-                                //     fontSize: 10,
-                                //     margin: [0, 3, 0, 0],
-                                //     lineHeight: 1.1,
-                                //     color: "#282B3E",
-                                //     bold: true,
-                                // },
-                                // {
-                                //     text: `Email: ${lab.contact_email}`,
-                                //     alignment: 'center',
-                                //     fontSize: 9,
-                                //     margin: [0, 5, 0, 0],
-                                //     lineHeight: 1.1
-                                // }
-                            ],
-
-                            // RIGHT BLOCK (Page No + NABL Logo)
-                            {
-                                width: 85,
-                                stack: [
-                                    {
-                                        text: `${currentPage} of ${pageCount}`,
-                                        alignment: 'right',
-                                        fontSize: 9,
-                                        margin: [0, 5, 0, 0]
-                                    },
-                                    nablBuffer ? {
-                                        image: nablBuffer,
-                                        fit: [80, 80],
-                                        alignment: 'right',
-                                        margin: [0, 5, 0, 0],
-                                    } : { text: '' },
-                                ],
-                            }
-                        ],
-                    },
-
-                    // LINE BELOW HEADER
-                    {
-                        canvas: [{
-                            type: "line",
-                            x1: 0,
-                            y1: 0,
-                            x2: 600,
-                            y2: 0,
-                            lineWidth: 1.2,
-                            strokeColor: "black"
-                        }],
-                        margin: [0, 8, 0, 20]
-                    },
-                ];
+                    }, {
+                        image: labLogo_1_Buffer,
+                        width: 200,
+                        height: 300,
+                        opacity: 0.1,
+                        absolutePosition: {
+                            x: (pageSize.width - 200) / 2,
+                            y: (pageSize.height - 300) / 2
+                        }
+                    }
+                ]
             },
+            // header: function (currentPage, pageCount) {
+            //     return [
+            //         {
+            //             table: {
+            //                 widths: [100, '*', 100], // three boxes
+            //                 body: [
+            //                     [
+            //                         // LEFT BOX (NABL + CC Code)
+            //                         {
+            //                             stack: [
+            //                                 nablBuffer ? {
+            //                                     image: nablBuffer,
+            //                                     fit: [80, 80],
+            //                                     alignment: 'center',
+            //                                     margin: [0, 0, 0, 0]
+            //                                 } : { text: '' },
+
+            //                             ],
+            //                             alignment: 'center',
+            //                             border: [true, true, true, true], // box border
+            //                             margin: [0, 0, 0, 0]
+            //                         },
+
+            //                         // CENTER BOX (Title)
+            //                         {
+            //                             text: "CALIBRATION CERTIFICATE",
+            //                             alignment: 'center',
+            //                             fontSize: 16,
+            //                             bold: true,
+            //                             margin: [0, 25, 0, 25], // vertical centering
+            //                             border: [true, true, true, true], // box border
+            //                         },
+
+            //                         // RIGHT BOX (Company Logo + Plant)
+            //                         {
+            //                             stack: [
+            //                                 labLogo_1_Buffer ? {
+            //                                     image: labLogo_1_Buffer,
+            //                                     fit: [120, 120],
+            //                                     alignment: 'center',
+            //                                     margin: [0, 20, 0, 2]
+            //                                 } : { text: '' },
+
+            //                                 lab?.address1 ? {
+            //                                     text: lab.address1,
+            //                                     alignment: 'center',
+            //                                     fontSize: 9,
+            //                                     margin: [0, 2, 0, 0],
+            //                                 } : { text: '' }
+
+
+            //                             ],
+            //                             alignment: 'center',
+            //                             border: [true, true, true, true], // box border
+            //                             margin: [0, 5, 0, 5]
+            //                         }
+            //                     ]
+            //                 ]
+            //             },
+            //             layout: {
+            //                 hLineWidth: function () { return 0.9; },
+            //                 vLineWidth: function () { return 0.9; },
+            //                 hLineColor: function () { return 'black'; },
+            //                 vLineColor: function () { return 'black'; }
+            //             },
+            //             margin: [10, 10, 10, 0]
+            //         },
+            //     ];
+            // },
+            header: function (currentPage, pageCount) {
+                if (isNABL) {
+                    return [
+                        {
+                            table: {
+                                widths: [100, '*', 100],
+                                body: [[
+                                    // LEFT BOX (NABL logo)
+                                    {
+                                        stack: [
+                                            nablBuffer ? {
+                                                image: nablBuffer,
+                                                fit: [80, 80],
+                                                alignment: 'center',
+                                                margin: [0, 0, 0, 0]
+                                            } : { text: '' },
+                                        ],
+                                        alignment: 'center',
+                                        border: [true, true, true, true],
+                                        margin: [0, 0, 0, 0]
+                                    },
+                                    // CENTER BOX (Title)
+                                    {
+                                        text: "CALIBRATION CERTIFICATE",
+                                        alignment: 'center',
+                                        fontSize: 16,
+                                        bold: true,
+                                        margin: [0, 25, 0, 25],
+                                        border: [true, true, true, true]
+                                    },
+                                    // RIGHT BOX (Company Logo + Plant)
+                                    {
+                                        stack: [
+                                            labLogo_1_Buffer ? {
+                                                image: labLogo_1_Buffer,
+                                                fit: [120, 120],
+                                                alignment: 'center',
+                                                margin: [0, 20, 0, 2]
+                                            } : { text: '' },
+                                            lab?.address1 ? {
+                                                text: lab.address1,
+                                                alignment: 'center',
+                                                fontSize: 9,
+                                                margin: [0, 2, 0, 0],
+                                            } : { text: '' }
+                                        ],
+                                        alignment: 'center',
+                                        border: [true, true, true, true],
+                                        margin: [0, 5, 0, 5]
+                                    }
+                                ]]
+                            },
+                            layout: {
+                                hLineWidth: function () { return 0.9; },
+                                vLineWidth: function () { return 0.9; },
+                                hLineColor: function () { return 'black'; },
+                                vLineColor: function () { return 'black'; }
+                            },
+                            margin: [10, 10, 10, 0]
+                        }
+                    ];
+                } else {
+                    return [
+                        {
+                            table: {
+                                widths: ['*', 120],
+                                body: [[
+                                    {
+                                        text: "CALIBRATION CERTIFICATE",
+                                        alignment: 'center',
+                                        fontSize: 16,
+                                        bold: true,
+                                        margin: [80, 25, 0, 25],
+                                        border: [false, true, false, true]
+                                    },
+                                    {
+                                        stack: [
+                                            labLogo_1_Buffer ? {
+                                                image: labLogo_1_Buffer,
+                                                fit: [100, 100],
+                                                alignment: 'center',
+                                                margin: [0, 20, 0, 2]
+                                            } : { text: '' },
+                                            lab?.address1 ? {
+                                                text: lab.address1,
+                                                alignment: 'center',
+                                                fontSize: 9,
+                                                margin: [0, 5, 0, 0]
+                                            } : { text: '' }
+                                        ],
+                                        border: [false, true, false, true],
+                                        alignment: 'center',
+                                        margin: [0, 5, 0, 5]
+                                    }
+                                ]]
+                            },
+                            layout: {
+                                hLineWidth: function () { return 0.9; },
+                                vLineWidth: function () { return 0.9; },
+                                hLineColor: function () { return 'black'; },
+                                vLineColor: function () { return 'black'; }
+                            },
+                            margin: [10, 10, 10, 0]
+                        }
+                    ];
+                }
+            },
+
             footer: function (currentPage, pageCount) {
+                const qrBuffer = lab_QR_LOGO_2_Buffer || lab_QR_LOGO_1_Buffer;
 
-                const borderLayout = {
-                    layout: {
-                        hLineWidth: () => 0.5,
-                        vLineWidth: () => 0.5,
-                        hLineColor: () => 'black',
-                        vLineColor: () => 'black',
-                    }
-                };
-
-                const signature1 = sign1LogoBuffer ? {
-                    stack: [
-                        isEnabled("SIGNATURE_PRINT_CERTIFICATE") ?
-                            { image: sign1LogoBuffer, width: 40, alignment: 'center', margin: [0, 5, 0, 0] } :
-                            { text: '', margin: [0, 20, 0, 0] },
-                        { text: calibrated_employee_name || '-', fontSize: 7, alignment: 'center' },
-                        { text: calibrated_employee_role || '-', fontSize: 7, alignment: 'center' },
-                        { text: 'Calibrated By', fontSize: 9, bold: true, alignment: 'center' }
-                    ],
-                    width: '28%',
-                    ...borderLayout
-                } : {
-                    stack: [
-                        { text: '', margin: [0, 20, 0, 0] },
-                        { text: calibrated_employee_name || '-', fontSize: 7, alignment: 'center' },
-                        { text: calibrated_employee_role || '-', fontSize: 7, alignment: 'center' },
-                        { text: 'Calibrated By', fontSize: 9, bold: true, alignment: 'center' }
-                    ],
-                    width: '28%',
-                    ...borderLayout
-                };
-
-                const seal = isEnabled("SEAL_PRINT_CERTIFICATE") && sealBuffer ? {
-                    stack: [
-                        { image: sealBuffer, width: 40, alignment: 'center', margin: [0, 10, 0, 0] }
-                    ],
-                    width: '28%',
-                    ...borderLayout
-                } : { text: '', width: '28%' };
-
-                const signature2 = sign2LogoBuffer ? {
-                    stack: [
-                        isEnabled("SIGNATURE_PRINT_CERTIFICATE") ?
-                            { image: sign2LogoBuffer, width: 40, alignment: 'center', margin: [0, 5, 0, 0] } :
-                            { text: '', margin: [0, 20, 0, 0] },
-                        { text: approved_employee_name || '-', fontSize: 7, alignment: 'center' },
-                        { text: approved_employee_role || '-', fontSize: 7, alignment: 'center' },
-                        { text: 'Authorized By', fontSize: 9, bold: true, alignment: 'center' }
-                    ],
-                    width: '28%',
-                    ...borderLayout
-                } : {
-                    stack: [
-                        { text: '', margin: [0, 20, 0, 0] },
-                        { text: calibrated_employee_name || '-', fontSize: 7, alignment: 'center' },
-                        { text: calibrated_employee_role || '-', fontSize: 7, alignment: 'center' },
-                        { text: 'Calibrated By', fontSize: 9, bold: true, alignment: 'center' }
-                    ],
-                    width: '28%',
-                    ...borderLayout
-                };
-
-                const qrCode = lab_QR_LOGO_2_Buffer || lab_QR_LOGO_1_Buffer ? {
-                    image: lab_QR_LOGO_2_Buffer || lab_QR_LOGO_1_Buffer,
-                    width: 50,
-                    alignment: 'right',
-                    margin: [0, 10, 0, 0]
-                } : { text: '', width: '16%' };
-
-                const footerContent = [
-                    {
-                        canvas: [{
-                            type: "line",
-                            x1: 0,
-                            y1: 0,
-                            x2: 600,
-                            y2: 0,
-                            lineWidth: 0.5,
-                            strokeColor: "black"
-                        }],
-                        margin: [0, 0, 0, 4]
+                const signatureTable = {
+                    table: {
+                        widths: ['16.6%', '16.6%', '16.6%', '16.6%', '16.6%', '16.6%'],
+                        body: [
+                            [
+                                { text: 'Calibrated By', alignment: 'center', fontSize: 8, },
+                                { text: '', alignment: 'center' },
+                                { text: 'Verified By', alignment: 'center', fontSize: 8, },
+                                { text: '', alignment: 'center' },
+                                { text: 'Authorized By', alignment: 'center', fontSize: 8, },
+                                { text: '', alignment: 'center' }
+                            ],
+                            [
+                                { text: 'Name', alignment: 'center', fontSize: 8, },
+                                { text: calibrated_employee_name, alignment: 'center', fontSize: 8, },
+                                { text: 'Name', alignment: 'center', fontSize: 8, },
+                                { text: approved_employee_name, alignment: 'center', fontSize: 8, },
+                                { text: 'Name', alignment: 'center', fontSize: 8, },
+                                { text: authorized_employee_name || "-", alignment: 'center', fontSize: 8, }
+                            ]
+                        ]
                     },
-                    {
-                        columns: [
-                            signature1,
-                            seal,
-                            signature2,
-                            qrCode
-                        ],
-                        columnGap: 10,
-                        margin: [0, 0, 0, 0]
-                    }
-                ];
+                    layout: {
+                        //hLineWidth: function (i, node) { return 0.9; },
+                        hLineWidth: function (i, node) {
+                            if (i === 0) return 0.9;
+                            if (i === node.table.body.length) return 0.1;
+                            return 0.9;
+                        },
+                        vLineWidth: function (i, node) { return 0.9; },
+                        hLineColor: function () { return 'black'; },
+                        vLineColor: function () { return 'black'; }
+                    },
+                    margin: [10, 0, 8, 0]
+                };
+
+                const addressStack = {
+                    stack: [
+                        { text: lab?.lab_name || '', alignment: 'center', fontSize: 9, bold: true, margin: [20, 0, 0, 1] },
+                        { text: `${lab?.address2} ${lab?.city} - ${lab?.pincode}`, alignment: 'center', fontSize: 8, margin: [20, 1, 0, 1] },
+                        { text: `Ph: ${lab?.contact_number1} / ${lab?.contact_number2}, `, alignment: 'center', fontSize: 8, margin: [20, 1, 0, 1] },
+                        { text: `E-mail id: ${lab?.contact_email}`, alignment: 'center', fontSize: 8, margin: [20, 1, 0, 0] }
+                    ]
+                };
+
+                const qrCell = isNABL && qrBuffer
+                    ? { image: qrBuffer, width: 50, alignment: 'center', margin: [0, 0, 0, 0] }
+                    : { text: '', width: 50 };
+
+                const footerTable = {
+                    table: {
+                        widths: isNABL ? ['*', 60] : ['*'],
+                        body: isNABL
+                            ? [[addressStack, qrCell]]
+                            : [[addressStack]]
+                    },
+                    layout: {
+                        hLineWidth: function (i, node) { return 0.9; },
+                        //vLineWidth: function (i, node) { return 0.9; },
+                        vLineWidth: function (i, node) {
+                            return (i === 1) ? 0 : 0.9;
+                        },
+                        hLineColor: function () { return 'black'; },
+                        vLineColor: function () { return 'black'; },
+                        paddingLeft: function () { return 5; },
+                        paddingRight: function () { return 5; },
+                        paddingTop: function () { return 5; },
+                        paddingBottom: function () { return 5; }
+                    },
+                    margin: [10, 0, 10, 0]
+                };
+
+                const out = [signatureTable, footerTable];
+
+                const formattedCurrent = String(currentPage).padStart(2, '0');
+                const formattedTotal = String(pageCount).padStart(2, '0');
 
                 if (currentPage === pageCount) {
-                    footerContent.unshift({
-                        text: "*** End of Calibration Report ***",
-                        alignment: "center",
-                        fontSize: 10,
-                        bold: true,
-                        margin: [0, 0, 0, 0]
+                    out.push({
+                        table: {
+                            widths: ['*'],
+                            body: [[
+                                { text: "***End of Certificate***", alignment: "center", fontSize: 9, bold: true },
+                            ]]
+                        },
+                        layout: 'noBorders',
+                        margin: [isNABL ? 0 : 40, 0, 26, 0]
                     });
                 }
 
-                return footerContent;
+                out.push({
+                    table: {
+                        widths: ['*', 'auto'],
+                        body: [[
+                            { text: `Page ${formattedCurrent}  of  ${formattedTotal}`, alignment: "center", fontSize: 8 },
+                            { text: format_no_cert, alignment: "right", fontSize: 8 },
+                        ]]
+                    },
+                    layout: 'noBorders',
+                    margin: [isNABL ? 60 : 95, 0, isNABL ? 20 : 13, 15]
+                });
+                return out;
             },
+
             content: [
-                {
-                    text: 'CALIBRATION CERTIFICATE ',
-                    alignment: 'center',
-                    fontSize: 16,
-                    margin: [0, 5, 0, 5],
-                },
                 {
                     style: 'firstTable',
                     table: {
@@ -879,21 +1022,24 @@ const generate = async (req, res, next) => {
                             [
                                 {
                                     text: [
-                                        { text: 'CUSTOMER NAME & ADDRESS:', decoration: 'underline' },
+                                        { text: 'CUSTOMER NAME & ADDRESS:', bold: true },
                                         `\n${customer_name}`,
                                         `\n${customer_address}`
-                                    ], rowSpan: isValid(item?.dispatch_dc) ? 3 : 3, colSpan: 2, lineHeight: 1.5
+                                    ],
+                                    rowSpan: 3,
+                                    colSpan: 2,
+                                    lineHeight: 1
                                 },
                                 {},
                                 { text: "CAL.DATE:" },
                                 { text: cal_date || '-', alignment: 'center' }
                             ],
-                            [
-                                {},
-                                {},
-                                { text: "Due Date of Calibration:" },
-                                { text: due_date || '-', alignment: 'center' }
-                            ],
+                            // [
+                            //     {},
+                            //     {},
+                            //     { text: "Due Date of Calibration:" },
+                            //     { text: due_date || '-', alignment: 'center' }
+                            // ],
                             [
                                 {},
                                 {},
@@ -901,12 +1047,35 @@ const generate = async (req, res, next) => {
                                 { text: srf || '-', alignment: 'center' }
                             ],
                             [
+                                {},
+                                {},
+                                { text: `SANSERA LAB ID NO:` },
+                                { text: item?.inward_no || '-', alignment: 'center' }
+                            ],
+                            [
                                 { text: 'Customer Reference No:' },
-                                { text: isValid(item?.dispatch_dc) ? item?.dispatch_dc : 'N/A', alignment: 'center' },
+                                //{ text: isValid(item?.dispatch_dc) ? item?.dispatch_dc : 'N/A', alignment: 'center' },
+                                { text: Dc_Number, alignment: 'center' },
                                 { text: 'CALIBRATED AT:' },
                                 { text: calibrationAt, alignment: 'center' }
-                            ]
+                            ],
+                            [
+                                { text: "DISCIPLINE:", },
+                                { text: disciplineName, alignment: "center", lineHeight: 1 },
+                                { text: "GROUP:" },
+                                { text: groupName, alignment: "center", lineHeight: 1 }
+                            ],
                         ]
+                    },
+                    layout: {
+                        hLineWidth: function (i, node) {
+                            if (i === 0) return 0.1;
+                            if (i === node.table.body.length) return 0.9;
+                            return 0.9;
+                        },
+                        vLineWidth: function () { return 0.9; },
+                        hLineColor: function () { return 'black'; },
+                        vLineColor: function () { return 'black'; }
                     }
                 },
                 {
@@ -915,7 +1084,7 @@ const generate = async (req, res, next) => {
                         widths: ['*'],
                         body: [
                             [
-                                { text: 'DUC DETAILS', alignment: 'center', decoration: 'underline' },
+                                { text: 'DUC DETAILS', alignment: 'center', bold: true },
                             ]
                         ]
                     },
@@ -938,30 +1107,25 @@ const generate = async (req, res, next) => {
                     }
 
                 },
-                {
-                    style: "thirdTable",
-                    table: {
-                        widths: environmentalwidths,
-                        layout: "noBorders",
-                        body: environmentalbody
-                    }
-                },
+
                 {
                     style: 'fivthTable',
                     table: {
                         widths: ['*'],
                         body: [
                             [
-                                { text: 'STANDARD DETAILS', alignment: 'center', decoration: 'underline' }
+                                { text: 'STANDARD DETAILS', alignment: 'center', bold: true }
                             ]
-                        ]
+                        ],
+
                     },
                     layout: {
                         hLineColor: function (i, node) {
-                            return (i === 0 || i === node.table.body.length) ? 'white' : 'black';
+                            return (i === node.table.body.length) ? 'white' : 'black';
                         },
                     }
                 },
+
                 {
                     style: 'sixthTable',
                     table: {
@@ -969,8 +1133,8 @@ const generate = async (req, res, next) => {
                         body: [
                             [
                                 { text: 'DESCRIPTION', alignment: 'center', bold: true },
-                                { text: 'MAKE', alignment: 'center', bold: true },
-                                { text: 'MODEL', alignment: 'center', bold: true },
+                                { text: 'MAKE / MODEL', alignment: 'center', bold: true },
+                                { text: 'Calibration Agency', alignment: 'center', bold: true },
                                 { text: 'SL.NO / ID.NO', alignment: 'center', bold: true },
                                 { text: 'VALIDITY', alignment: 'center', bold: true },
                                 { text: 'CERTIFICATE.NO', alignment: 'center', bold: true },
@@ -981,10 +1145,11 @@ const generate = async (req, res, next) => {
                             ],
                             ...standard_details_Table.map(item => {
                                 const row = [
-                                    { text: item.m_description || '-', alignment: 'center' },
-                                    { text: item.m_make || '-', alignment: 'center' },
-                                    { text: item.m_model || '-', alignment: 'center' },
-                                    { text: item.m_identification_details ? `${item.m_serial_no} / ${item.m_identification_details}` : item.m_serial_no, alignment: 'center' },
+                                    //{ text: item.m_description || '-', alignment: 'center' },
+                                    { text: `${item.m_description || '-'} - ${item.m_identification_details || '-'}`, alignment: 'center' },
+                                    { text: `${item.m_make || '-'} / ${item.m_model || '-'}`, alignment: 'center' },
+                                    { text: item.m_calibration_agency || '-', alignment: 'center' },
+                                    { text: `${item.m_serial_no || "-"} / ${item.m_identification_details || "-"}`, alignment: 'center' },
                                     { text: item.m_validity || '-', alignment: 'center' },
                                     { text: item.m_certificate_no || '-', alignment: 'center' },
                                     { text: item.m_traceability || '-', alignment: 'center' },
@@ -1002,44 +1167,41 @@ const generate = async (req, res, next) => {
                                 return row;
                             })
                         ]
+                    },
+                    layout: {
+                        hLineColor: function (i, node) {
+                            return (i === node.table.body.length) ? 'white' : 'black';
+                        },
                     }
                 },
-
                 {
-                    ...(notes?.length > 0 && {
-                        id: 'notes',
-                        stack: [
-                            {
-                                text: 'NOTES:',
-                                decoration: 'underline',
-                                margin: [0, 5, 0, 5]
-                            },
-                            {
-                                style: 'remarksList',
-                                ol: notes,
-                                lineHeight: 1.5
-                            }
-                        ]
-                    })
-                },
-                {
-                    style: 'eightthTable',
-                    margin: [0, 5, 0, 0],
+                    style: "thirdTable",
                     table: {
-                        widths: ['auto', '*'],
-                        body: [
-                            [
-                                {
-                                    text: 'CALIBRATION RESULT', decoration: 'underline',
-                                    fontSize: 8, alignment: 'center',
-                                    bold: true
-                                },
-                                { text: `${disciplineName} - ${groupName}`, fontSize: 7, alignment: 'center', bold: true }
-                            ]
-                        ]
+                        widths: environmentalwidths,
+                        layout: "noBorders",
+                        body: environmentalbody
                     },
-                    layout: 'noBorders'
+                    margin: [0, 0, 0, 10]
                 },
+                // {
+                //     style: 'eightthTable',
+                //     margin: [3, 5, 0, 0],
+                //     table: {
+                //         widths: ['auto', '*'],
+                //         body: [
+                //             [
+                //                 {
+                //                     text: 'CALIBRATION RESULT',
+                //                     fontSize: 8, alignment: 'center',
+                //                     bold: true
+                //                 },
+                //                 { text: ``, fontSize: 7, alignment: 'center', bold: true }
+                //                 //{ text: `${disciplineName} - ${groupName}`, fontSize: 7, alignment: 'center', bold: true }
+                //             ]
+                //         ]
+                //     },
+                //     layout: 'noBorders'
+                // },
                 ...imageContent,
                 ...(Array.isArray(ExcelProcedureTable) ? ExcelProcedureTable : []),
                 {
@@ -1049,12 +1211,13 @@ const generate = async (req, res, next) => {
                             {
                                 text: 'REMARKS:',
                                 decoration: 'underline',
-                                margin: [0, 5, 0, 5]
+                                margin: [3, 3, 0, 3]
                             },
                             {
                                 style: 'remarksList',
                                 ol: remarks,
-                                lineHeight: 1.5
+                                lineHeight: 1.5,
+                                margin: [3, 0, 0, 0]
                             }
                         ]
                     })
@@ -1084,35 +1247,35 @@ const generate = async (req, res, next) => {
 
             styles: {
                 firstTable: {
-                    fontSize: 7
+                    fontSize: 8
                 },
                 secondTable: {
-                    fontSize: 7
+                    fontSize: 8
                 },
                 thirdTable: {
-                    fontSize: 7
+                    fontSize: 8
                 },
                 fivthTable: {
-                    fontSize: 7
+                    fontSize: 8
                 },
                 fourthTable: {
-                    fontSize: 7
+                    fontSize: 8
                 },
                 sixthTable: {
-                    fontSize: 7
+                    fontSize: 8
                 },
                 seventhTable: {
-                    fontSize: 7
+                    fontSize: 8
                 },
                 ninethTable: {
-                    fontSize: 6,
+                    fontSize: 7,
                     font: 'DejaVu',
                 },
                 remarks_style: {
-                    fontSize: 7
+                    fontSize: 8
                 },
                 remarksList: {
-                    fontSize: 7
+                    fontSize: 8
                 },
                 mainTable: {
                     alignment: 'center'
@@ -1147,7 +1310,9 @@ const generate = async (req, res, next) => {
             approved_employee_name,
             instrumentDynamicRows,
             standard_details_Table,
-            EParameterData?.dataValues
+            EParameterData?.dataValues,
+            format_no_obser,
+            imageToBuffer
         ) : null
 
 
@@ -1227,7 +1392,6 @@ const generate = async (req, res, next) => {
 
                     // Send draft mail
                     const { msg } = await sendMail(srfItemsQuery, draftPDFPath);
-                    console.log("Draft certificate emailed:", msg);
                 });
 
                 draftPdf.end();
@@ -1276,27 +1440,7 @@ const generate = async (req, res, next) => {
 }
 
 
-// const download = async (req, res, next) => {
 
-//     try {
-//         const { srf_item_id, type } = req.body;
-//         // ***  Query Certificate by srf_item_id ***
-//         let certificate = await Certificate.findOne({
-//             where: { srfitemId: srf_item_id },
-//             order: [['createdAt', 'DESC']]
-//         });
-//         const fileName = type === 'calibration' ? certificate?.fileName : certificate?.observationFileName;
-//         const docPath = type === 'calibration' ? path.join(__dirname, "..", "certificates", fileName) : path.join(__dirname, "..", "certificates/Observation", fileName);
-//         return res.sendFile(docPath);
-//     } catch (err) {
-//         console.log(err);
-//         let action = "Failed to download certificate";
-//         const error = new Error(action);
-//         error.code = 500;
-//         error.path = "Download Certificate";
-//         return errorHandler(error, req, res, next);
-//     }
-// }
 
 const download = async (req, res, next) => {
     try {
@@ -1420,6 +1564,12 @@ const verify_certificate = async (req, res, next) => {
             where: { srf_item_id }
         });
 
+        let calibration_done = await Item.findOne({
+            where: { srf_item_id },
+            attributes: ["calibration_done_date"],
+        });
+
+
         // Returns true if a record exists, false otherwise
         const isGenerated = !!isGenerateCertificate;
 
@@ -1435,8 +1585,9 @@ const verify_certificate = async (req, res, next) => {
         const check_uncertainty = certificate?.fileName ? true : false;
         const check_observation = certificate?.observationFileName ? true : false
         const check_draft = certificate?.draftFileName ? true : false
+        const iscalibration_done = calibration_done?.calibration_done_date ? true : false
 
-        return res.json({ isGenerateCertificate: isGenerated, check, check_uncertainty, check_observation, check_draft });
+        return res.json({ isGenerateCertificate: isGenerated, check, check_uncertainty, check_observation, check_draft, iscalibration_done });
     } catch (err) {
         console.log(err);
         let action = "Failed to verify certificate";
@@ -1507,9 +1658,11 @@ const standard_details_tableData = async (master_list_equipments) => {
             m_certificate_no: eachItem.calibration_certificate_no || '-',
             m_validity: vDate || '-',
             m_traceability: eachItem.traceability || '-',
-            m_identification_details: eachItem.asset_number,
+            //m_identification_details: eachItem.asset_number,
+            m_identification_details: eachItem.uid,
             m_certificate_filename: eachItem.mastercertificate_filename || '-',
-            m_electro_parameter: eachItem.electro_parameter || '-'
+            m_electro_parameter: eachItem.electro_parameter || '-',
+            m_calibration_agency: eachItem.calibration_agency || '-'
         });
     });
 

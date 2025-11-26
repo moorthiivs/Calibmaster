@@ -62,7 +62,7 @@ module.exports = {
         allowNull: false,
       },
       year_Of_make: {
-        type: Sequelize.STRING(10),
+        type: Sequelize.STRING(200),
         allowNull: false,
       },
       serial_no: {

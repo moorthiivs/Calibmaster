@@ -8,6 +8,7 @@ const routers = require('./routes/');
 const srfItemsCronservices = require('./cron-service/srf-items-cron');
 const masterEquipmentsCronservices = require('./cron-service/master-equipments-cron');
 const cron = require('node-cron');
+const { generateSrfNumber } = require("./utils/srfService");
 
 const app = express();
 
@@ -85,6 +86,6 @@ app.use((error, req, res, next) => {
 //Port on which the server will be exposed
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   logger.info(`App is running on port ${PORT}`);
 });

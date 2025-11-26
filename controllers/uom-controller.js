@@ -29,7 +29,6 @@ const createUom = async (req, res, next) => {
             },
         });
 
-        console.log(duplicateUom);
         
 
         if (duplicateUom.length) {

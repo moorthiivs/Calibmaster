@@ -3,7 +3,7 @@ const SRF = require("../models").srf_list;
 const Item = require("../models").srfitem;
 const instrumentTypeModel = require("../models").instrument_type;
 const instrument = require("../models").instrument;
-const { format, parseISO, addDays, differenceInDays } = require('date-fns');
+const { format, parseISO, addDays, differenceInDays, parse, isValid } = require('date-fns');
 
 
 exports.getInwardReport = async (req, res) => {
@@ -33,6 +33,9 @@ exports.getInwardReport = async (req, res) => {
         }
 
         const items = await Item.findAll({
+            where: {
+                rstatus: 1,
+            },
             include: [
                 {
                     model: instrumentTypeModel,
@@ -57,36 +60,27 @@ exports.getInwardReport = async (req, res) => {
             order: [["srf_item_id", "ASC"]]
         });
 
-
-        items.forEach((item, index) => {
-            console.log(`Item #${index + 1}:`);
-            // console.log(item.intrument_type.instrument, "item.intrument_type");
-            // console.log(item.srf.customer, "item.srf.customer");
-            // console.log(item.intrument_type?.instrument?.instrument_name, "item?.instrument_type?.instrument?.instrument_name");
-
-            // console.log(item.url_number, "item.url_number");
-
-
-        });
         const result = [];
 
         items.forEach((item) => {
             const srf = item.srf;
 
+            //const dispatchDate = item.dispatch_date || null;
+            //const agreedDate = srf.agreed_completion_date || null;
 
-            //const dispatchDate = item.dispatch_date ? parseISO(item.dispatch_date) : null;
-            //const agreedDate = item.agreed_completion_date ? parseISO(item.agreed_completion_date) : null;
 
-            const dispatchDate = item.dispatch_date || null;
-            const agreedDate = item.agreed_completion_date || null;
+            const dispatchDateRaw = item.dispatch_date;
+            const agreedDateRaw = srf.agreed_completion_date;
 
+            const dispatchDate = dispatchDateRaw ? new Date(dispatchDateRaw) : null;
+            const agreedDate = agreedDateRaw ? parse(agreedDateRaw, "yyyy-MM-dd", new Date()) : null;
 
             let delayedDays = 0;
-            if (dispatchDate && agreedDate && dispatchDate.toDateString() !== agreedDate.toDateString()) {
+
+            // ✅ Only calculate if both dates are valid
+            if (isValid(dispatchDate) && isValid(agreedDate)) {
                 delayedDays = differenceInDays(dispatchDate, agreedDate);
             }
-
-
             const formatSizeRange = (ranges) => {
                 if (!Array.isArray(ranges)) return "";
 
@@ -101,14 +95,14 @@ exports.getInwardReport = async (req, res) => {
                     .join(", ");
             };
 
-            console.log(item.url_number, "item.url_number");
 
             result.push({
                 inwardNo: item.inward_no,
                 date: srf.srf_date ? format(new Date(srf.srf_date), 'dd-MM-yyyy') : '-',
                 time: srf.srf_date ? format(new Date(srf.srf_date), 'hh:mm a') : "-",
                 customer: srf.customer.customer_name,
-                contractAgreement: srf.contract_agreement,
+                //contractAgreement: srf.contract_agreement || srf.customer_code,
+                contractAgreement: srf.customer.customer_code || "-",
                 descriptionOfItem: item?.intrument_type?.instrument?.instrument_name,
                 assignTo: item.calibration_done_by_empname || "-",
                 expectedDeliveryDate: format(new Date(srf.agreed_completion_date), 'dd-MM-yyyy'),

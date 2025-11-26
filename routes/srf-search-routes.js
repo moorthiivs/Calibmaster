@@ -12,4 +12,6 @@ router.post("/identification-details", srfSearchController.searchByIdentificatio
 
 router.post("/srf-items", srfSearchController.SearchBySRFItems);
 
+router.post("/inward-number", srfSearchController.searchByInwardNo);
+
 module.exports = router;

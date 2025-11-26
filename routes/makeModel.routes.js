@@ -11,7 +11,7 @@ router.delete('/makes/:id', controller.deleteMake);
 // Model routes
 router.post('/model', controller.createModel);
 router.get('/model', controller.getAllModels);
-router.put('/model/:id', controller.updateModel);
-router.delete('/model/:id', controller.deleteModel);
+router.put('/models/:id', controller.updateModel);
+router.delete('/models/:id', controller.deleteModel);
 
 module.exports = router;

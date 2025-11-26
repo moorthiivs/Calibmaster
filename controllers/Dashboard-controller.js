@@ -35,6 +35,49 @@ exports.getDashboardData = async (req, res) => {
       whereCustomer.customer_id = customerId;
     }
 
+
+
+    let cardCounts = await Customer.findAll({
+      where: { lab_id: labId, ...whereCustomer },
+      attributes: [
+        [Sequelize.fn("COUNT", Sequelize.literal(`CASE WHEN "srf_lists->srfitems"."rstatus" = 1 THEN 1 END`)), "totalCalibrations"],
+        [Sequelize.fn("COUNT", Sequelize.literal(`CASE WHEN "srf_lists->srfitems"."status" = 'Not Calibrated' THEN 1 END`)), "pendingCalibrations"],
+        [Sequelize.fn("COUNT", Sequelize.literal(`CASE WHEN "srf_lists->srfitems"."status" = 'Report Generated' AND calibration_done_date IS NOT NULL THEN 1 END`)), "certificatesGenerated"],
+        [Sequelize.fn("COUNT", Sequelize.literal(`CASE WHEN "srf_lists->srfitems"."calibration_due_date"::date BETWEEN '${from.toISOString().split('T')[0]}' AND '${to.toISOString().split('T')[0]}' THEN 1 END`)), "upcomingDue"],
+      ],
+      include: [
+        {
+          model: SRF,
+          as: "srf_lists",
+          attributes: [],
+          include: [
+            {
+              model: Item,
+              as: "srfitems",
+              attributes: [],
+              where: {
+                rstatus: 1,
+              }
+            },
+          ],
+        },
+      ],
+      raw: true,
+    });
+
+
+    let cardsData;
+    if (Array.isArray(cardCounts) && cardCounts.length > 0) {
+      cardsData = cardCounts[0];
+    } else {
+      cardsData = {
+        totalCalibrations: 0,
+        pendingCalibrations: 0,
+        certificatesGenerated: 0,
+        upcomingDue: 0,
+      };
+    }
+
     // Get SRF count per customer
     const srfCounts = await SRF.findAll({
       where: {
@@ -79,8 +122,10 @@ exports.getDashboardData = async (req, res) => {
           as: 'srfitems',
           attributes: [],
           where: {
+            rstatus: 1,
+            status: "Report Generated",
             calibration_done_date: {
-              [Op.ne]: null
+              [Op.ne]: null,
             }
           },
         }]
@@ -111,6 +156,7 @@ exports.getDashboardData = async (req, res) => {
           as: 'srfitems',
           attributes: [],
           where: {
+            rstatus: 1,
             status: "Not Calibrated"
           },
         }]
@@ -119,7 +165,7 @@ exports.getDashboardData = async (req, res) => {
       raw: true
     });
 
-  
+
     const notcalibratedTotal = notcalibratedCounts.reduce((acc, curr) => acc + Number(curr.value), 0);
     const notcalibratedTotalData = [...notcalibratedCounts, { customerName: 'Total', value: notcalibratedTotal }];
 
@@ -127,7 +173,8 @@ exports.getDashboardData = async (req, res) => {
     res.json({
       calibrated: itemDataWithTotal,
       srfCountByCustomer: srfDataWithTotal,
-      notcalibrated: notcalibratedTotalData
+      notcalibrated: notcalibratedTotalData,
+      cards: cardsData,
     });
 
   } catch (err) {

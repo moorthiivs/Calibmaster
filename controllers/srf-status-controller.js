@@ -56,7 +56,6 @@ const updateDispatchDetails = async (req, res, next) => {
     const { dispatchInfo, items: itemsToProcess, srfId, report_done_by_empname, report_done_date } = req.body;
     const { dispatch_dc, dispatch_date, dispatch_mode, status, labId } = dispatchInfo;
 
-    console.log(dispatch_date, "dispatch_date");
 
     // Create an array of item IDs for the bulk update
     const ids = itemsToProcess.map(v => v.srf_item_id);
@@ -65,7 +64,7 @@ const updateDispatchDetails = async (req, res, next) => {
         // 2. Perform the bulk database update first.
         await Item.update(
             {
-                dispatch_dc, dispatch_date, dispatch_mode, status, report_done_date, report_done_by_empname
+                dispatch_dc, dispatch_date, dispatch_mode, status, report_done_date, report_done_by_empname, updated_timestamp: new Date(),
             },
             { where: { srf_item_id: ids, rstatus: 1 } }
         );
@@ -91,7 +90,7 @@ const updateDispatchDetails = async (req, res, next) => {
                         "companyId": item?.srf?.customer_id
                     },
                     reportGenerateDate: report_done_date,
-                    skip_response: true // This flag is crucial
+                    skip_response: true, // This flag is crucial
                 }
             };
             // Call generate for each item. Assumes 'generate' handles 'skip_response'.
@@ -142,7 +141,7 @@ const updateReportDispatchDetails = async (req, res, next) => {
     try {
         await Item.update(
             {
-                report_dispatch_date, report_dispatch_mode, status,
+                report_dispatch_date, report_dispatch_mode, status, updated_timestamp: new Date(),
             },
             { where: { srf_item_id: ids, rstatus: 1 } }
         );
@@ -186,7 +185,7 @@ const updatePaymentDetails = async (req, res, next) => {
     try {
         await Item.update(
             {
-                status,
+                status, updated_timestamp: new Date(),
             },
             { where: { srf_item_id: ids, rstatus: 1 } }
         );

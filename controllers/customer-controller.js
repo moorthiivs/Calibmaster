@@ -18,7 +18,6 @@ const createCustomer = async (req, res, next) => {
         return errorHandler(error, req, res, next);
     }
 
-    console.log(req.body, "req.body.contract_days");
 
 
     var calibmaster_customer_id = new Date().getTime();

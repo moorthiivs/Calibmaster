@@ -13,14 +13,58 @@ const instrument = require("../models").instrument;
 
 const instrumentTypeModel = require("../models").instrument_type;
 
+// function getFolderSize(folderPath) {
+//     try {
+//         let totalSize = 0;
+//         function calculateSize(dir) {
+//             const files = fs.readdirSync(dir);
+//             files.forEach((file) => {
+//                 const filePath = nodePath.join(dir, file);
+//                 const stats = fs.statSync(filePath);
+//                 if (stats.isFile()) {
+//                     totalSize += stats.size;
+//                 } else if (stats.isDirectory()) {
+//                     calculateSize(filePath);
+//                 }
+//             });
+//         }
+
+//         calculateSize(folderPath);
+//         return totalSize;
+//     } catch (error) {
+
+//         console.log(error);
+
+//     }
+
+// }
+
+
 function getFolderSize(folderPath) {
     let totalSize = 0;
 
     function calculateSize(dir) {
-        const files = fs.readdirSync(dir);
+        let files;
+        try {
+            files = fs.readdirSync(dir);
+        } catch {
+            return; // inaccessible folder
+        }
+
         files.forEach((file) => {
+            if (file === "node_modules") return; // skip heavy symlinked folders
+
             const filePath = nodePath.join(dir, file);
-            const stats = fs.statSync(filePath);
+            let stats;
+
+            try {
+                stats = fs.lstatSync(filePath);
+            } catch {
+                return;
+            }
+
+            if (stats.isSymbolicLink()) return; // avoid infinite loops
+
             if (stats.isFile()) {
                 totalSize += stats.size;
             } else if (stats.isDirectory()) {
@@ -32,6 +76,7 @@ function getFolderSize(folderPath) {
     calculateSize(folderPath);
     return totalSize;
 }
+
 
 function formatSize(bytes) {
     if (bytes >= 1024 ** 3) return (bytes / (1024 ** 3)).toFixed(2) + " GB";

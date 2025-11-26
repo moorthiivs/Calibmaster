@@ -7,7 +7,7 @@
 
 // const router = express.Router();
 
-  
+
 // const storage = multer.diskStorage({
 //     destination: function (req, file, cb) {
 //         cb(null, path.join(__dirname, '..excel-procedure'));
@@ -79,6 +79,10 @@ router.post("/fetchOne-calibmaster-excel", controller.FetchOneCalibmasterExcel);
 router.put("/update-calibmaster-excel", controller.updateCalibmasterExcel);
 
 router.delete("/delete-calibmaster-excel", controller.DeleteCalibmasterExcel);
+
+router.put("/update-Procedure-Image", controller.updateProcedureImage);
+
+router.delete("/delete-Procedure-Image", controller.deleteProcedureImage);
 
 
 module.exports = router;

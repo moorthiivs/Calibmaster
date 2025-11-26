@@ -19,10 +19,11 @@ const ejs = require('ejs');
 
 const { sendMailHandler } = require("../helpers/mailSend");
 const { errorHandler } = require("../helpers/error-handler");
-const generateInwardNumber = require("../utils/generateInwardNumber");
+const { generateInwardNumber, generateSingleInwardNumber } = require("../utils/generateInwardNumber");
 
 const { format } = require('date-fns');
-
+const { Op } = require("sequelize");
+const generateAndAssignCertificateNo = require("../utils/generateAndAssignCertificateNo");
 let err;
 
 const addSRFHandler = async (req, res, next) => {
@@ -74,7 +75,8 @@ const addSRFHandler = async (req, res, next) => {
   currentSRF.amend_no = req.body.srf.amend_no;
   currentSRF.amend_date = (req.body.srf.amend_date) ? req.body.srf.amend_date : null;
   // currentSRF.calibrationAt = req.body.srf.Calibrationat
-  //currentSRF.customer_code = req.body.srf.customer_code
+  currentSRF.customer_code = req.body.srf.customer_code
+  currentSRF.contract_agreement = req.body.srf.customer_code
 
   let sendsrf = req.body.srf.sendsrf;
   let srfDate = req.body.srf.date || new Date()
@@ -125,13 +127,35 @@ const addSRFHandler = async (req, res, next) => {
       }
     });
 
-    if (srfno) {
-      isError = true;
-      code = 500;
-      action = "SRF Number Already Exists!!";
-      const error = new Error(action);
-      error.code = code;
-      error.path = path;
+    // if (srfno) {
+    //   isError = true;
+    //   code = 500;
+    //   action = "SRF Number Already Exists!!";
+    //   const error = new Error(action);
+    //   error.code = code;
+    //   error.path = path;
+    //   return errorHandler(error, req, res, next);
+    // }
+
+
+    const duplicate = await SRF.findOne({
+      where: {
+        lab_id: req.body.labId,
+        [Op.or]: [
+          { srf_number: currentSRF.srf_number },
+          { customer_dc: currentSRF.customer_dc },
+        ],
+      },
+    });
+
+    if (duplicate) {
+      const errorMessage =
+        duplicate.srf_number === currentSRF.srf_number
+          ? "SRF Number Already Exists!!"
+          : "Customer DC Number Already Exists!!";
+
+      const error = new Error(errorMessage);
+      error.code = 400;
       return errorHandler(error, req, res, next);
     }
 
@@ -198,15 +222,60 @@ const addSRFHandler = async (req, res, next) => {
     //insertedItems = await Item.bulkCreate(items, { returning: true });
     // return res.json({ insertedItems });
     isError = false;
-    const items = await Promise.all(req.body.items.map(async (v, i) => {
-      const inwardNumber = await generateInwardNumber(
-        srfDate,
-        v.name,
-        Item,
-        req.body.labId
-      );
+    // const items = await Promise.all(req.body.items.map(async (v, i) => {
+    //   const inwardNumber = await generateInwardNumber(
+    //     srfDate,
+    //     v.name,
+    //     Item,
+    //     req.body.labId
+    //   );
 
-      return {
+    //   return {
+    //     srf_id: newSRF.srf_id,
+    //     srf_item_no: i + 1,
+    //     inward_no: inwardNumber,
+    //     make: v.make,
+    //     model: v.model,
+    //     serial_no: v.serialno,
+    //     identification_details: v.idno,
+
+    //     remarks: v.remarks,
+    //     reminder_frequency: v.reminder_frequency || 0,
+    //     frequency_days: v.frequency_days || null,
+    //     status: "Not Calibrated",
+
+    //     rstatus: 1,
+    //     lab_id: req.body.labId,
+    //     intrument_type_id: v.masterlistId,
+
+    //     created_timestamp: Date.now(),
+    //     created_by_login_name: fetchCreater.name,
+    //     created_by_user_id: req.userId,
+
+    //     updated_timestamp: Date.now(),
+    //     updated_by_login_name: fetchCreater.name,
+    //     updated_by_user_id: req.userId,
+    //     calibrationAt: v.calibrationAt,
+    //     labtype: v.labtype,
+    //     ranges: v.ranges,
+    //     instrument_type_at_calibration: v.instrument_type_at_calibration
+    //   };
+    // }));
+    const items = [];
+    const itemsData = req.body.items;
+    const inwardNumbers = await generateInwardNumber({
+      inwardDate: srfDate,
+      items: itemsData,
+      model: Item,
+      labId: req.body.labId,
+    });
+
+
+    for (let i = 0; i < itemsData.length; i++) {
+      const v = itemsData[i];
+      const inwardNumber = inwardNumbers[i];
+
+      items.push({
         srf_id: newSRF.srf_id,
         srf_item_no: i + 1,
         inward_no: inwardNumber,
@@ -214,31 +283,37 @@ const addSRFHandler = async (req, res, next) => {
         model: v.model,
         serial_no: v.serialno,
         identification_details: v.idno,
-
         remarks: v.remarks,
         reminder_frequency: v.reminder_frequency || 0,
         frequency_days: v.frequency_days || null,
         status: "Not Calibrated",
-
         rstatus: 1,
         lab_id: req.body.labId,
         intrument_type_id: v.masterlistId,
-
         created_timestamp: Date.now(),
         created_by_login_name: fetchCreater.name,
         created_by_user_id: req.userId,
-
         updated_timestamp: Date.now(),
         updated_by_login_name: fetchCreater.name,
         updated_by_user_id: req.userId,
         calibrationAt: v.calibrationAt,
         labtype: v.labtype,
-        ranges: v.ranges
-      };
-    }));
+        ranges: v.ranges,
+        instrument_type_at_calibration: v.instrument_type_at_calibration,
+      });
+    }
 
     insertedItems = await Item.bulkCreate(items, { returning: true });
 
+    for (const createdItem of insertedItems) {
+      await generateAndAssignCertificateNo({
+        item: createdItem,
+        srf: newSRF,
+        itemCount: null,
+        Item,
+        labId: req.body.labId
+      });
+    }
 
   } catch (err) {
     isError = true;
@@ -1357,6 +1432,7 @@ const addSRFHandler = async (req, res, next) => {
     return res.status(201).json({
       status: "SUCCESS",
       code: 201,
+      insertedItems,
       message: "SRF Added Successfully",
     });
   }
@@ -1425,7 +1501,8 @@ const getSRFs = async (req, res, next) => {
           as: "customer",
           attributes: ["customer_name"]
         }
-      ]
+      ],
+      order: [["srf_id", "DESC"]],
     });
   } catch (err) {
     console.log(err);
@@ -1555,9 +1632,20 @@ const getsrfbyId = async (req, res, next) => {
   try {
     items = await Item.findAll({
       where: { srf_id: req.body.srfId, rstatus: 1 },
-      include: ["intrument_type", "srf"],
+      // include: ["intrument_type", "srf"],
+      include: [
+        {
+          association: "intrument_type",
+          include: [
+            {
+              association: "instrument",
+            }
+          ]
+
+        }, "srf"
+      ],
       order: [
-        ['srf_item_id', 'ASC'],
+        ['srf_item_id', 'DESC'],
       ]
     });
 
@@ -1607,8 +1695,19 @@ const getSrfItems = async (req, res, next) => {
   try {
     let items = await Item.findAll({
       where: { lab_id: labId, rstatus: 1 },
+      // include: [
+      //   { model: instrument_type, as: "intrument_type" },
+      //   { model: SRF, as: "srf", include: "customer" }
+      // ],
       include: [
-        { model: instrument_type, as: "intrument_type" },
+        {
+          association: "intrument_type",
+          include: [
+            {
+              association: "instrument",
+            }
+          ]
+        },
         { model: SRF, as: "srf", include: "customer" }
       ],
       order: [["srf_item_id", "DESC"]]
@@ -1636,17 +1735,117 @@ const getSrfItems = async (req, res, next) => {
   }
 }
 
-const addItemtoSRF = async (req, res, next) => {
+// const addItemtoSRF = async (req, res, next) => {
 
+//   if (!req.body || !req.body.srfId || !req.body.item) {
+//     const error = new Error("Invalid Request Params!!");
+//     error.code = 400;
+//     return errorHandler(error, req, res, next);
+//   }
+
+//   let srf;
+//   const { labId, srfId } = req.body;
+
+//   try {
+//     srf = await SRF.findOne({
+//       where: { srf_id: srfId, rstatus: 1 }
+//     });
+//   } catch (err) {
+//     const error = new Error("Failed to fetch SRF");
+//     error.code = 500;
+//     return errorHandler(error, req, res, next);
+//   }
+
+//   if (!srf) {
+//     const error = new Error("SRF not Found!!!");
+//     error.code = 500;
+//     return errorHandler(error, req, res, next);
+//   }
+
+//   const inwardNumber = await generateInwardNumber(
+//     srf.srf_date,
+//     req.body.item.name,
+//     Item,
+//     req.body.labId
+//   );
+
+//   //SRF Items Validation
+//   // const validitem = itemSchema(req.body.item);
+//   // if (!validitem) {
+//   //   const error = new Error("Invalid SRF Item!!");
+//   //   error.code = 400;
+//   //   return errorHandler(error, req, res, next);
+//   // }
+
+//   // Fetch user on database
+//   const fetchCreater = await User.findOne({
+//     where: { id: req.userId }
+//   });
+
+//   try {
+//     const item = req.body.item;
+//     item.srf_id = srfId;
+//     item.status = "Not Calibrated";
+//     item.rstatus = 1;
+//     item.lab_id = labId;
+
+//     item.created_timestamp = Date.now();
+//     item.created_by_login_name = fetchCreater.name;
+//     item.created_by_user_id = req.userId;
+
+//     item.updated_timestamp = Date.now();
+//     item.updated_by_login_name = fetchCreater.name;
+//     item.updated_by_user_id = req.userId;
+
+//     item.inward_no = inwardNumber
+
+//     let newitem = new Item(item);
+//     await newitem.save();
+
+//   } catch (err) {
+//     console.log(err);
+//     const error = new Error("Failed to create srf-item");
+//     error.code = 500;
+//     return errorHandler(error, req, res, next);
+//   }
+
+//   //Getting SRF Items
+//   let items;
+//   try {
+//     items = await Item.findAll({
+//       where: { lab_id: labId, rstatus: 1 },
+//       include: ["intrument_type"],
+//       order: [["srf_item_id", "ASC"]]
+//     });
+//   } catch (err) {
+//     const error = new Error("Failed to find srf-items");
+//     error.code = 500;
+//     return errorHandler(error, req, res, next);
+//   }
+
+//   //Returning 200 Response
+//   return res.status(200).json({
+//     status: "SUCCESS",
+//     code: 200,
+//     message: "SRF Items Fetched Successfully",
+//     data: {
+//       items,
+//     },
+//   });
+// };
+
+
+const addItemtoSRF = async (req, res, next) => {
   if (!req.body || !req.body.srfId || !req.body.item) {
     const error = new Error("Invalid Request Params!!");
     error.code = 400;
     return errorHandler(error, req, res, next);
   }
 
-  let srf;
-  const { labId, srfId } = req.body;
+  const { labId, srfId, item } = req.body;
 
+  let srf;
+  let createdItem
   try {
     srf = await SRF.findOne({
       where: { srf_id: srfId, rstatus: 1 }
@@ -1663,32 +1862,46 @@ const addItemtoSRF = async (req, res, next) => {
     return errorHandler(error, req, res, next);
   }
 
-  const inwardNumber = await generateInwardNumber(
-    srf.srf_date,
-    req.body.item.name,
-    Item,
-    req.body.labId
-  );
+  const existingItem = await Item.findOne({
+    where: {
+      identification_details: item.identification_details,
+      rstatus: 1,
+    },
+    include: [{
+      model: SRF,
+      as: 'srf',
+      where: {
+        customer_dc: srf.customer_dc,
+        rstatus: 1
+      }
+    }]
+  });
 
-  //SRF Items Validation
-  // const validitem = itemSchema(req.body.item);
-  // if (!validitem) {
-  //   const error = new Error("Invalid SRF Item!!");
-  //   error.code = 400;
-  //   return errorHandler(error, req, res, next);
-  // }
+  if (existingItem) {
+    const error = new Error(
+      `ID Number '${item.identification_details}' is already registered for another instrument type.`
+    );
+    error.code = 409;
+    return errorHandler(error, req, res, next);
+  }
 
-  // Fetch user on database
+  const inwardNumber = await generateSingleInwardNumber({
+    inwardDate: srf.srf_date,
+    itemName: item.name,
+    model: Item,
+    labId: labId,
+  });
+
   const fetchCreater = await User.findOne({
     where: { id: req.userId }
   });
 
   try {
-    const item = req.body.item;
     item.srf_id = srfId;
     item.status = "Not Calibrated";
     item.rstatus = 1;
     item.lab_id = labId;
+    item.inward_no = inwardNumber;
 
     item.created_timestamp = Date.now();
     item.created_by_login_name = fetchCreater.name;
@@ -1698,10 +1911,16 @@ const addItemtoSRF = async (req, res, next) => {
     item.updated_by_login_name = fetchCreater.name;
     item.updated_by_user_id = req.userId;
 
-    item.inward_no = inwardNumber
-
-    let newitem = new Item(item);
-    await newitem.save();
+    //await Item.create(item);
+    createdItem = await Item.create(item);
+    // ✅ Generate certificate number
+    await generateAndAssignCertificateNo({
+      item: createdItem,
+      srf,
+      itemCount: null,
+      Item,
+      labId
+    });
 
   } catch (err) {
     console.log(err);
@@ -1710,7 +1929,7 @@ const addItemtoSRF = async (req, res, next) => {
     return errorHandler(error, req, res, next);
   }
 
-  //Getting SRF Items
+  // ✅ Get all items again
   let items;
   try {
     items = await Item.findAll({
@@ -1724,14 +1943,11 @@ const addItemtoSRF = async (req, res, next) => {
     return errorHandler(error, req, res, next);
   }
 
-  //Returning 200 Response
   return res.status(200).json({
     status: "SUCCESS",
     code: 200,
-    message: "SRF Items Fetched Successfully",
-    data: {
-      items,
-    },
+    message: "Item added and items fetched successfully",
+    data: { items, createdItem },
   });
 };
 
@@ -1757,9 +1973,10 @@ const addBulkItemtoSRF = async (req, res, next) => {
 
   const { labId, srf_id } = req.body;
 
+  let srf
   // Fetch SRF on database
   try {
-    const srf = await SRF.findOne({
+    srf = await SRF.findOne({
       where: { srf_id, rstatus: 1 }
     });
 
@@ -1783,21 +2000,63 @@ const addBulkItemtoSRF = async (req, res, next) => {
   });
 
   try {
-    const items = req.body.items;
-    for (let item of items) {
-      item.srf_id = srf_id;
-      item.status = "Not Calibrated";
-      item.rstatus = 1;
-      item.lab_id = labId;
+    const items = [];
+    const itemsData = req.body.items;
+    const inwardNumbers = await generateInwardNumber({
+      inwardDate: srf.srf_date,
+      items: itemsData,
+      model: Item,
+      labId: labId,
+    });
+    for (let i = 0; i < itemsData.length; i++) {
+      const v = itemsData[i];
+      const inwardNumber = inwardNumbers[i];
 
-      item.created_timestamp = Date.now();
-      item.created_by_login_name = fetchCreater.name;
-      item.created_by_user_id = req.userId;
+      items.push({
+        srf_item_no: v.srf_item_no,
+        srf_id: srf_id,
+        make: v.make,
+        model: v.model,
+        serial_no: v.serial_no,
+        identification_details: v.identification_details,
+        frequency_days: v.frequency_days,
+        reminder_frequency: v.reminder_frequency,
+        remarks: v.remarks,
+        url_number: v.url_number,
+        intrument_type_id: v.intrument_type_id,
+        status: "Not Calibrated",
+        rstatus: 1,
+        lab_id: labId,
 
-      item.updated_timestamp = Date.now();
-      item.updated_by_login_name = fetchCreater.name;
-      item.updated_by_user_id = req.userId;
+        created_timestamp: Date.now(),
+        created_by_login_name: fetchCreater.name,
+        created_by_user_id: req.userId,
+
+        updated_timestamp: Date.now(),
+        updated_by_login_name: fetchCreater.name,
+        updated_by_user_id: req.userId,
+
+        inward_no: inwardNumber,
+      });
     }
+    // const items = req.body.items;
+    // for (let item of items) {
+    //   item.srf_id = srf_id;
+    //   item.status = "Not Calibrated";
+    //   item.rstatus = 1;
+    //   item.lab_id = labId;
+
+    //   item.created_timestamp = Date.now();
+    //   item.created_by_login_name = fetchCreater.name;
+    //   item.created_by_user_id = req.userId;
+
+    //   item.updated_timestamp = Date.now();
+    //   item.updated_by_login_name = fetchCreater.name;
+    //   item.updated_by_user_id = req.userId;
+    // }
+
+    console.log(items, "items");
+
     await Item.bulkCreate(items);
 
   } catch (err) {
@@ -1841,73 +2100,166 @@ const addBulkItemtoSRF = async (req, res, next) => {
   });
 };
 
-const updateSRFItem = async (req, res, next) => {
+// const updateSRFItem = async (req, res, next) => {
 
-  if (!req.body || !req.body.srf_id || !req.body.srf_item_id || !req.body.item || !req.body.lab_id) {
+//   if (!req.body || !req.body.srf_id || !req.body.srf_item_id || !req.body.item || !req.body.lab_id) {
+//     const error = new Error("Invalid Request Params!!");
+//     error.code = 400;
+//     return errorHandler(error, req, res, next);
+//   }
+
+//   //SRF Items Validation
+//   // const validitem = itemSchema(req.body.item);
+//   // if (!validitem) {
+//   //   const error = new Error("Invalid SRF Item!!");
+//   //   error.code = 400;
+//   //   return errorHandler(error, req, res, next);
+//   // }
+
+//   const { srf_id, srf_item_id, lab_id, } = req.body;
+
+
+//   try {
+//     const item = await Item.findOne({
+//       where: {
+//         srf_item_id,
+//         srf_id,
+//         lab_id,
+//         // rstatus: 1,
+//       },
+//     });
+
+//     if (item) {
+//       await item.update(req.body.item);
+//     }
+//   } catch (err) {
+//     console.log(err);
+//     const error = new Error("Internal Server Error!!");
+//     error.code = 500;
+//     return errorHandler(error, req, res, next);
+//   }
+
+//   //Getting SRF Items
+//   let items;
+//   try {
+//     items = await Item.findAll({
+//       where: { lab_id, rstatus: 1 },
+//       include: ["intrument_type"],
+//       order: [["srf_item_id", "ASC"]]
+//     });
+//   } catch (err) {
+//     const error = new Error("Failed to find srf-items");
+//     error.code = 500;
+//     return errorHandler(error, req, res, next);
+//   }
+
+//   //Returning 200 Response
+//   return res.status(200).json({
+//     status: "SUCCESS",
+//     code: 200,
+//     message: "SRF Item Updated Successfully",
+//     data: {
+//       items,
+//     },
+//   });
+// };
+
+
+const updateSRFItem = async (req, res, next) => {
+  if (
+    !req.body ||
+    !req.body.srf_id ||
+    !req.body.srf_item_id ||
+    !req.body.item ||
+    !req.body.lab_id
+  ) {
     const error = new Error("Invalid Request Params!!");
     error.code = 400;
     return errorHandler(error, req, res, next);
   }
 
-  //SRF Items Validation
-  // const validitem = itemSchema(req.body.item);
-  // if (!validitem) {
-  //   const error = new Error("Invalid SRF Item!!");
-  //   error.code = 400;
-  //   return errorHandler(error, req, res, next);
-  // }
-
-  const { srf_id, srf_item_id, lab_id } = req.body;
+  const { srf_id, srf_item_id, lab_id, item: updatedItem } = req.body;
 
   try {
-
+    // 🔍 Find existing item
     const item = await Item.findOne({
-      where: {
-        srf_item_id,
-        srf_id,
-        lab_id,
-        // rstatus: 1,
-      },
+      where: { srf_item_id, srf_id, lab_id },
+      include: [
+        {
+          association: "intrument_type",
+          include: [{ association: "instrument" }],
+        },
+        "srf"
+      ],
     });
 
-
-    console.log(req.body.item, "req.body.item");
-
-
-    if (item) {
-      await item.update(req.body.item);
+    if (!item) {
+      const error = new Error("Item not found for update");
+      error.code = 404;
+      return errorHandler(error, req, res, next);
     }
+
+    let inwardNumber = item.inward_no;
+
+    // 🧠 Step 1: Check if instrument name changed
+    const currentInstrumentName = item.intrument_type?.instrument?.instrument_name;
+    const newInstrumentName = updatedItem.name;
+
+
+
+    if (
+      newInstrumentName &&
+      currentInstrumentName &&
+      newInstrumentName.trim().toLowerCase() !== currentInstrumentName.trim().toLowerCase()
+    ) {
+      // 🆕 Step 2: Regenerate new inward number
+      inwardNumber = await generateSingleInwardNumber({
+        inwardDate: item.srf.srf_date, // or from srf.srf_date if available
+        itemName: newInstrumentName,
+        model: Item,
+        labId: lab_id,
+      });
+
+      console.log("🔁 New inward number generated:", inwardNumber);
+    }
+
+    await item.update({
+      ...updatedItem,
+      inward_no: inwardNumber,
+    });
   } catch (err) {
-    console.log(err);
+    console.error(err);
     const error = new Error("Internal Server Error!!");
     error.code = 500;
     return errorHandler(error, req, res, next);
   }
 
-  //Getting SRF Items
-  let items;
   try {
-    items = await Item.findAll({
+    const items = await Item.findAll({
       where: { lab_id, rstatus: 1 },
-      include: ["intrument_type"],
-      order: [["srf_item_id", "ASC"]]
+      include: [
+        {
+          association: "intrument_type",
+          include: [{ association: "instrument" }],
+        },
+      ],
+      order: [["srf_item_id", "DESC"]],
+    });
+
+    return res.status(200).json({
+      status: "SUCCESS",
+      code: 200,
+      message: "SRF Item Updated Successfully",
+      data: { items },
     });
   } catch (err) {
+    console.error(err);
     const error = new Error("Failed to find srf-items");
     error.code = 500;
     return errorHandler(error, req, res, next);
   }
-
-  //Returning 200 Response
-  return res.status(200).json({
-    status: "SUCCESS",
-    code: 200,
-    message: "SRF Item Updated Successfully",
-    data: {
-      items,
-    },
-  });
 };
+
 
 const updateDCInfo = async (req, res, next) => {
   const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
@@ -2003,7 +2355,7 @@ const updateDCInfo = async (req, res, next) => {
       attributes: {
         exclude: ["createdAt", "updatedAt"],
       },
-      order: [["srf_item_id", "ASC"]],
+      order: [["srf_item_id", "DESC"]],
     });
   } catch (err) {
     isError = true;
@@ -2067,6 +2419,7 @@ const updateCalInfo = async (req, res, next) => {
           calibration_done_date: date,
           calibration_done_by_empname: userName,
           status: "Calibrated",
+          updated_timestamp: new Date(),
         });
       }
 
@@ -2094,6 +2447,7 @@ const updateCalInfo = async (req, res, next) => {
           report_done_date: reportGenerateDate,
           report_done_by_empname: userName,
           status: "Report Generated",
+          updated_timestamp: new Date(),
         });
       }
     } catch (err) {
@@ -2123,6 +2477,7 @@ const updateCalInfo = async (req, res, next) => {
           report_done_date: reportGenerateDate,
           report_done_by_empname: userName,
           status: "Report Generated",
+          updated_timestamp: new Date(),
         });
       }
     } catch (err) {
@@ -2152,13 +2507,13 @@ const updateCalInfo = async (req, res, next) => {
 
     let calibration_due_date;
 
-    if ((mode == 1 || mode == 3) && reminder_frequency != 0) {
+    if ((mode == 1 || mode == 3 || mode == 2) && reminder_frequency != 0) {
       const calibration_done_date = new Date(date)
       calibration_due_date = new Date(calibration_done_date.setMonth(calibration_done_date.getMonth() + parseInt(reminder_frequency)));
     }
 
     await Item.update(
-      { calibration_due_date },
+      { calibration_due_date, updated_timestamp: new Date(), },
       { where: { srf_item_id: id } }
     )
   } catch (err) {
@@ -2223,8 +2578,13 @@ const updateCalInfo = async (req, res, next) => {
     items = await Item.findAll({
       where: { srf_id: srfId, rstatus: 1 },
       include: ["intrument_type"],
-      order: [["srf_item_id", "ASC"]]
+      order: [["srf_item_id", "DESC"]]
     });
+
+    let counter = 1;
+    for (let i = 0; i < items.length; i++) {
+      items[i].dataValues.slNo = counter++;
+    }
   } catch (err) {
     isError = true;
     code = 500;
@@ -2418,7 +2778,7 @@ const updateInvoiceInfo = async (req, res, next) => {
     const updateQuery = await Item.update(
       {
         invoice_no, invoice_date, invoice_due_date, status,
-        invoice_file_name: mainLogoImgFileName
+        invoice_file_name: mainLogoImgFileName, updated_timestamp: new Date(),
       },
       { where: { srf_item_id: ids, rstatus: 1 } }
     );
@@ -2688,6 +3048,16 @@ const findbyAssestid = async (req, res, next) => {
       return errorHandler(error, req, res, next);
     }
 
+    // const item = await Item.findOne({
+    //   where: {
+    //     lab_id: lab_id,
+    //     labtype: labType,
+    //     identification_details: assetId,
+    //     rstatus: 1
+    //   },
+    //   include: ["intrument_type"]
+    // });
+
     const item = await Item.findOne({
       where: {
         lab_id: lab_id,
@@ -2695,7 +3065,16 @@ const findbyAssestid = async (req, res, next) => {
         identification_details: assetId,
         rstatus: 1
       },
-      include: ["intrument_type"]
+      include: [
+        {
+          association: "intrument_type",
+          include: [
+            {
+              association: "instrument",
+            }
+          ]
+        }
+      ]
     });
 
     if (!item) {

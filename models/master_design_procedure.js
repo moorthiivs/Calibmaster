@@ -35,7 +35,7 @@ module.exports = (sequelize, DataTypes) => {
       },
       ref_std: {
         type: DataTypes.STRING,
-        allowNull: false,
+        allowNull: true,
       },
 
       calibration: {
@@ -83,7 +83,11 @@ module.exports = (sequelize, DataTypes) => {
       remarks: {
         type: DataTypes.ARRAY(DataTypes.TEXT),
         allowNull: false
-      }
+      },
+      description: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
     },
     {
       sequelize,

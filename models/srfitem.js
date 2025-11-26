@@ -39,7 +39,7 @@ module.exports = (sequelize, DataTypes) => {
       },
       serial_no: {
         type: DataTypes.STRING(200),
-        allowNull: false,
+        allowNull: true,
       },
 
       identification_details: {

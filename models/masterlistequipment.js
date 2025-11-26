@@ -48,7 +48,7 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
       },
       year_Of_make: {
-        type: DataTypes.STRING(10),
+        type: DataTypes.STRING(200),
         allowNull: false,
       },
       serial_no: {

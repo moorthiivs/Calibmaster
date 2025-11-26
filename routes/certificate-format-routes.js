@@ -9,4 +9,8 @@ router.post("/create", certificateFormatcontroller.createFormat);
 // Get format by labId
 router.get("/:labId", certificateFormatcontroller.fetchoneFormat);
 
+
+router.post("/format-no-config", certificateFormatcontroller.formatNoConfig);
+
+
 module.exports = router;

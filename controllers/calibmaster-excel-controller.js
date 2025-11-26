@@ -51,8 +51,6 @@ const CreateCalibmasterExcel = async (req, res, next) => {
   try {
     const { userId, labId, master_design_procedure_id, diagram_image } = req.body;
 
-    console.log("Received diagram_image:", diagram_image);
-
     const file = req.file;
 
     if (!userId || !labId || !file) {
@@ -72,7 +70,6 @@ const CreateCalibmasterExcel = async (req, res, next) => {
     if (existingProcedureFile) {
       if (fs.existsSync(uploadPath)) {
         fs.unlinkSync(uploadPath);
-        console.log(`Successfully deleted existing file: ${uploadPath}`);
       } else {
         console.warn(`File not found at path: ${uploadPath} - nothing to delete`);
       }
@@ -211,11 +208,12 @@ const FetchCalibmasterExcel = async (req, res, next) => {
         {
           model: MasterTable,
           attributes: ['calibration_procedure'],
-          required: false // LEFT JOIN
+          required: false,
+          include: ["instrument_type"]
         }
       ]
     })
-
+    
     if (!result) {
       const error = new Error('Failed to fetched Calibmaster Excel Sheet')
       error.code = 500
@@ -275,8 +273,6 @@ const updateCalibmasterExcel = async (req, res, next) => {
         .json({ message: 'User ID, Lab ID, and Excel file are required.' })
     }
 
-    console.log(selectedHiddenSheets,"selectedHiddenSheets");
-    
 
     const masterTableUpdate = await calibmasterexcel.update(
       {
@@ -293,8 +289,7 @@ const updateCalibmasterExcel = async (req, res, next) => {
       }
     )
 
-    console.log(masterTableUpdate);
-    
+
     if (selectedHiddenSheets) {
       const existingRecord = await ProcedureResult.findOne({
         where: {
@@ -318,7 +313,6 @@ const updateCalibmasterExcel = async (req, res, next) => {
           }
         )
       }
-      console.log(existingRecord, "existingRecord");
 
     }
 
@@ -369,11 +363,6 @@ const DeleteCalibmasterExcel = async (req, res, next) => {
       const filePath = path.join(__dirname, '../excel_procedure', filename)
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath)
-        console.log(
-          `File ${filename} deleted successfully from excel_procedure folder.`
-        )
-      } else {
-        console.log(`File ${filename} not found in excel_procedure folder.`)
       }
       return res.status(200).json({
         msg: 'Your Excel File Deleted Successfully from Database and Folder'
@@ -392,10 +381,155 @@ const DeleteCalibmasterExcel = async (req, res, next) => {
   }
 }
 
+
+// const updateProcedureImage = async (req, res, next) => {
+
+//   try {
+//     const { images, procedureId, userId } = req.body;
+
+//     if (!images || !Array.isArray(images) || images.length === 0) {
+//       return res.status(400).json({ message: 'No images provided' });
+//     }
+
+//     if (!procedureId) {
+//       return res.status(400).json({ message: 'Procedure ID is required' });
+//     }
+
+//     if (!userId) {
+//       return res.status(400).json({ message: 'User ID is required' });
+//     }
+
+//     // Save images to disk and get filenames
+//     const savedImages = images.map(imageData => {
+//       const DecodeImg = decodeBase64Image(imageData);
+//       const imageBuffer = DecodeImg.data;
+//       const fileExtension = DecodeImg.type.split('/')[1];
+//       const imgFileName = `${Math.floor(Math.random() * 9999999)}-${procedureId}.${fileExtension}`;
+//       fs.writeFileSync(`public/procedure_images/${imgFileName}`, imageBuffer);
+//       return imgFileName;
+//     });
+
+//     // Update the DB record with new images
+//     const procedure = await calibmasterexcel.findByPk(procedureId);
+//     if (!procedure) {
+//       return res.status(404).json({ message: 'Procedure not found' });
+//     }
+
+//     const existingImages = procedure.diagram_image || [];
+//     const updatedImages = [...existingImages, ...savedImages];
+
+//     await procedure.update({ diagram_image: updatedImages });
+
+//     return res.status(200).json({ message: 'Images updated successfully', images: updatedImages });
+//   } catch (error) {
+//     console.error(error);
+//     return res.status(500).json({ message: 'Failed to update images', error: error.message });
+//   }
+// };
+
+
+
+const updateProcedureImage = async (req, res) => {
+  try {
+    const { images, procedureId, userId } = req.body;
+
+    if (!images || !Array.isArray(images) || images.length === 0) {
+      return res.status(400).json({ message: 'No images provided' });
+    }
+
+    // Load existing DB images
+    const procedure = await calibmasterexcel.findByPk(procedureId);
+    if (!procedure) {
+      return res.status(404).json({ message: 'Procedure not found' });
+    }
+    const existingImages = Array.isArray(procedure.diagram_image)
+      ? procedure.diagram_image
+      : [];
+
+    // ✅ Separate incoming images
+    const newImagesToSave = [];
+    const finalImages = [];
+
+    images.forEach((img) => {
+      if (img && typeof img === "string" && img.startsWith("data:")) {
+        newImagesToSave.push(img); // base64 → needs saving
+      } else if (img) {
+        finalImages.push(img); // already filename → keep
+      }
+    });
+
+    // ✅ Save only base64 images
+    const savedImages = newImagesToSave.map((imageData) => {
+      const decoded = decodeBase64Image(imageData);
+      if (!decoded) return null;
+      const fileExtension = decoded.type.split("/")[1];
+      const imgFileName = `${Math.floor(Math.random() * 9999999)}-${procedureId}.${fileExtension}`;
+      fs.writeFileSync(`public/procedure_images/${imgFileName}`, decoded.data);
+      return imgFileName;
+    }).filter(Boolean); // remove nulls
+
+    // ✅ Create final updated list
+    const updatedImages = [...finalImages, ...savedImages];
+
+    // ✅ Save to DB
+    await procedure.update({ diagram_image: updatedImages });
+
+    return res.status(200).json({
+      message: "Images updated successfully",
+      images: updatedImages,
+    });
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ message: "Failed to update images", error: error.message });
+  }
+};
+
+
+const deleteProcedureImage = async (req, res, next) => {
+  try {
+    const { imageId, procedureId } = req.query;
+
+    console.log(imageId, procedureId, "imageId, procedureId");
+
+    if (!procedureId) {
+      return res.status(400).json({ message: 'Procedure ID is required' });
+    }
+
+    const procedure = await calibmasterexcel.findByPk(procedureId);
+    if (!procedure) {
+      return res.status(404).json({ message: 'Procedure not found' });
+    }
+
+    const existingImages = procedure.diagram_image || [];
+    if (!existingImages.includes(imageId)) {
+      return res.status(404).json({ message: 'Image not found in procedure' });
+    }
+
+    const updatedImages = existingImages.filter(img => img !== imageId);
+
+    // Remove file from folder
+    const filePath = path.join(__dirname, '../public/procedure_images', imageId);
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+
+    await procedure.update({ diagram_image: updatedImages });
+
+    return res.status(200).json({ message: 'Image deleted successfully', images: updatedImages });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Failed to delete image', error: error.message });
+  }
+}
+
+
+
 module.exports = {
   CreateCalibmasterExcel,
   FetchCalibmasterExcel,
   FetchOneCalibmasterExcel,
   updateCalibmasterExcel,
-  DeleteCalibmasterExcel
+  DeleteCalibmasterExcel,
+  updateProcedureImage,
+  deleteProcedureImage
 }

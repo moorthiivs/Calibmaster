@@ -8,7 +8,7 @@ const nodePath = require('path');
 const nodemailer = require("nodemailer");
 const config = require("../utils/config");
 const { errorHandler } = require("../helpers/error-handler");
-
+const fsPromises = require("fs").promises;
 
 // *** Helper function ***
 const sendMail = async (srfItemsQuery, filePath) => {
@@ -44,8 +44,6 @@ const sendMail = async (srfItemsQuery, filePath) => {
         }
       ]
     });
-
-    console.log(info);
     return { msg: "Certificate Mail Send Successfully", status: true }
   } catch (error) {
     console.log(error);
@@ -53,7 +51,7 @@ const sendMail = async (srfItemsQuery, filePath) => {
   }
 }
 
-const certificateUploadHandler = async (req, res, next) => {
+const certificateUploadHandler_old = async (req, res, next) => {
   const path = "/api/certificate/upload";
   let action = "Upload Certificate";
   const file = req.file;
@@ -154,6 +152,89 @@ const certificateUploadHandler = async (req, res, next) => {
     error.code = 500;
     error.path = path;
     return errorHandler(error, req, res, next);
+  }
+};
+
+
+const certificateUploadHandler = async (req, res, next) => {
+  const path = "/api/certificate/upload";
+  const file = req.file;
+  const folderName = "./certificates";
+
+  if (!file) {
+    return next(new Error("No file uploaded"));
+  }
+
+  if (file.mimetype !== "application/pdf") {
+    return next(new Error("Please upload a PDF file"));
+  }
+
+  try {
+    // Ensure folder exists
+    if (!fs.existsSync(folderName)) {
+      fs.mkdirSync(folderName);
+    }
+
+    // Safe filename
+    const safeFilename = req.body.filename.replace(/[^a-zA-Z0-9_\-\.]/g, "_");
+    const oldPath = nodePath.join(folderName, file.originalname);
+    const newPath = nodePath.join(folderName, safeFilename);
+
+    // Move the file (await to ensure it completes)
+    await fsPromises.rename(oldPath, newPath);
+
+    // Save certificate record
+    const { srf_item_id } = req.body;
+    const newCertificate = new Certificate({
+      fileName: safeFilename,
+      rstatus: 1,
+      srfitemId: srf_item_id
+    });
+
+    const result = await newCertificate.save();
+
+
+
+    let srfItemsQuery = await srfItem.findOne({
+      where: { srf_item_id },
+      attributes: [
+        "serial_no", "identification_details", "calibration_done_date",
+        "url_number", "certificate_date",
+        "calibration_due_date", "calibration_remainder_date_1",
+      ],
+      include: [
+        {
+          model: Lab,
+          as: "lab",
+          attributes: [
+            "contact_email",
+            "email_smtp_server_host", "email_smtp_server_port", "sender_email", "sender_password"
+          ]
+        },
+        {
+          model: SRF,
+          as: "srf",
+          attributes: [
+            "srf_number", "contact_name", "contact_email"
+          ]
+        }
+      ]
+    });
+
+    // Send mail
+    const { msg } = await sendMail(srfItemsQuery, newPath);
+
+    res.status(200).json({
+      status: "SUCCESS",
+      message: `File Uploaded Successfully and ${msg}`,
+      result,
+      filePath: newPath
+    });
+
+  } catch (err) {
+    console.error(err);
+    // Just log and continue
+    next(new Error("Failed to upload certificate: " + err.message));
   }
 };
 

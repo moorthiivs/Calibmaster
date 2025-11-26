@@ -52,6 +52,8 @@ const GetDueDateCount = async (req, res, next) => {
 
 const CalibrationDuedateItems = async (req, res, next) => {
     const { labId, date } = req.body;
+
+    
     if (!labId || !date) {
         const error = new Error("lab Detail are required");
         error.code = 500;

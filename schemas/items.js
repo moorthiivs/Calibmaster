@@ -20,7 +20,7 @@ const innerschema = {
     },
   },
   required: [
-    "serialno",
+    //"serialno",
     "remarks",
   ],
   additionalProperties: true,

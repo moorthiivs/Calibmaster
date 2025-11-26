@@ -35,7 +35,7 @@ module.exports = (sequelize, DataTypes) => {
       },
       ref_std: {
         type: DataTypes.STRING,
-        allowNull: false,
+        allowNull: true,
       },
 
       calibration: {
@@ -93,7 +93,15 @@ module.exports = (sequelize, DataTypes) => {
       deletedby_id: {
         type: DataTypes.INTEGER,
         allowNull: true
-      }
+      },
+      description: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      authorizedby_employee_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true
+      },
     },
     {
       sequelize,
@@ -150,6 +158,13 @@ module.exports = (sequelize, DataTypes) => {
       constrains: true,
       onDelete: "CASCADE",
       foreignKey: "approved_employee_id",
+    });
+
+    master_result_table.belongsTo(models.employee_master, {
+      as: "authorizedby_employee_master",
+      constrains: true,
+      onDelete: "CASCADE",
+      foreignKey: "authorizedby_employee_id",
     });
 
   };

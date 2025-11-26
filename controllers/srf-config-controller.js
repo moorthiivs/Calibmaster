@@ -1,6 +1,7 @@
 const User = require("../models").User;
 const EParameter = require("../models").EParameter;
 const { errorHandler } = require("../helpers/error-handler");
+const { generateSrfNumber } = require("../utils/srfService");
 
 const createConfig = async (req, res, next) => {
 
@@ -76,6 +77,8 @@ const fetchConfig = async (req, res, next) => {
             where: { lab_id: `'${lab_id}'` }
         });
 
+        const srfNo = await generateSrfNumber('SANSERA');
+
         if (!result) {
             const error = new Error("Failed to fetched SRF Configuration");
             error.code = 500;
@@ -84,7 +87,8 @@ const fetchConfig = async (req, res, next) => {
             return res.status(200).json({
                 msg: true,
                 response: "SRF Configuration fetched successfully!!!",
-                result
+                result,
+                srfNo
             });
         }
     } catch (err) {

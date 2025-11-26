@@ -209,7 +209,44 @@ const SearchBySRFItems = async (req, res, next) => {
     });
 }
 
+const searchByInwardNo = async (req, res, next) => {
+
+    const { labId, inward_no } = req.body;
+
+    if (!labId) {
+        let action = "Lab Id Is Required";
+        const error = new Error(action);
+        error.code = 500;
+        return errorHandler(error, req, res, next);
+    }
+
+    try {
+        let items = await Item.findAll({
+            where: {
+                inward_no: {
+                    [Op.iLike]: `${inward_no}%`
+                },
+                lab_id: labId, rstatus: 1
+            },
+            include: ["intrument_type"],
+            order: [["srf_item_id", "ASC"]]
+        });
+
+        res.status(200).json({
+            status: "SUCCESS",
+            code: 200,
+            message: "SRF Items Fetched Successfully",
+            items
+        });
+    } catch (err) {
+        console.log(err);
+        const error = new Error("Something went wrong, please try again");
+        error.code = 500;
+        return errorHandler(error, req, res, next);
+    }
+}
 exports.searchBySerialNo = searchBySerialNo;
 exports.searchByDispatchNo = searchByDispatchNo;
 exports.searchByIdentificationDetails = searchByIdentificationDetails;
 exports.SearchBySRFItems = SearchBySRFItems;
+exports.searchByInwardNo = searchByInwardNo;

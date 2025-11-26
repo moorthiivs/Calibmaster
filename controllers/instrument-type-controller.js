@@ -376,8 +376,10 @@ const editInstrumentType = async (req, res, next) => {
 
                 size_spec: (size_spec) ? size_spec : null,
                 size_spec_uom_id: (size_spec_uom_id) ? size_spec_uom_id : null,
-                type,
+                //type,
 
+
+                type: (typeof type === "string" && type.trim() !== "") ? type : null,
                 ranges: rows,
                 labtype,
 
@@ -397,6 +399,8 @@ const editInstrumentType = async (req, res, next) => {
             msg: true, response: "Record updated successfully!!!"
         });
     } catch (err) {
+        console.log(err);
+
         let action = "Something went wrong, please try again";
         const error = new Error(action);
         error.code = 500;

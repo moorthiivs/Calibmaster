@@ -11,7 +11,7 @@ const schema = {
       type: "string",
     },
     srf_number: {
-      type: "number",
+      type: "string",
     },
 
     contact_name: {
@@ -91,7 +91,7 @@ const schema = {
 
     "customer_id",
   ],
-  additionalProperties: false,
+  additionalProperties: true,
 };
 
 module.exports = ajvInstance.compile(schema);
