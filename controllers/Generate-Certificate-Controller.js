@@ -227,7 +227,7 @@ const generate = async (req, res, next) => {
         };
 
         // Generate table content for both certificate and observation
-        const ExcelProcedureTable = await generatePdfFromSheet(excelData, mergedCells, Styles, selectedSheet_Cert, decimalPoint, ExcelProcedureTablelayout, fontSize = 7);
+        const ExcelProcedureTable = await generatePdfFromSheet(excelData, mergedCells, Styles, selectedSheet_Cert, decimalPoint, ExcelProcedureTablelayout, fontSize = 6.5);
         const observationTable = isValid(selectedSheet_Obs) ? await generatePdfFromSheet(excelData, mergedCells, Styles, selectedSheet_Obs, decimalPoint, observationTablelayout, fontSize = 7) : null
 
         // Validate generation
