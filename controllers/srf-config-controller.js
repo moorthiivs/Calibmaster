@@ -2,7 +2,7 @@ const User = require("../models").User;
 const EParameter = require("../models").EParameter;
 const { errorHandler } = require("../helpers/error-handler");
 const { generateSrfNumber } = require("../utils/srfService");
-
+const SRF = require("../models").srf_list;
 const createConfig = async (req, res, next) => {
 
     try {
@@ -77,6 +77,11 @@ const fetchConfig = async (req, res, next) => {
             where: { lab_id: `'${lab_id}'` }
         });
 
+        const srfDates = await SRF.findAll({
+            where: { lab_id },
+            attributes: ['srf_date'], // only fetch SRF dates
+        });
+        const existingSrfDates = srfDates.map(d => d.srf_date.toISOString().split('T')[0]);
         const srfNo = await generateSrfNumber('SANSERA');
 
         if (!result) {
@@ -88,7 +93,8 @@ const fetchConfig = async (req, res, next) => {
                 msg: true,
                 response: "SRF Configuration fetched successfully!!!",
                 result,
-                srfNo
+                srfNo,
+                existingSrfDates
             });
         }
     } catch (err) {

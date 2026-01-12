@@ -8,7 +8,7 @@ router.post("/create", Authorization, instrumentTypeController.createInstrumentT
 
 router.post("/list", Authorization, instrumentTypeController.listInstrumentTypes);
 
-router.get("/searchByName/:name", Authorization, instrumentTypeController.searchByName);
+router.get("/searchByName", Authorization, instrumentTypeController.searchByName);
 
 router.get("/fetch/:id", Authorization, instrumentTypeController.fetchById);
 
@@ -18,5 +18,6 @@ router.post("/filter", Authorization, instrumentTypeController.filterInstrumentT
 
 router.post("/listCategoryofInstruments", Authorization, instrumentTypeController.listCategoryofInstruments);
 
+router.delete("/delete", Authorization, instrumentTypeController.deleteinstrumentype);
 
 module.exports = router;

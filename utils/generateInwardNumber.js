@@ -76,7 +76,7 @@ const instrumentCodeMap = {
     "Concentricity Gauge": "CO",
     "Concentricity Gauge MM": "CO",
     "Concentricity Gauge Inch": "CO",
-    "Plain Mandrel": 'PP',
+    "Plain Mandrel": 'PM',
     "V' BLOCK NON MAGNETIC": "VB",
     "MAGNETIC 'V' BLOCK": "VB",
     "SPLAIN Plug Gauge": "SPP",
@@ -85,8 +85,6 @@ const instrumentCodeMap = {
     
 
 };
-
-
 
 
 function normalizeName(name) {
@@ -192,8 +190,6 @@ async function generateInwardNumber({ inwardDate, items, model, labId }) {
         return `${prefix}${code}${dd}${mm}${yy}${serialStr}`;
     });
 }
-
-
 
 module.exports = { generateInwardNumber, generateSingleInwardNumber };
 

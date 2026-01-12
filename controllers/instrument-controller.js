@@ -35,7 +35,8 @@ const createInstrument = async (req, res, next) => {
     instrument_discipline_id,
     instrument_group_id,
     lab_id,
-    ParametersData
+    ParametersData,
+    ranges
   } = req.body;
 
   if (
@@ -87,6 +88,7 @@ const createInstrument = async (req, res, next) => {
       updated_by_user_id: req.userId,
 
       lab_id,
+      ranges
     });
 
     const result = await newInstrument.save();
@@ -188,6 +190,7 @@ const editInstrument = async (req, res, next) => {
     instrument_uom_id,
     instrument_discipline_id,
     instrument_group_id,
+    ranges,
   } = req.body;
 
   if (
@@ -227,6 +230,7 @@ const editInstrument = async (req, res, next) => {
         instrument_uom_id,
         instrument_discipline_id,
         instrument_group_id,
+        ranges
       },
       {
         where: { instrument_id },
@@ -322,7 +326,7 @@ const instrumentParametersUpdate = async (req, res, next) => {
   try {
     const { parametersData, instrument_id, labid, userid } = req.body;
 
-      
+
     for (const param of parametersData) {
       if (param.id) {
         await InstrumentParameter.update(
@@ -360,6 +364,36 @@ const instrumentParametersUpdate = async (req, res, next) => {
   }
 };
 
+const deleteinstrument = async (req, res, next) => {
+  try {
+
+    const { instrument_id, labid, userid } = req.body;
+
+    if (!instrument_id || !labid || !userid) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    let result = await instrument.findOne({
+      where: { instrument_id, lab_id: labid },
+    });
+
+    if (!result) {
+      return res.status(404).json({ message: "Instrument  not found" });
+    }
+
+    await instrument.destroy({
+      where: {
+        instrument_id: instrument_id,
+        lab_id: labid,
+      },
+
+    });
+
+    res.status(200).json({ message: "Instrument Deleted Successfully" });
+  } catch (error) {
+    console.log(error);
+  }
+}
 
 const deleteinstrumentParameter = async (req, res, next) => {
   try {
@@ -406,4 +440,5 @@ exports.fetchById = fetchById;
 exports.editInstrument = editInstrument;
 exports.fetchOneinstrumentParameters = fetchOneinstrumentParameters
 exports.instrumentParametersUpdate = instrumentParametersUpdate
+exports.deleteinstrument = deleteinstrument
 exports.deleteinstrumentParameter = deleteinstrumentParameter

@@ -140,9 +140,11 @@ const listInstrumentTypes = async (req, res, next) => {
             "instrument_types"."instrument_full_name",
             "instrument_types"."type",
             "instrument_types"."ranges",
+            "instrument_types"."labtype",
+            "instrument_types"."instrument_type_spec",
 
 	        "instrumentsMain"."instrument_name",
-
+            
 	        "uomTable"."uom_id" AS "uom_pk_id",
 	        "uomTable"."uom_name" AS "ins_uom_name",
 
@@ -194,79 +196,131 @@ const listInstrumentTypes = async (req, res, next) => {
     }
 }
 
+// const searchByName = async (req, res, next) => {
+
+//     const name = req.params.name;
+
+//     if (!name) {
+//         let action = "Search By Name !!!";
+//         const error = new Error(action);
+//         error.code = 500;
+//         return errorHandler(error, req, res, next);
+//     }
+
+//     try {
+
+//         let result = await db.sequelize.query(
+//             `SELECT 
+
+//             "instrument_types"."instrument_type_id",
+//             "instrument_types"."instrument_full_name",
+
+// 	        "instrumentsMain"."instrument_name",
+
+// 	        "uomTable"."uom_id" AS "uom_pk_id",
+// 	        "uomTable"."uom_name" AS "ins_uom_name",
+
+//             "disciplinesTable"."instrument_discipline_id" AS "dis_pk_id",
+//             "disciplinesTable"."instrument_discipline" AS "ins_dis_name",
+
+// 	        "groupsTable"."instrument_group_id" AS "group_pk_id",
+//             "groupsTable"."group_details" AS "ins_group_name"
+
+//         FROM 
+//             "instrument_types"
+
+//         INNER JOIN "instruments" AS "instrumentsMain"
+//             ON "instrument_types"."instrument_id" = "instrumentsMain"."instrument_id"
+
+//         LEFT OUTER JOIN 
+//             "UOMs" as "uomTable"
+// 	        ON ("uomTable"."uom_id" = "instrumentsMain"."instrument_uom_id")
+
+//         LEFT OUTER JOIN
+//             "instrument_disciplines" as "disciplinesTable"
+//             ON ("disciplinesTable"."instrument_discipline_id" = "instrumentsMain"."instrument_discipline_id")
+
+//         LEFT OUTER JOIN
+//             "instrument_groups" as "groupsTable"
+//             ON "groupsTable"."instrument_group_id" = "instrumentsMain"."instrument_group_id"
+
+//         WHERE LOWER("instrument_types"."instrument_full_name") LIKE LOWER(:search_name)
+
+//         ORDER BY
+// 	        "instrument_types"."instrument_type_id" DESC
+//         `,
+//             {
+//                 type: QueryTypes.SELECT,
+//                 replacements: { search_name: `${name}%` },
+//             }
+//         );
+
+//         return res.status(200).json({
+//             status: "SUCCESS",
+//             code: 200,
+//             message: "Uom List Fetched Successfully!!",
+//             data: result
+//         });
+
+//     } catch (err) {
+//         let action = "Internal Server Error!!!";
+//         const error = new Error(action);
+//         error.code = 500;
+//         return errorHandler(error, req, res, next);
+//     }
+// }
+
+
 const searchByName = async (req, res, next) => {
-
-    const name = req.params.name;
-
-    if (!name) {
-        let action = "Search By Name !!!";
-        const error = new Error(action);
-        error.code = 500;
-        return errorHandler(error, req, res, next);
-    }
-
+    const { name = "", labType } = req.query;
     try {
-
-        let result = await db.sequelize.query(
-            `SELECT 
-            
-            "instrument_types"."instrument_type_id",
-            "instrument_types"."instrument_full_name",
-
-	        "instrumentsMain"."instrument_name",
-
-	        "uomTable"."uom_id" AS "uom_pk_id",
-	        "uomTable"."uom_name" AS "ins_uom_name",
-
-            "disciplinesTable"."instrument_discipline_id" AS "dis_pk_id",
-            "disciplinesTable"."instrument_discipline" AS "ins_dis_name",
-
-	        "groupsTable"."instrument_group_id" AS "group_pk_id",
-            "groupsTable"."group_details" AS "ins_group_name"
-
-        FROM 
-            "instrument_types"
-
-        INNER JOIN "instruments" AS "instrumentsMain"
-            ON "instrument_types"."instrument_id" = "instrumentsMain"."instrument_id"
-        
-        LEFT OUTER JOIN 
-            "UOMs" as "uomTable"
-	        ON ("uomTable"."uom_id" = "instrumentsMain"."instrument_uom_id")
-
-        LEFT OUTER JOIN
-            "instrument_disciplines" as "disciplinesTable"
-            ON ("disciplinesTable"."instrument_discipline_id" = "instrumentsMain"."instrument_discipline_id")
-
-        LEFT OUTER JOIN
-            "instrument_groups" as "groupsTable"
-            ON "groupsTable"."instrument_group_id" = "instrumentsMain"."instrument_group_id"
-        
-        WHERE LOWER("instrument_types"."instrument_full_name") LIKE LOWER(:search_name)
-
-        ORDER BY
-	        "instrument_types"."instrument_type_id" DESC
-        `,
+        const result = await db.sequelize.query(
+            `
+            SELECT 
+                it."instrument_type_id",
+                it."instrument_full_name",
+                im."instrument_name",
+                it."labtype",
+                it."instrument_type_spec",
+                u."uom_id" AS "uom_pk_id",
+                u."uom_name" AS "ins_uom_name",
+                d."instrument_discipline_id" AS "dis_pk_id",
+                d."instrument_discipline" AS "ins_dis_name",
+                g."instrument_group_id" AS "group_pk_id",
+                g."group_details" AS "ins_group_name"
+            FROM "instrument_types" it
+            INNER JOIN "instruments" im
+                ON it."instrument_id" = im."instrument_id"
+            LEFT JOIN "UOMs" u
+                ON u."uom_id" = im."instrument_uom_id"
+            LEFT JOIN "instrument_disciplines" d
+                ON d."instrument_discipline_id" = im."instrument_discipline_id"
+            LEFT JOIN "instrument_groups" g
+                ON g."instrument_group_id" = im."instrument_group_id"
+            WHERE 
+                (:name = '' OR LOWER(it."instrument_full_name") LIKE LOWER(:search_name))
+                AND (:labType IS NULL OR it."labtype" = :labType)
+            ORDER BY it."instrument_type_id" DESC
+            `,
             {
                 type: QueryTypes.SELECT,
-                replacements: { search_name: `${name}%` },
+                replacements: {
+                    name,
+                    search_name: `${name}%`,
+                    labType: labType || null,
+                },
             }
         );
 
-        return res.status(200).json({
+        return res.json({
             status: "SUCCESS",
-            code: 200,
-            message: "Uom List Fetched Successfully!!",
-            data: result
+            data: result,
         });
-
     } catch (err) {
-        let action = "Internal Server Error!!!";
-        const error = new Error(action);
-        error.code = 500;
-        return errorHandler(error, req, res, next);
+        next(err);
     }
-}
+};
+
 
 const fetchById = async (req, res, next) => {
 
@@ -428,6 +482,7 @@ const filterInstrumentTypes = async (req, res, next) => {
                 it."ranges",
                 it."instrument_type_spec" AS "category",
                 i."instrument_name",
+                i."ranges" AS "Acceptrange",
                 uom."uom_id" AS "uom_pk_id",
                 uom."uom_name" AS "ins_uom_name",
                 dis."instrument_discipline_id" AS "dis_pk_id",
@@ -523,7 +578,33 @@ const listCategoryofInstruments = async (req, res, next) => {
 }
 
 
+const deleteinstrumentype = async (req, res, next) => {
+    try {
+        const { instrument_type_id, userid } = req.body;
 
+
+        if (!instrument_type_id || !userid) {
+            return res.status(400).json({ message: "Missing required fields" });
+        }
+
+        let result = await instrumentTypeModel.findOne({
+            where: { instrument_type_id },
+        });
+
+        if (!result) {
+            return res.status(404).json({ message: "Instrument  not found" });
+        }
+
+        await instrumentTypeModel.destroy({
+            where: {
+                instrument_type_id: instrument_type_id,
+            },
+        });
+        res.status(200).json({ message: "Instrument Deleted Successfully" });
+    } catch (error) {
+        console.log(error);
+    }
+}
 
 exports.createInstrumentType = createInstrumentType;
 exports.listInstrumentTypes = listInstrumentTypes;
@@ -532,3 +613,4 @@ exports.fetchById = fetchById;
 exports.editInstrumentType = editInstrumentType;
 exports.filterInstrumentTypes = filterInstrumentTypes;
 exports.listCategoryofInstruments = listCategoryofInstruments
+exports.deleteinstrumentype = deleteinstrumentype

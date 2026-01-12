@@ -52,6 +52,11 @@ module.exports = (sequelize, DataTypes) => {
       updated_by_user_id: {
         type: DataTypes.STRING,
         allowNull: true
+      },
+      ranges: {
+        type: DataTypes.JSON,
+        allowNull: true,
+        defaultValue: [],
       }
     },
     {

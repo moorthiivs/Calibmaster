@@ -22,3 +22,7 @@ Cron Job attempt on SRF calibration_remainder_date_1 at Wed, Aug 06, 2025, 00:00
 Cron Job attempt on SRF calibration_remainder_date_2 at Wed, Aug 06, 2025, 00:00:00 Total sent Mail: 0 
 Cron Job attempt on Master Equipment calibration_remainder_date_1 at Wed, Aug 06, 2025, 00:00:00 Total sent Mail: 0 
 Cron Job attempt on Master Equipment calibration_remainder_date_2 at Wed, Aug 06, 2025, 00:00:00 Total sent Mail: 0 
+Cron Job attempt on SRF calibration_remainder_date_1 at Mon, Dec 29, 2025, 00:00:03 Total sent Mail: 0 
+Cron Job attempt on SRF calibration_remainder_date_2 at Mon, Dec 29, 2025, 00:00:04 Total sent Mail: 0 
+Cron Job attempt on Master Equipment calibration_remainder_date_1 at Mon, Dec 29, 2025, 00:00:13 Total sent Mail: 0 
+Cron Job attempt on Master Equipment calibration_remainder_date_2 at Mon, Dec 29, 2025, 00:00:21 Total sent Mail: 0 

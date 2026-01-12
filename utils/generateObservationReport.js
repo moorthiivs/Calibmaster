@@ -47,15 +47,17 @@ async function generateObservationReport(
     ],
     [
       { text: "Date of Calibration:", bold: true },
-      { text: cal_date, },
-      { text: "Due Date:", bold: true },
-      { text: due_date, },
+      { text: cal_date, colSpan: 2 },
+      // { text: "Due Date:", bold: true },
+      // { text: due_date, },
+      {},
       { text: "Calibrated At:", bold: true },
-      { text: item?.calibrationAt || "LAB" },
+      { text: item?.calibrationAt || "LAB", colSpan: 2 },
+      {},
     ],
     [
       {
-        text: "Unit Under Calibration",
+        text: "DUC DETAILS",
         colSpan: 6,
         bold: true,
         fillColor: "#eeeeee",
@@ -259,133 +261,10 @@ async function generateObservationReport(
 
 
 
-  // ... (rest of the code before buildContentArray remains the same)
-
-  //-------------------------------------------------------------------
-  // FUNCTION: Estimate the approximate height of a table
-  //-------------------------------------------------------------------
-  function estimateTableHeight(tbl) {
-    // A more robust estimate: rows * row_height + margins/padding
-    const rows = tbl?.table?.body?.length || 1;
-    // Assuming font size 8, a row is roughly 12 units high. Add 4 for margin/spacing.
-    return rows * 16 + 10;
-  }
-
-  //-------------------------------------------------------------------
-  // FUNCTION: Build CONTENT ARRAY with manual page-break injection
-  //-------------------------------------------------------------------
-  function buildContentArray() {
-    const contentArr = [];
-
-    // Add static items first (This must be done before height estimation)
-    contentArr.push(
-      {
-        style: "Tables",
-        table: { widths: ["*", "*", "*", "*", "*", "*"], body: baseTableBody },
-        margin: [0, 10, 0, 5],
-        id: "BaseTable" // Added ID for easier debugging/tracking
-      },
-      {
-        text: `Calibration Procedure : ${masterResult?.calibration_procedure || "-"}`,
-        style: "tableHeadings",
-        bold: true,
-        margin: [3, 0, 0, 0],
-        id: "ProcedureHeading"
-      },
-      {
-        style: "Tables",
-        table: { widths: [30, "*", "*", "*", "*"], body: EquipmentMasterUsed },
-        margin: [0, 5, 0, 5],
-        id: "EquipmentTable"
-      },
-      {
-        style: "Tables",
-        table: { widths: ["*", "*", "*", "*", "*", "*", "*"], body: EnvironmentalCondition },
-        margin: [0, 5, 0, 5],
-        id: "EnvironmentalTable"
-      },
-    );
-
-
-    const pageHeight = 842;       // A4 height in points
-    const topMargin = 62;         // Top margin (for header)
-    const bottomMargin = 105;     // Bottom margin (for footer)
-    const usableHeightPerPage = pageHeight - topMargin - bottomMargin; // Usable body height (~675 points)
-
-
-    let usedHeight =
-      estimateTableHeight(contentArr[0]) + // BaseTable (~11 rows)
-      15 + // Procedure Heading
-      estimateTableHeight(contentArr[2]) + // EquipmentTable (2 header rows + variable master rows, let's assume 3 master rows total)
-      estimateTableHeight(contentArr[3]) + // EnvironmentalTable (3 rows)
-      30; // Extra padding/margins/safety
-
-    // A conservative, high-side estimate: 400
-    if (usedHeight < 350) usedHeight = 350; // Ensure a minimum estimate
-    if (usedHeight > usableHeightPerPage - 100) usedHeight = usableHeightPerPage - 100; // Cap it
-
-
-    usedHeight = 380; // Keeping the original estimate as a starting point.
-
-
-    //-------------------------------------------------------------------
-    // PROCESS EACH EXCEL TABLE
-    //-------------------------------------------------------------------
-    if (Array.isArray(ExcelProcedureTable)) {
-
-      ExcelProcedureTable.forEach((tbl) => {
-
-        const tableHeight = estimateTableHeight(tbl);
-
-        if (usedHeight + tableHeight > usableHeightPerPage - 80) {
-          contentArr.push({ text: "", pageBreak: "before" });
-          usedHeight = tableHeight + 20;
-        } else {
-          usedHeight += tableHeight + 20;
-        }
-
-        let realTable = null;
-
-        // CASE 1: direct table
-        if (tbl && tbl.table && tbl.table.body) {
-          realTable = tbl.table;
-        }
-
-        // CASE 2: wrapped inside columns → extract table
-        else if (
-          tbl &&
-          Array.isArray(tbl.columns) &&
-          tbl.columns[0] &&
-          tbl.columns[0].table &&
-          tbl.columns[0].table.body
-        ) {
-          realTable = tbl.columns[0].table;
-        }
-
-        if (realTable) {
-          contentArr.push({
-            unbreakable: true,          // best for tables
-            table: realTable,           // correct pdfmake structure
-            layout: tbl.columns?.[0]?.layout || tbl.layout || "noBorders",
-            margin: tbl.columns?.[0]?.margin || tbl.margin || [0, 2, 0, 2],
-            fontSize: tbl.columns?.[0]?.fontSize || 7,
-            alignment: tbl.columns?.[0]?.alignment || "center",
-          });
-
-        } else {
-          console.error("❌ Invalid Excel table skipped:", tbl);
-        }
-
-      });
-
-    }
-
-    return contentArr;
-  }
   try {
     const docDefinition = {
       pageSize: "A4",
-      pageMargins: [10, 62, 10, 120],
+      pageMargins: [10, 62, 10, 92],
       background: (currentPage, pageSize) => {
         return [
           {
@@ -449,182 +328,144 @@ async function generateObservationReport(
 
         const formattedCurrent = String(currentPage).padStart(2, '0');
         const formattedTotal = String(pageCount).padStart(2, '0');
-
-        const topMargin = currentPage === pageCount ?  5 : 90
+        const topMargin = currentPage === pageCount ? 0 : 6
         const baseFooter = {
           fontSize: 9,
           margin: [10, topMargin, 10, 0],
           columns: [
-            { text: '', alignment: 'left' },
+            { text: '' },
             { text: `Page ${formattedCurrent} of ${formattedTotal}`, alignment: "center" },
-            {
-              text: format_no_obser || "",
-              alignment: "right",
-            },
-          ],
+            { text: format_no_obser || "", alignment: "right" }
+          ]
         };
 
+        /* ========= COMMON FOOTER TABLE (ALL PAGES) ========= */
+        const footerTableBody = [
+
+          // NOTE
+          // [
+          //   { text: "Note :", bold: true, fontSize: 9, border: [true, true, false, true] },
+          //   {
+          //     text: lengthofRemarks === 3 ? "All values are in mm" : "All values are in µm",
+          //     colSpan: 3,
+          //     fontSize: 9,
+          //     border: [false, true, true, true]
+          //   },
+          //   {}, {}
+          // ],
+
+          // SIGNATURE HEADER
+          [
+            { text: "Calibrated By :", alignment: "center", bold: true, border: [true, true, true, true] },
+            { text: "", border: [true, true, true, true] },
+            { text: "Approved By :", alignment: "center", bold: true, border: [true, true, true, true] },
+            { text: "", border: [true, true, true, true] }
+          ],
+
+          // SIGNATURE NAMES
+          [
+            { text: "Name", alignment: "center", border: [true, false, true, true] },
+            { text: calibrated_employee_name || "-", alignment: "center", border: [true, false, true, true] },
+            { text: "Name", alignment: "center", border: [true, false, true, true] },
+            { text: approved_employee_name || "-", alignment: "center", border: [true, false, true, true] }
+          ],
+
+          // REMARKS
+          [
+            { text: "Remarks :", bold: true, border: [true, true, false, true] },
+            { text: "", colSpan: 3, border: [false, true, true, true] },
+            {}, {}
+          ]
+        ];
+
+        /* ========= LAST PAGE ONLY ========= */
         if (currentPage === pageCount) {
-          return {
-            //pageBreak: 'before',
-            //unbreakable: true,
-            margin: [10, 0, 10, 30],
-            stack: [
-              {
-                canvas: [{ type: "line", x1: 0, y1: 0, x2: 575, y2: 0, lineWidth: 1 }],
-              },
-              {
-                style: "Tables",
-                table: {
-                  widths: ["15%", "85%"],
-                  body: [
-                    [
-                      {
-                        text: `Note  :`,
-                        alignment: "left",
-                        fontSize: 9,
-                        border: [true, false, true, false],
-                        margin: [3, 2, 0, 2],
-                        bold: true
-                      },
-                      {
-                        text: `${lengthofRemarks === 3 ? "All values are in mm" : 'All values are in µm'}`,
-                        alignment: "left",
-                        fontSize: 9,
-                        border: [false, false, false, false],
-                        margin: [0, 2, 0, 2],
-                      }
-                    ],
-
-                  ],
-                },
-                layout: {
-                  defaultBorder: false,
-                  hLineWidth: function () { return 0.8; },
-                  vLineWidth: function () { return 0.8; },
-                },
-              },
-              {
-                canvas: [{ type: "line", x1: 0, y1: 0, x2: 575, y2: 0, lineWidth: 1 }],
-              },
-              {
-                style: "Tables",
-                table: {
-                  widths: ["15%", "35%", "15%", "35%"],
-                  body: [
-                    [
-                      { text: "Calibrated By :", alignment: "center", fontSize: 9, border: [false, false, true, true], bold: true },
-                      { text: "", alignment: "center", fontSize: 9, border: [false, false, true, true] },
-
-                      { text: "Approved By :", alignment: "center", fontSize: 9, border: [false, false, true, true], bold: true },
-                      { text: "", alignment: "center", fontSize: 9, border: [true, false, true, false] },
-                    ],
-                    [
-                      { text: "Name", alignment: "center", fontSize: 9, border: [false, false, true, false] },
-                      { text: `${calibrated_employee_name || "-"}`, alignment: "center", fontSize: 9, border: [false, false, false, false] },
-
-                      { text: "Name", alignment: "center", fontSize: 9, border: [true, false, true, false] },
-                      { text: `${approved_employee_name || "-"}`, alignment: "center", fontSize: 9, border: [false, true, false, false] },
-
-                    ]
-                  ]
-                },
-                layout: {
-                  defaultBorder: false,
-                  hLineWidth: function () { return 0.8; },
-                  vLineWidth: function () { return 0.8; },
-                },
-              },
-
-              {
-                canvas: [{ type: "line", x1: 0, y1: 0, x2: 575, y2: 0, lineWidth: 1 }],
-              },
-              {
-                style: "Tables",
-                table: {
-                  widths: ["15%", "*"],
-                  body: [
-                    [
-                      {
-                        text: `Remarks  :`,
-                        alignment: "left",
-                        fontSize: 9,
-                        border: [false, false, false, false],
-                        margin: [3, 2, 0, 0],
-                        bold: true
-                      },
-                      {
-                        text: ``,
-                        alignment: "left",
-                        fontSize: 9,
-                        border: [false, false, false, false],
-                        margin: [0, 2, 0, 0],
-                      }
-                    ],
-
-                  ],
-                },
-                layout: {
-                  defaultBorder: false,
-                  hLineWidth: function () { return 0.8; },
-                  vLineWidth: function () { return 0.8; },
-                },
-              },
-              {
-                canvas: [{ type: "line", x1: 0, y1: 0, x2: 575, y2: 0, lineWidth: 1 }],
-              },
-
-              {
-                text: "***End of Observation Sheet***",
-                alignment: "center",
-                fontSize: 9,
-                bold: true,
-                margin: [0, 3, 0, 1]
-              },
-              baseFooter,
-            ],
-          };
+          footerTableBody.push([
+            {
+              text: "***End of Observation Sheet***",
+              colSpan: 4,
+              alignment: "center",
+              bold: true,
+              margin: [0, 4, 0, 2],
+              border: [false, false, false, false]
+            },
+            {}, {}, {}
+          ]);
         }
 
-        return baseFooter;
+        return {
+          margin: [10, 0, 10, 0],
+          stack: [
+            {
+              style: "Tables",
+              table: {
+                widths: ["15%", "35%", "15%", "35%"],
+                body: footerTableBody
+              },
+              layout: {
+                defaultBorder: false,
+                hLineWidth: () => 0.5,
+                vLineWidth: () => 0.5
+              }
+            },
+            baseFooter
+          ]
+        };
       },
       content: [
 
-        ...buildContentArray()
-        // {
-        //   //layout: Layout,
-        //   style: "Tables",
-        //   table: {
-        //     widths: ["*", "*", "*", "*", "*", "*"],
-        //     body: baseTableBody,
-        //   },
-        //   margin: [0, 10, 0, 5],
-        // },
-        // {
-        //   text: `Calibration Procedure : ${masterResult?.calibration_procedure || "-"
-        //     }`,
-        //   style: "tableHeadings",
-        //   bold: true,
-        //   margin: [3, 0, 0, 0],
-        // },
-        // {
-        //   style: "Tables",
-        //   table: {
-        //     widths: [30, "*", "*", "*", "*"],
-        //     body: EquipmentMasterUsed,
-        //   },
-        //   margin: [0, 5, 0, 5],
-        // },
-        // {
-        //   style: "Tables",
-        //   table: {
-        //     widths: ["*", "*", "*", "*", "*", "*", "*"],
-        //     body: EnvironmentalCondition,
-        //   },
-        //   margin: [0, 5, 0, 5],
-        // },
-
-        // ...(Array.isArray(ExcelProcedureTable) ? ExcelProcedureTable : []),
+        //...buildContentArray()
+        {
+          style: "Tables",
+          table: {
+            widths: ["*", "*", "*", "*", "*", "*"],
+            body: baseTableBody,
+          },
+          margin: [0, 10, 0, 0],
+          layout: {
+            hLineWidth: () => 0.5,
+            vLineWidth: () => 0.5,
+            hLineColor: () => '#000000',
+            vLineColor: () => '#000000'
+          }
+        },
+        {
+          style: "Tables",
+          table: {
+            widths: [30, "*", "*", "*", "*"],
+            body: EquipmentMasterUsed,
+          },
+          margin: [0, 0, 0, 0],
+          layout: {
+            //hLineWidth: () => 0.5,
+            hLineWidth: (i, node) => {
+              if (i === 0) return 0.1;
+              return 0.5;
+            },
+            vLineWidth: () => 0.5,
+            hLineColor: () => '#000000',
+            vLineColor: () => '#000000'
+          }
+        },
+        {
+          style: "Tables",
+          table: {
+            widths: ["*", "*", "*", "*", "*", "*", "*"],
+            body: EnvironmentalCondition,
+          },
+          margin: [0, 0, 0, 0],
+          layout: {
+            //hLineWidth: () => 0.5,
+            hLineWidth: (i, node) => {
+              if (i === 0) return 0.1;
+              return 0.5;
+            },
+            vLineWidth: () => 0.5,
+            hLineColor: () => '#000000',
+            vLineColor: () => '#000000'
+          }
+        },
+        ...(Array.isArray(ExcelProcedureTable) ? ExcelProcedureTable : []),
 
 
       ],
@@ -656,7 +497,6 @@ async function generateObservationReport(
           font: "DejaVu",
         },
       },
-
     };
 
     const pdfDoc = printer.createPdfKitDocument(docDefinition);
@@ -682,6 +522,7 @@ async function generateObservationReport(
       pdfDoc.on("error", reject);
       pdfDoc.end();
     });
+
   } catch (error) {
     console.error("Error generating observation report:", error);
   }

@@ -2,6 +2,7 @@ const { errorHandler } = require("../helpers/error-handler");
 const User = require("../models").User;
 const uomModel = require("../models").UOM;
 const { Op } = require("sequelize");
+const { sequelize } = require("../models");
 
 const createUom = async (req, res, next) => {
 
@@ -21,20 +22,49 @@ const createUom = async (req, res, next) => {
         return errorHandler(error, req, res, next);
     }
 
+    const normalizedName = uom_name.trim().toLowerCase();
+    const normalizedQuantity = uom_kindofquantity.trim().toLowerCase();
+    const normalizedSymbol = uom_printsysmbol.trim().toLowerCase();
+
     try {
 
-        let duplicateUom = await uomModel.findAll({
+        // let duplicateUom = await uomModel.findAll({
+        //     where: {
+        //         uom_name: { [Op.iLike]: `${uom_name.trim()}` },
+        //     },
+        // });
+
+        // if (duplicateUom.length) {
+        //     let action = "UOM Name already exists";
+        //     const error = new Error(action);
+        //     error.code = 500;
+        //     return errorHandler(error, req, res, next);
+        // }
+        const duplicateUom = await uomModel.findOne({
             where: {
-                uom_name: { [Op.iLike]: `${uom_name.trim()}` },
-            },
+                [Op.or]: [
+                    sequelize.where(
+                        sequelize.fn("lower", sequelize.col("uom_name")),
+                        normalizedName
+                    ),
+                    sequelize.where(
+                        sequelize.fn("lower", sequelize.col("uom_kindofquantity")),
+                        normalizedQuantity
+                    ),
+                    sequelize.where(
+                        sequelize.fn("lower", sequelize.col("uom_printsysmbol")),
+                        normalizedSymbol
+                    )
+                ]
+            }
         });
 
-        
-
-        if (duplicateUom.length) {
-            let action = "UOM Name already exists";
-            const error = new Error(action);
-            error.code = 500;
+        if (duplicateUom) {
+            const error = new Error(
+                `UOM already exists (${duplicateUom.uom_name} - ${duplicateUom.uom_printsysmbol})`
+            );
+            error.code = 409; // Conflict
+            error.path = "/api/uom/create";
             return errorHandler(error, req, res, next);
         }
 
@@ -133,13 +163,13 @@ const editUom = async (req, res, next) => {
     }
 
     try {
-        
+
         let duplicateUom = await uomModel.findAll({
             where: {
                 uom_name: { [Op.iLike]: `${uom_name.trim()}` },
                 uom_id: {
                     [Op.not]: uom_id,
-                  },
+                },
             },
         });
 

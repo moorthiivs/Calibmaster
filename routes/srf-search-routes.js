@@ -14,4 +14,6 @@ router.post("/srf-items", srfSearchController.SearchBySRFItems);
 
 router.post("/inward-number", srfSearchController.searchByInwardNo);
 
+router.post("/instrument-name", srfSearchController.searchByInstrumentName);
+
 module.exports = router;

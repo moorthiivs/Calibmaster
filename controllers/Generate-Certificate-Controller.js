@@ -69,6 +69,7 @@ const { errorHandler } = require("../helpers/error-handler");
 const { generateImageContent } = require("../utils/ProcedureImage");
 const { generateObservationReport } = require("../utils/generateObservationReport");
 const generateAndAssignCertificateNo = require("../utils/generateAndAssignCertificateNo");
+const { log } = require("winston");
 
 async function imageToBuffer(imagePath) {
     try {
@@ -208,10 +209,12 @@ const generate = async (req, res, next) => {
         const selectedSheet_Obs = excelTable.dataValues.print_on_observation;
 
         const ExcelProcedureTablelayout = {
-            hLineWidth: (i, node) => i === 0 || i === node.table.body.length ? 1 : 1,
-            vLineWidth: () => 1,
-            // hLineColor: () => '#cccccc',
-            // vLineColor: () => '#cccccc',
+            //hLineWidth: (i, node) => i === 0 || i === node.table.body.length ? 1 : 1,
+            hLineWidth: (i, node) => {
+                if (i === 0) return 0.1;
+                return 0.5;
+            },
+            vLineWidth: () => 0.5,
             hLineColor: () => '#000000',
             vLineColor: () => '#000000',
             paddingLeft: () => 2,
@@ -220,15 +223,19 @@ const generate = async (req, res, next) => {
             paddingBottom: () => 3
         };
         const observationTablelayout = {
-            hLineWidth: () => 0.7,
-            vLineWidth: () => 0.7,
+            //hLineWidth: () => 0.7,
+            hLineWidth: (i, node) => {
+                if (i === 0) return 0.1;
+                return 0.5;
+            },
+            vLineWidth: () => 0.5,
             hLineColor: () => '#000000',
             vLineColor: () => '#000000'
         };
 
         // Generate table content for both certificate and observation
-        const ExcelProcedureTable = await generatePdfFromSheet(excelData, mergedCells, Styles, selectedSheet_Cert, decimalPoint, ExcelProcedureTablelayout, fontSize = 6.5);
-        const observationTable = isValid(selectedSheet_Obs) ? await generatePdfFromSheet(excelData, mergedCells, Styles, selectedSheet_Obs, decimalPoint, observationTablelayout, fontSize = 7) : null
+        const ExcelProcedureTable = await generatePdfFromSheet(excelData, mergedCells, Styles, selectedSheet_Cert, decimalPoint, ExcelProcedureTablelayout, fontSize = 7);
+        const observationTable = isValid(selectedSheet_Obs) ? await generatePdfFromSheet(excelData, mergedCells, Styles, selectedSheet_Obs, decimalPoint, observationTablelayout, fontSize = 6) : null
 
         // Validate generation
         if (!ExcelProcedureTable) {
@@ -565,7 +572,7 @@ const generate = async (req, res, next) => {
             );
             row2.push(
                 { text: 'ACTUAL', alignment: 'center', bold: true },
-                { text: `${AtmosphericPressureActual || '-'}`, alignment: 'center' }
+                { text: `${AtmosphericPressure || '-'}`, alignment: 'center' }
             );
         }
 
@@ -650,14 +657,6 @@ const generate = async (req, res, next) => {
             "This is a computer-generated certificate and has been digitally signed by an authorized signatory."
         ];
 
-        const headerHeight = 130;
-
-        // Your logo size (fit height) — you already know it
-        const logoFit = 85;
-
-        // Compute dynamic top margin to vertically center
-        const topMargin = Math.max(0, (headerHeight - logoFit) / 2);
-
 
         const Dc_Number = await item?.srf?.dataValues?.customer_dc ?? item?.dispatch_dc ?? "N/A";
 
@@ -684,7 +683,7 @@ const generate = async (req, res, next) => {
         const docDefinition = {
             pageSize: 'A4',
             pageOrientation: 'portrait',
-            pageMargins: [10, headerMargin, 10, 125],
+            pageMargins: [10, headerMargin, 10, 127],
             background: (currentPage, pageSize) => {
                 // return {
                 //     image: labLogo_1_Buffer,
@@ -717,81 +716,12 @@ const generate = async (req, res, next) => {
                     }
                 ]
             },
-            // header: function (currentPage, pageCount) {
-            //     return [
-            //         {
-            //             table: {
-            //                 widths: [100, '*', 100], // three boxes
-            //                 body: [
-            //                     [
-            //                         // LEFT BOX (NABL + CC Code)
-            //                         {
-            //                             stack: [
-            //                                 nablBuffer ? {
-            //                                     image: nablBuffer,
-            //                                     fit: [80, 80],
-            //                                     alignment: 'center',
-            //                                     margin: [0, 0, 0, 0]
-            //                                 } : { text: '' },
-
-            //                             ],
-            //                             alignment: 'center',
-            //                             border: [true, true, true, true], // box border
-            //                             margin: [0, 0, 0, 0]
-            //                         },
-
-            //                         // CENTER BOX (Title)
-            //                         {
-            //                             text: "CALIBRATION CERTIFICATE",
-            //                             alignment: 'center',
-            //                             fontSize: 16,
-            //                             bold: true,
-            //                             margin: [0, 25, 0, 25], // vertical centering
-            //                             border: [true, true, true, true], // box border
-            //                         },
-
-            //                         // RIGHT BOX (Company Logo + Plant)
-            //                         {
-            //                             stack: [
-            //                                 labLogo_1_Buffer ? {
-            //                                     image: labLogo_1_Buffer,
-            //                                     fit: [120, 120],
-            //                                     alignment: 'center',
-            //                                     margin: [0, 20, 0, 2]
-            //                                 } : { text: '' },
-
-            //                                 lab?.address1 ? {
-            //                                     text: lab.address1,
-            //                                     alignment: 'center',
-            //                                     fontSize: 9,
-            //                                     margin: [0, 2, 0, 0],
-            //                                 } : { text: '' }
-
-
-            //                             ],
-            //                             alignment: 'center',
-            //                             border: [true, true, true, true], // box border
-            //                             margin: [0, 5, 0, 5]
-            //                         }
-            //                     ]
-            //                 ]
-            //             },
-            //             layout: {
-            //                 hLineWidth: function () { return 0.9; },
-            //                 vLineWidth: function () { return 0.9; },
-            //                 hLineColor: function () { return 'black'; },
-            //                 vLineColor: function () { return 'black'; }
-            //             },
-            //             margin: [10, 10, 10, 0]
-            //         },
-            //     ];
-            // },
             header: function (currentPage, pageCount) {
                 if (isNABL) {
                     return [
                         {
                             table: {
-                                widths: [100, '*', 100],
+                                widths: [100, '*', 110],
                                 body: [[
                                     // LEFT BOX (NABL logo)
                                     {
@@ -839,8 +769,8 @@ const generate = async (req, res, next) => {
                                 ]]
                             },
                             layout: {
-                                hLineWidth: function () { return 0.9; },
-                                vLineWidth: function () { return 0.9; },
+                                hLineWidth: function () { return 0.5; }, // 0.9
+                                vLineWidth: function () { return 0.5; }, // 0.9
                                 hLineColor: function () { return 'black'; },
                                 vLineColor: function () { return 'black'; }
                             },
@@ -851,7 +781,7 @@ const generate = async (req, res, next) => {
                     return [
                         {
                             table: {
-                                widths: ['*', 120],
+                                widths: ['*', 135.4],
                                 body: [[
                                     {
                                         text: "CALIBRATION CERTIFICATE",
@@ -876,15 +806,15 @@ const generate = async (req, res, next) => {
                                                 margin: [0, 5, 0, 0]
                                             } : { text: '' }
                                         ],
-                                        border: [false, true, false, true],
+                                        border: [true, true, false, true],
                                         alignment: 'center',
                                         margin: [0, 5, 0, 5]
                                     }
                                 ]]
                             },
                             layout: {
-                                hLineWidth: function () { return 0.9; },
-                                vLineWidth: function () { return 0.9; },
+                                hLineWidth: function () { return 0.5; }, // 0.9
+                                vLineWidth: function () { return 0.5; }, // 0.9
                                 hLineColor: function () { return 'black'; },
                                 vLineColor: function () { return 'black'; }
                             },
@@ -893,7 +823,6 @@ const generate = async (req, res, next) => {
                     ];
                 }
             },
-
             footer: function (currentPage, pageCount) {
                 const qrBuffer = lab_QR_LOGO_2_Buffer || lab_QR_LOGO_1_Buffer;
 
@@ -904,7 +833,7 @@ const generate = async (req, res, next) => {
                             [
                                 { text: 'Calibrated By', alignment: 'center', fontSize: 8, },
                                 { text: '', alignment: 'center' },
-                                { text: 'Verified By', alignment: 'center', fontSize: 8, },
+                                { text: 'Reviewd by', alignment: 'center', fontSize: 8, },
                                 { text: '', alignment: 'center' },
                                 { text: 'Authorized By', alignment: 'center', fontSize: 8, },
                                 { text: '', alignment: 'center' }
@@ -922,11 +851,11 @@ const generate = async (req, res, next) => {
                     layout: {
                         //hLineWidth: function (i, node) { return 0.9; },
                         hLineWidth: function (i, node) {
-                            if (i === 0) return 0.9;
+                            if (i === 0) return 0.5;
                             if (i === node.table.body.length) return 0.1;
-                            return 0.9;
+                            return 0.5; // 0.9
                         },
-                        vLineWidth: function (i, node) { return 0.9; },
+                        vLineWidth: function (i, node) { return 0.3; }, // 0.9
                         hLineColor: function () { return 'black'; },
                         vLineColor: function () { return 'black'; }
                     },
@@ -954,10 +883,9 @@ const generate = async (req, res, next) => {
                             : [[addressStack]]
                     },
                     layout: {
-                        hLineWidth: function (i, node) { return 0.9; },
-                        //vLineWidth: function (i, node) { return 0.9; },
+                        hLineWidth: function (i, node) { return 0.5; }, // 0.9
                         vLineWidth: function (i, node) {
-                            return (i === 1) ? 0 : 0.9;
+                            return (i === 1) ? 0 : 0.5;
                         },
                         hLineColor: function () { return 'black'; },
                         vLineColor: function () { return 'black'; },
@@ -1000,7 +928,6 @@ const generate = async (req, res, next) => {
                 });
                 return out;
             },
-
             content: [
                 {
                     style: 'firstTable',
@@ -1008,10 +935,11 @@ const generate = async (req, res, next) => {
                         widths: ['*', '*', '*', '*'],
                         body: [
                             [
-                                { text: "CERTIFICATE NUMBER:" },
-                                { text: certificate_number || '-', alignment: 'center' },
-                                { text: "DATE OF ISSUE:" },
-                                { text: date_of_issue || '-', alignment: 'center' },
+                                { text: "CERTIFICATE NUMBER:", border: [true, false, true, true], },
+                                { text: certificate_number || '-', alignment: 'center', border: [true, false, true, true], },
+                                { text: "DATE OF ISSUE:", border: [true, false, true, true], },
+                                { text: date_of_issue || '-', alignment: 'center', border: [true, false, true, true] },
+
                             ],
                             [
                                 { text: "ULR NUMBER:" },
@@ -1070,13 +998,16 @@ const generate = async (req, res, next) => {
                     layout: {
                         hLineWidth: function (i, node) {
                             if (i === 0) return 0.1;
-                            if (i === node.table.body.length) return 0.9;
-                            return 0.9;
+                            if (i === node.table.body.length) return 0.5;
+                            return 0.5;
                         },
-                        vLineWidth: function () { return 0.9; },
+                        vLineWidth: function () { return 0.5; },
                         hLineColor: function () { return 'black'; },
                         vLineColor: function () { return 'black'; }
                     }
+
+
+
                 },
                 {
                     style: 'secondTable',
@@ -1089,6 +1020,8 @@ const generate = async (req, res, next) => {
                         ]
                     },
                     layout: {
+                        hLineWidth: function () { return 0.5; },
+                        vLineWidth: function () { return 0.5; },
                         hLineColor: function (i, node) {
                             return (i === node.table.body.length) ? 'white' : 'white';
                         },
@@ -1101,13 +1034,14 @@ const generate = async (req, res, next) => {
                         body: thirdTableBody
                     },
                     layout: {
+                        hLineWidth: function () { return 0.5; },
+                        vLineWidth: function () { return 0.5; },
                         hLineColor: function (i, node) {
                             return (i === node.table.body.length) ? 'white' : 'black';
                         },
                     }
 
                 },
-
                 {
                     style: 'fivthTable',
                     table: {
@@ -1120,12 +1054,14 @@ const generate = async (req, res, next) => {
 
                     },
                     layout: {
+
+                        hLineWidth: function () { return 0.5; },
+                        vLineWidth: function () { return 0.5; },
                         hLineColor: function (i, node) {
                             return (i === node.table.body.length) ? 'white' : 'black';
                         },
                     }
                 },
-
                 {
                     style: 'sixthTable',
                     table: {
@@ -1169,6 +1105,8 @@ const generate = async (req, res, next) => {
                         ]
                     },
                     layout: {
+                        hLineWidth: function () { return 0.5; },
+                        vLineWidth: function () { return 0.5; },
                         hLineColor: function (i, node) {
                             return (i === node.table.body.length) ? 'white' : 'black';
                         },
@@ -1178,30 +1116,17 @@ const generate = async (req, res, next) => {
                     style: "thirdTable",
                     table: {
                         widths: environmentalwidths,
-                        layout: "noBorders",
                         body: environmentalbody
                     },
-                    margin: [0, 0, 0, 10]
+                    margin: [0, 0, 0, 0],
+                    layout: {
+                        hLineWidth: function () { return 0.5; },
+                        vLineWidth: function () { return 0.5; },
+                        // hLineColor: function (i, node) {
+                        //     return (i === node.table.body.length) ? 'white' : 'black';
+                        // },
+                    }
                 },
-                // {
-                //     style: 'eightthTable',
-                //     margin: [3, 5, 0, 0],
-                //     table: {
-                //         widths: ['auto', '*'],
-                //         body: [
-                //             [
-                //                 {
-                //                     text: 'CALIBRATION RESULT',
-                //                     fontSize: 8, alignment: 'center',
-                //                     bold: true
-                //                 },
-                //                 { text: ``, fontSize: 7, alignment: 'center', bold: true }
-                //                 //{ text: `${disciplineName} - ${groupName}`, fontSize: 7, alignment: 'center', bold: true }
-                //             ]
-                //         ]
-                //     },
-                //     layout: 'noBorders'
-                // },
                 ...imageContent,
                 ...(Array.isArray(ExcelProcedureTable) ? ExcelProcedureTable : []),
                 {
@@ -1268,7 +1193,7 @@ const generate = async (req, res, next) => {
                     fontSize: 8
                 },
                 ninethTable: {
-                    fontSize: 7,
+                    fontSize: 8,
                     font: 'DejaVu',
                 },
                 remarks_style: {
@@ -1670,48 +1595,6 @@ const standard_details_tableData = async (master_list_equipments) => {
 }
 
 
-// function formatDynamicRowsFromOriginalRanges(rangesArray) {
-//     if (!Array.isArray(rangesArray)) return null;
-
-//     const keyValuePairs = [];
-
-//     for (const obj of rangesArray) {
-//         const uom = obj.InstrumentparameterUOM || '';
-//         for (const [key, value] of Object.entries(obj)) {
-//             if (key !== 'InstrumentUOMID' && key !== 'InstrumentparameterUOM') {
-//                 keyValuePairs.push({
-//                     name: key.toUpperCase() + ':',
-//                     value: `${value} ${uom}`.trim()
-//                 });
-//             }
-//         }
-//     }
-
-//     if (keyValuePairs.length === 0) return null;
-
-//     const rows = [];
-//     for (let i = 0; i < keyValuePairs.length; i += 2) {
-//         const row = [];
-
-//         const first = keyValuePairs[i];
-//         row.push({ text: first.name, bold: false });
-//         row.push({ text: first.value, alignment: 'center' });
-
-//         if (keyValuePairs[i + 1]) {
-//             const second = keyValuePairs[i + 1];
-//             row.push({ text: second.name, bold: false });
-//             row.push({ text: second.value, alignment: 'center' });
-//         } else {
-//             row.push({}, {});
-//         }
-
-//         rows.push(row);
-//     }
-
-//     return rows;
-// }
-
-
 
 function capitalizeEachWord(params) {
     if (params === Number || params === null || params === undefined) return params
@@ -1730,16 +1613,71 @@ function capitalizeFirstLetter(str) {
         .map(word => word.charAt(0).toUpperCase() + word.slice(1))
         .join(' ');
 }
+// Is  Ranges lc sperate column 
 
-// function formatDynamicRowsFromOriginalRanges(rangesArray, masterResult = [], isEnabled) {
 
+// function buildRangeLcTypeRow(range, lc, type, masterResult = {}, isEnabled) {
+//     const rawCells = [];
+
+//     // Add RANGE if provided
+//     if (range) {
+//         rawCells.push({ text: 'RANGE:', bold: false }, { text: range, alignment: 'center' });
+//     }
+
+//     // Add L.C. if provided
+//     if (lc) {
+//         rawCells.push({ text: 'L.C:', bold: false }, { text: lc, alignment: 'center' });
+//     }
+
+//     // Add TYPE if provided
+//     if (type) {
+//         rawCells.push({ text: 'TYPE:', bold: false }, { text: type, alignment: 'center' });
+//     }
+
+//     // Add WITNESSED BY if masterResult contains valid witness names
+//     if (isEnabled("WITNESSBY_PRINT_CERTIFICATE") && Array.isArray(masterResult.witnessed_by) && masterResult.witnessed_by.length > 0) {
+//         const names = masterResult.witnessed_by
+//             .map(w => {
+//                 if (w.name && w.designation) {
+//                     return `${capitalizeEachWord(w.name)} - (${capitalizeEachWord(w.designation)})`;
+//                 } else if (w.name) {
+//                     return capitalizeEachWord(w.name);
+//                 }
+//                 return null;
+//             })
+//             .filter(Boolean)
+//             .join(', ');
+
+//         if (names) {
+//             rawCells.push({ text: 'WITNESSED BY:', bold: false }, { text: names, alignment: 'center' });
+//         }
+//     }
+
+//     const rows = [];
+
+//     // Group every 2 labels and values into a row (i.e., 4 columns per row)
+//     for (let i = 0; i < rawCells.length; i += 4) {
+//         const row = rawCells.slice(i, i + 4);
+
+//         // If row has less than 4 cells, fill empty cells (borderless)
+//         while (row.length < 4) {
+//             row.push({ text: '', border: [false, false, false, false] });
+//         }
+
+//         rows.push(row);
+//     }
+
+//     return rows;
+// }
+
+// function formatDynamicRowsFromOriginalRanges(rangesArray, masterResult = [], isEnabled, type) {
 //     if (!Array.isArray(rangesArray)) return null;
 
 //     const keyValuePairs = [];
 
-//     for (const obj of rangesArray) {
-//         // const uom = obj.InstrumentparameterUOM || '';
+//     console.log(rangesArray, "rangesArray");
 
+//     for (const obj of rangesArray) {
 //         const uom = (obj.InstrumentparameterUOM && obj.InstrumentparameterUOM.toString().toLowerCase() !== 'select')
 //             ? obj.InstrumentparameterUOM
 //             : '';
@@ -1753,10 +1691,8 @@ function capitalizeFirstLetter(str) {
 //         }
 //     }
 
-
 //     // Add Witnessed By row
 //     if (isEnabled("WITNESSBY_PRINT_CERTIFICATE") && masterResult?.length > 0) {
-//         //const witnessNames = masterResult.map(w => w.name).filter(Boolean).join(', ');
 //         const witnessNames = masterResult.map(w => {
 //             if (w.name && w.designation) {
 //                 return `${capitalizeEachWord(w.name)} - (${capitalizeEachWord(w.designation)})`;
@@ -1767,9 +1703,17 @@ function capitalizeFirstLetter(str) {
 //         })
 //             .filter(Boolean)
 //             .join(', ');
+
 //         keyValuePairs.push({
 //             name: 'WITNESSED BY:',
 //             value: capitalizeEachWord(witnessNames)
+//         });
+//     }
+
+//     if (type) {
+//         keyValuePairs.push({
+//             name: 'INSTRUMENT TYPE:',
+//             value: type
 //         });
 //     }
 
@@ -1797,97 +1741,69 @@ function capitalizeFirstLetter(str) {
 //     return rows;
 // }
 
-function formatDynamicRowsFromOriginalRanges(rangesArray, masterResult = [], isEnabled, type) {
-    if (!Array.isArray(rangesArray)) return null;
+
+
+const cleanValue = (val) =>
+    typeof val === 'string' ? val.replace(/\s+/g, ' ').trim() : val;
+
+
+const isValidNumber = (val) => {
+    if (val === null || val === undefined) return false;
+
+    const str = val.toString().trim();
+
+    // Reject empty, dash, or non-numeric
+    if (str === '' || str === '-') return false;
+
+    // Allow integers & decimals (0, 0.001, 3.21, 10.000)
+    return /^-?\d+(\.\d+)?$/.test(str);
+};
+
+
+// Is Ranges lc show single column 
+function buildRangeLcTypeRow(range, lc, type, masterResult = {}, isEnabled) {
+    console.log(range, "range");
 
     const keyValuePairs = [];
 
-    for (const obj of rangesArray) {
-        const uom = (obj.InstrumentparameterUOM && obj.InstrumentparameterUOM.toString().toLowerCase() !== 'select')
-            ? obj.InstrumentparameterUOM
-            : '';
-        for (const [key, value] of Object.entries(obj)) {
-            if (key !== 'InstrumentUOMID' && key !== 'InstrumentparameterUOM') {
-                keyValuePairs.push({
-                    name: key.toUpperCase() + ':',
-                    value: `${value} ${uom}`.trim()
-                });
-            }
-        }
-    }
+    /* -------------------------------
+       RANGE + L.C (COMBINED)
+    --------------------------------*/
+    if (range || lc) {
+        let combinedValue = "";
 
-    // Add Witnessed By row
-    if (isEnabled("WITNESSBY_PRINT_CERTIFICATE") && masterResult?.length > 0) {
-        const witnessNames = masterResult.map(w => {
-            if (w.name && w.designation) {
-                return `${capitalizeEachWord(w.name)} - (${capitalizeEachWord(w.designation)})`;
-            } else if (w.name) {
-                return capitalizeEachWord(w.name);
-            }
-            return null;
-        })
-            .filter(Boolean)
-            .join(', ');
+        if (range && lc) {
+            combinedValue = `${range} / ${lc}`;
+        } else if (range) {
+            combinedValue = range;
+        } else if (lc) {
+            combinedValue = lc;
+        }
 
         keyValuePairs.push({
-            name: 'WITNESSED BY:',
-            value: capitalizeEachWord(witnessNames)
+            name: "RANGE / L.C:",
+            value: combinedValue
         });
     }
 
-    // ➕ Add Instrument Type row
+    /* -------------------------------
+       TYPE
+    --------------------------------*/
     if (type) {
         keyValuePairs.push({
-            name: 'INSTRUMENT TYPE:',
+            name: "TYPE:",
             value: type
         });
     }
 
-    if (keyValuePairs.length === 0) return null;
-
-    const rows = [];
-    for (let i = 0; i < keyValuePairs.length; i += 2) {
-        const row = [];
-
-        const first = keyValuePairs[i];
-        row.push({ text: first.name, bold: false });
-        row.push({ text: first.value, alignment: 'center' });
-
-        if (keyValuePairs[i + 1]) {
-            const second = keyValuePairs[i + 1];
-            row.push({ text: second.name, bold: false });
-            row.push({ text: second.value, alignment: 'center' });
-        } else {
-            row.push({}, {}); // fill remaining columns if odd entry
-        }
-
-        rows.push(row);
-    }
-
-    return rows;
-}
-
-
-function buildRangeLcTypeRow(range, lc, type, masterResult = {}, isEnabled) {
-    const rawCells = [];
-
-    // Add RANGE if provided
-    if (range) {
-        rawCells.push({ text: 'RANGE:', bold: false }, { text: range, alignment: 'center' });
-    }
-
-    // Add L.C. if provided
-    if (lc) {
-        rawCells.push({ text: 'L.C:', bold: false }, { text: lc, alignment: 'center' });
-    }
-
-    // Add TYPE if provided
-    if (type) {
-        rawCells.push({ text: 'TYPE:', bold: false }, { text: type, alignment: 'center' });
-    }
-
-    // Add WITNESSED BY if masterResult contains valid witness names
-    if (isEnabled("WITNESSBY_PRINT_CERTIFICATE") && Array.isArray(masterResult.witnessed_by) && masterResult.witnessed_by.length > 0) {
+    /* -------------------------------
+       WITNESSED BY
+    --------------------------------*/
+    if (
+        isEnabled("WITNESSBY_PRINT_CERTIFICATE") &&
+        Array.isArray(masterResult.witnessed_by) &&
+        masterResult.witnessed_by.length > 0
+    ) {
         const names = masterResult.witnessed_by
             .map(w => {
                 if (w.name && w.designation) {
@@ -1898,22 +1814,33 @@ function buildRangeLcTypeRow(range, lc, type, masterResult = {}, isEnabled) {
                 return null;
             })
             .filter(Boolean)
-            .join(', ');
+            .join(", ");
 
         if (names) {
-            rawCells.push({ text: 'WITNESSED BY:', bold: false }, { text: names, alignment: 'center' });
+            keyValuePairs.push({
+                name: "WITNESSED BY:",
+                value: names
+            });
         }
     }
 
+    /* -------------------------------
+       BUILD TABLE ROWS (2 PAIRS / ROW)
+    --------------------------------*/
     const rows = [];
+    for (let i = 0; i < keyValuePairs.length; i += 2) {
+        const row = [];
 
-    // Group every 2 labels and values into a row (i.e., 4 columns per row)
-    for (let i = 0; i < rawCells.length; i += 4) {
-        const row = rawCells.slice(i, i + 4);
+        const first = keyValuePairs[i];
+        row.push({ text: first.name });
+        row.push({ text: first.value, alignment: "center" });
 
-        // If row has less than 4 cells, fill empty cells (borderless)
-        while (row.length < 4) {
-            row.push({ text: '', border: [false, false, false, false] });
+        if (keyValuePairs[i + 1]) {
+            const second = keyValuePairs[i + 1];
+            row.push({ text: second.name });
+            row.push({ text: second.value, alignment: "center" });
+        } else {
+            row.push({}, {});
         }
 
         rows.push(row);
@@ -1921,6 +1848,388 @@ function buildRangeLcTypeRow(range, lc, type, masterResult = {}, isEnabled) {
 
     return rows;
 }
+
+
+// function formatDynamicRowsFromOriginalRanges(
+//     rangesArray,
+//     masterResult = [],
+//     isEnabled,
+//     type
+// ) {
+//     if (!Array.isArray(rangesArray) || rangesArray.length === 0) return null;
+//     let rangeValue = null;
+//     let lcValue = null;
+//     let uom = '';
+
+//     const keyValuePairs = [];
+
+//     // -----------------------------
+//     // STEP 1: Extract RANGE / LC
+//     // -----------------------------
+//     for (const obj of rangesArray) {
+//         if (!obj || typeof obj !== 'object') continue;
+
+//         // Pick first valid UOM
+//         if (
+//             !uom &&
+//             obj.InstrumentparameterUOM &&
+//             obj.InstrumentparameterUOM.toString().toLowerCase() !== 'select'
+//         ) {
+//             uom = obj.InstrumentparameterUOM;
+//         }
+
+//         for (const [key, value] of Object.entries(obj)) {
+//             if (!value) continue;
+
+//             const normalizedKey = key.toLowerCase().replace(/\./g, '').trim();
+
+//             if (
+//                 normalizedKey === 'range' ||
+//                 normalizedKey === 'ranges' ||
+//                 normalizedKey.includes('range')
+//             ) {
+//                 //rangeValue = value;
+//                 rangeValue = cleanValue(value);
+
+//             }
+
+//             if (
+//                 normalizedKey === 'lc' ||
+//                 normalizedKey === 'l c' ||
+//                 normalizedKey.includes('leastcount')
+//             ) {
+//                 //lcValue = value;
+//                 lcValue = cleanValue(value);
+//             }
+//         }
+//     }
+
+//     const validRange =
+//         typeof rangeValue === 'string' && rangeValue.trim() !== ''
+//             ? rangeValue
+//             : null;
+//     const validLC = isValidNumber(lcValue) ? lcValue : null;
+
+
+//     // -----------------------------
+//     // STEP 2: Push RANGE / LC row
+//     // -----------------------------
+//     if (validRange || validLC) {
+//         let display = '';
+
+//         if (validRange && validLC) {
+//             display = `${validRange} / ${validLC}`;
+//         } else if (validRange) {
+//             display = `${validRange}`;
+//         } else {
+//             display = `${validLC}`;
+//         }
+
+//         if (uom) display += ` ${uom}`;
+
+//         keyValuePairs.push({
+//             name: 'RANGE / L.C:',
+//             value: cleanValue(display)
+//         });
+//     }
+
+//     // -----------------------------
+//     // STEP 3: OLD LOGIC for OTHER KEYS
+//     // -----------------------------
+//     for (const obj of rangesArray) {
+//         const localUom =
+//             obj.InstrumentparameterUOM &&
+//                 obj.InstrumentparameterUOM.toLowerCase() !== 'select'
+//                 ? obj.InstrumentparameterUOM
+//                 : '';
+
+//         for (const [key, value] of Object.entries(obj)) {
+//             if (
+//                 !value ||
+//                 key === 'InstrumentUOMID' ||
+//                 key === 'InstrumentparameterUOM'
+//             ) continue;
+
+//             const normalizedKey = key.toLowerCase().replace(/\./g, '').trim();
+
+//             // ❌ Skip Range & LC (already handled)
+//             if (
+//                 normalizedKey.includes('range') ||
+//                 normalizedKey === 'lc' ||
+//                 normalizedKey.includes('leastcount')
+//             ) {
+//                 continue;
+//             }
+
+//             keyValuePairs.push({
+//                 name: `${key.toUpperCase()}:`,
+//                 value: `${cleanValue(value)}${cleanValue(localUom) ? ' ' + cleanValue(localUom) : ''}`
+//             });
+//         }
+//     }
+
+//     // -----------------------------
+//     // STEP 4: Witness
+//     // -----------------------------
+//     if (
+//         isEnabled("WITNESSBY_PRINT_CERTIFICATE") &&
+//         Array.isArray(masterResult) &&
+//         masterResult.length > 0
+//     ) {
+//         const witnessNames = masterResult
+//             .map(w =>
+//                 w.name && w.designation
+//                     ? `${capitalizeEachWord(w.name)} - (${capitalizeEachWord(w.designation)})`
+//                     : w.name
+//                         ? capitalizeEachWord(w.name)
+//                         : null
+//             )
+//             .filter(Boolean)
+//             .join(', ');
+
+//         if (witnessNames) {
+//             keyValuePairs.push({
+//                 name: 'WITNESSED BY:',
+//                 value: capitalizeEachWord(witnessNames)
+//             });
+//         }
+//     }
+
+//     // -----------------------------
+//     // STEP 5: Instrument Type
+//     // -----------------------------
+//     if (type) {
+//         keyValuePairs.push({
+//             name: 'INSTRUMENT TYPE:',
+//             value: cleanValue(type)
+//         });
+//     }
+
+//     if (keyValuePairs.length === 0) return null;
+
+//     // -----------------------------
+//     // STEP 6: Build PDF rows (2 cols)
+//     // -----------------------------
+//     const rows = [];
+
+//     for (let i = 0; i < keyValuePairs.length; i += 2) {
+//         const row = [];
+
+//         const first = keyValuePairs[i];
+//         row.push({ text: first.name });
+//         row.push({ text: first.value, alignment: 'center' });
+
+//         if (keyValuePairs[i + 1]) {
+//             const second = keyValuePairs[i + 1];
+//             row.push({ text: second.name });
+//             row.push({ text: second.value, alignment: 'center' });
+//         } else {
+//             row.push({ text: '' }, { text: '' });
+//         }
+
+//         rows.push(row);
+//     }
+
+//     return rows;
+// }
+
+
+function formatDynamicRowsFromOriginalRanges(
+    rangesArray,
+    masterResult = [],
+    isEnabled,
+    type
+) {
+    if (!Array.isArray(rangesArray) || rangesArray.length === 0) return null;
+
+    let rangeMin = null;
+    let rangeMax = null;
+    let rangeValue = null;
+    let lcValue = null;
+    let uom = '';
+
+    const keyValuePairs = [];
+
+    // -----------------------------
+    // STEP 1: Extract RANGE / LC
+    // -----------------------------
+    for (const obj of rangesArray) {
+        if (!obj || typeof obj !== 'object') continue;
+
+        // Pick first valid UOM
+        if (
+            !uom &&
+            obj.InstrumentparameterUOM &&
+            obj.InstrumentparameterUOM.toString().toLowerCase() !== 'select'
+        ) {
+            uom = obj.InstrumentparameterUOM;
+        }
+
+        for (const [key, value] of Object.entries(obj)) {
+            if (!value) continue;
+
+            const normalizedKey = key.toLowerCase().replace(/\./g, '').trim();
+
+            // ---------- RANGE ----------
+            if (normalizedKey.includes('range')) {
+                if (typeof value === 'string' && value.includes('-')) {
+                    // Case: "0-300"
+                    rangeValue = cleanValue(value);
+                } else if (normalizedKey.includes('min')) {
+                    rangeMin = cleanValue(value);
+                } else if (normalizedKey.includes('max')) {
+                    rangeMax = cleanValue(value);
+                } else {
+                    // Case: "01992"
+                    rangeValue = cleanValue(value);
+                }
+            }
+
+            // ---------- LC ----------
+            if (
+                normalizedKey === 'lc' ||
+                normalizedKey === 'l c' ||
+                normalizedKey.includes('leastcount')
+            ) {
+                lcValue = cleanValue(value);
+            }
+        }
+    }
+
+    // -----------------------------
+    // STEP 2: Build Final RANGE
+    // -----------------------------
+    let finalRange = null;
+
+    if (rangeMin !== null && rangeMax !== null) {
+        finalRange = `${rangeMin}-${rangeMax}`;
+    } else if (rangeValue) {
+        finalRange = rangeValue;
+    }
+
+    const validLC = isValidNumber(lcValue) ? lcValue : null;
+
+    // -----------------------------
+    // STEP 3: Push RANGE / L.C Row
+    // -----------------------------
+    if (finalRange || validLC) {
+        let display = '';
+
+        if (finalRange && validLC) {
+            display = `${finalRange} / ${validLC}`;
+        } else if (finalRange) {
+            display = finalRange;
+        } else {
+            display = validLC;
+        }
+
+        if (uom) display += ` ${uom}`;
+
+        keyValuePairs.push({
+            name: 'RANGE / L.C:',
+            value: cleanValue(display)
+        });
+    }
+
+    // -----------------------------
+    // STEP 4: Other Keys
+    // -----------------------------
+    for (const obj of rangesArray) {
+        const localUom =
+            obj.InstrumentparameterUOM &&
+                obj.InstrumentparameterUOM.toLowerCase() !== 'select'
+                ? obj.InstrumentparameterUOM
+                : '';
+
+        for (const [key, value] of Object.entries(obj)) {
+            if (
+                !value ||
+                key === 'InstrumentUOMID' ||
+                key === 'InstrumentparameterUOM'
+            ) continue;
+
+            const normalizedKey = key.toLowerCase().replace(/\./g, '').trim();
+
+            // Skip Range & LC (already handled)
+            if (
+                normalizedKey.includes('range') ||
+                normalizedKey === 'lc' ||
+                normalizedKey.includes('leastcount')
+            ) continue;
+
+            keyValuePairs.push({
+                name: `${key.toUpperCase()}:`,
+                value: `${cleanValue(value)}${cleanValue(localUom) ? ' ' + cleanValue(localUom) : ''
+                    }`
+            });
+        }
+    }
+
+    // -----------------------------
+    // STEP 5: Witness
+    // -----------------------------
+    if (
+        isEnabled("WITNESSBY_PRINT_CERTIFICATE") &&
+        Array.isArray(masterResult) &&
+        masterResult.length > 0
+    ) {
+        const witnessNames = masterResult
+            .map(w =>
+                w.name && w.designation
+                    ? `${capitalizeEachWord(w.name)} - (${capitalizeEachWord(w.designation)})`
+                    : w.name
+                        ? capitalizeEachWord(w.name)
+                        : null
+            )
+            .filter(Boolean)
+            .join(', ');
+
+        if (witnessNames) {
+            keyValuePairs.push({
+                name: 'WITNESSED BY:',
+                value: capitalizeEachWord(witnessNames)
+            });
+        }
+    }
+
+    // -----------------------------
+    // STEP 6: Instrument Type
+    // -----------------------------
+    if (type) {
+        keyValuePairs.push({
+            name: 'INSTRUMENT TYPE:',
+            value: cleanValue(type)
+        });
+    }
+
+    if (keyValuePairs.length === 0) return null;
+
+    // -----------------------------
+    // STEP 7: Build PDF Rows (2 columns)
+    // -----------------------------
+    const rows = [];
+
+    for (let i = 0; i < keyValuePairs.length; i += 2) {
+        const row = [];
+
+        const first = keyValuePairs[i];
+        row.push({ text: first.name });
+        row.push({ text: first.value, alignment: 'center' });
+
+        if (keyValuePairs[i + 1]) {
+            const second = keyValuePairs[i + 1];
+            row.push({ text: second.name });
+            row.push({ text: second.value, alignment: 'center' });
+        } else {
+            row.push({ text: '' }, { text: '' });
+        }
+
+        rows.push(row);
+    }
+
+    return rows;
+}
+
 
 
 

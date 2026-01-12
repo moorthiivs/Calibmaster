@@ -1,0 +1,456 @@
+const { HyperFormula } = require("hyperformula");
+// Helper to convert column letter to index (e.g., "A" -> 0, "Z" -> 25, "AA" -> 26)
+const getColIndexFromLetter = (letter) => {
+    let column = 0;
+    const length = letter.length;
+    for (let i = 0; i < length; i++) {
+        column += (letter.charCodeAt(i) - 64) * Math.pow(26, length - i - 1);
+    }
+    return column - 1;
+};
+// Helper to evaluate conditional formatting rules
+const evaluateCondition = (cellValue, rule, hfInstance, currentSheetName) => {
+    const { condition } = rule;
+    if (!condition) return false;
+    const op = condition.operator;
+    // Function to resolve values (static numbers or cell references like "=Sheet1!A1")
+    const resolveValue = (val) => {
+        if (typeof val === 'string' && val.trim().startsWith('=')) {
+            const refExp = val.trim().substring(1); // remove "="
+            // Parse reference: [SheetName]![Column][Row] or just [Column][Row]
+            const parts = refExp.split('!');
+            let targetSheetName = currentSheetName;
+            let cellStr = refExp;
+            if (parts.length > 1) {
+                targetSheetName = parts[0].replace(/^'|'$/g, ""); // Remove surrounding quotes if present
+                cellStr = parts[1];
+            }
+            const match = cellStr.match(/^([A-Za-z]+)([0-9]+)$/);
+            if (match) {
+                const colLetter = match[1].toUpperCase();
+                const rowNum = parseInt(match[2], 10);
+                const col = getColIndexFromLetter(colLetter);
+                const row = rowNum - 1; // 0-indexed
+                const sheetId = hfInstance.getSheetId(targetSheetName);
+                if (sheetId !== undefined) {
+                    const cellVal = hfInstance.getCellValue({ sheet: sheetId, row, col });
+                    return cellVal;
+                }
+            }
+            return parseFloat(val); // Fallback if parsing fails
+        }
+        return isNaN(Number(val)) ? val : Number(val);
+    };
+    const cVal = Number(cellValue);
+    const isValidNumber = !isNaN(cVal) && cellValue !== "" && cellValue !== null;
+    if (op === 'between') {
+        // Tolerance Logic: (Center - Min) <= Val <= (Center + Max)
+        if ((condition.CenterRef && (typeof condition.CenterRef === 'object' || condition.CenterRef !== "")) || (condition.CenterValue !== "" && condition.CenterValue !== undefined)) {
+            let center = null;
+            // 1. Try CenterRef
+            if (condition.CenterRef && typeof condition.CenterRef === 'object' && condition.CenterRef.col !== undefined && condition.CenterRef.row !== undefined) {
+                const sheetId = hfInstance.getSheetId(currentSheetName);
+                if (sheetId !== undefined) {
+                    const refVal = hfInstance.getCellValue({
+                        sheet: sheetId,
+                        row: condition.CenterRef.row,
+                        col: condition.CenterRef.col
+                    });
+                    const floatVal = parseFloat(refVal);
+                    if (!isNaN(floatVal)) {
+                        center = floatVal;
+                    }
+                }
+            }
+            // 2. Fallback to CenterValue
+            if ((center === null || isNaN(center)) && condition.CenterValue !== "" && condition.CenterValue !== undefined) {
+                center = Number(resolveValue(condition.CenterValue));
+            }
+            // 3. Fallback to condition.value (if it contains a formula or value to be used as center)
+            if ((center === null || isNaN(center)) && condition.value !== "" && condition.value !== undefined) {
+                center = Number(resolveValue(condition.value));
+            }
+            if (center !== null && !isNaN(center)) {
+                const minTol = Number(resolveValue(condition.minValue));
+                const maxTol = Number(resolveValue(condition.maxValue));
+                if (!isValidNumber || isNaN(minTol) || isNaN(maxTol)) return false;
+                const lower = center - minTol;
+                const upper = center + maxTol;
+                const epsilon = 0.000001;
+                // Return TRUE (apply style) if outside range (Out of Tolerance)
+                const formattedRangeLower = lower - epsilon;
+                const formattedRangeUpper = upper + epsilon;
+                return cVal < formattedRangeLower || cVal > formattedRangeUpper;
+            }
+        }
+        // Standard Range: Min <= Val <= Max
+        const min = Number(resolveValue(condition.minValue));
+        const max = Number(resolveValue(condition.maxValue));
+        if (!isValidNumber) return false;
+        return cVal >= min && cVal <= max;
+    }
+    const tVal = resolveValue(condition.value);
+    // If both are numbers, compare numerically
+    if (isValidNumber && !isNaN(Number(tVal))) {
+        const nTVal = Number(tVal);
+        switch (op) {
+            case '=': return Math.abs(cVal - nTVal) < 0.000001;
+            case '>': return cVal > nTVal;
+            case '<': return cVal < nTVal;
+            case '!=': return Math.abs(cVal - nTVal) >= 0.000001;
+            case '>=': return cVal >= nTVal;
+            case '<=': return cVal <= nTVal;
+        }
+    }
+    // Fallback to string comparison
+    const sCVal = String(cellValue);
+    const sTVal = String(tVal);
+    switch (op) {
+        case '=': return sCVal == sTVal;
+        case '!=': return sCVal != sTVal;
+    }
+    return false;
+};
+const generatePdfFromSheet = async (
+    handsontableJson,
+    MergedCells,
+    Styles,
+    selectedSheetInput,
+    decimalPoint,
+    Layout,
+    fontSize
+) => {
+    try {
+        const sheetKey =
+            typeof selectedSheetInput === "object"
+                ? selectedSheetInput.value
+                : selectedSheetInput;
+        const sheetData = handsontableJson[sheetKey] || [];
+        const mergedCells = MergedCells?.[sheetKey] || [];
+        const rawStyleObj = Styles?.[sheetKey] || {};
+        const stylesArray = Object.values(rawStyleObj).filter(item => typeof item === "object" && item?.row !== undefined);
+        const conditionalStyles = rawStyleObj.conditionalFormatting || [];
+        // OPTIMIZATION: Build a Lookup Map for conditional rules
+        // Key: "row-col", Value: Array of rules
+        const ruleMap = new Map();
+        if (Array.isArray(conditionalStyles)) {
+            conditionalStyles.forEach(rule => {
+                // Ensure row/col are valid
+                if (rule && rule.row !== undefined && rule.col !== undefined) {
+                    const key = `${rule.row}-${rule.col}`;
+                    if (!ruleMap.has(key)) ruleMap.set(key, []);
+                    ruleMap.get(key).push(rule);
+                }
+            });
+        }
+        if (!sheetData.length) return [];
+        const hfInstance = HyperFormula.buildFromSheets(handsontableJson, {
+            licenseKey: "gpl-v3",
+        });
+        const sheetId = hfInstance.getSheetId(sheetKey);
+        if (sheetId === undefined) {
+            throw new Error(`Sheet "${sheetKey}" not found`);
+        }
+        const evaluatedData = hfInstance.getSheetValues(sheetId);
+        const maxCols = Math.max(...evaluatedData.map((row) => row.length), 0);
+        const paddedData = evaluatedData.map((row) => {
+            const newRow = Array(maxCols).fill("");
+            return row.concat(newRow.slice(row.length));
+        });
+        const splitTables = [];
+        let currentChunk = [];
+        let startRowIndexes = [];
+        paddedData.forEach((row, idx) => {
+            const isEmptyRow = row.every((cell) => cell === "");
+            if (isEmptyRow) {
+                if (currentChunk.length) {
+                    splitTables.push(currentChunk);
+                    startRowIndexes.push(idx - currentChunk.length);
+                    currentChunk = [];
+                }
+            } else {
+                currentChunk.push(row);
+            }
+        });
+        if (currentChunk.length) {
+            splitTables.push(currentChunk);
+            startRowIndexes.push(paddedData.length - currentChunk.length);
+        }
+        const cleanMergeDefinitions = (
+            mergedCells,
+            tableData,
+            startRow,
+            endRow,
+            maxCols
+        ) => {
+            return mergedCells
+                .filter(
+                    ({ row, col, rowspan, colspan }) =>
+                        row >= startRow &&
+                        col >= 0 &&
+                        rowspan > 0 &&
+                        colspan > 0 &&
+                        row < endRow &&
+                        col < maxCols &&
+                        row + rowspan - 1 < endRow &&
+                        col + colspan - 1 < maxCols
+                )
+                .map(({ row, col, rowspan, colspan }) => ({
+                    row: row - startRow,
+                    col,
+                    rowspan: Math.min(rowspan, tableData.length - (row - startRow)),
+                    colspan: Math.min(colspan, maxCols - col),
+                }))
+                .filter(
+                    (cell, index, self) =>
+                        index ===
+                        self.findIndex((c) => c.row === cell.row && c.col === cell.col)
+                );
+        };
+        return splitTables.map((tableData, chunkIndex) => {
+            const startRow = startRowIndexes[chunkIndex];
+            const endRow = startRow + tableData.length;
+            const tableStyles = stylesArray
+                .filter((s) => s.row >= startRow && s.row < endRow)
+                .map((s) => ({
+                    ...s,
+                    row: s.row - startRow,
+                }));
+            const tableMergedCells = cleanMergeDefinitions(
+                mergedCells,
+                tableData,
+                startRow,
+                endRow,
+                maxCols
+            );
+            const tableBody = tableData.map((row, rowIndex) =>
+                row.map((cell, colIndex) => {
+                    const style = tableStyles.find(
+                        (s) => s.row === rowIndex && s.col === colIndex
+                    );
+                    let formattedText = "";
+                    let decimalPlaces = null;
+                    if (
+                        decimalPoint &&
+                        typeof decimalPoint === "object" &&
+                        decimalPoint[sheetKey]
+                    ) {
+                        const key = `${startRow + rowIndex}-${colIndex}`;
+                        decimalPlaces = decimalPoint[sheetKey][key];
+                    }
+                    if (
+                        decimalPlaces != null &&
+                        cell !== null &&
+                        cell !== "" &&
+                        cell !== undefined &&
+                        !isNaN(Number(cell))
+                    ) {
+                        formattedText = Number(cell).toFixed(decimalPlaces);
+                        const originalRawValue = sheetData[startRow + rowIndex]?.[colIndex];
+                        const originalString = (originalRawValue !== null && originalRawValue !== undefined) ? String(originalRawValue) : "";
+                        const isFormula = (typeof originalRawValue === 'string' && originalRawValue.trim().startsWith('='));
+                        if (
+                            !isFormula &&
+                            originalString !== "" &&
+                            !isNaN(Number(originalString)) &&
+                            Math.abs(Number(originalString) - Number(cell)) < 0.000001 &&
+                            (
+                                (originalString.includes('.') && !formattedText.includes('.')) ||
+                                (Number(originalString) !== Number(formattedText)) ||
+                                (originalString.length > formattedText.length && originalString.includes('.') && formattedText.includes('.'))
+                            )
+                        ) {
+                            formattedText = originalString;
+                        }
+                        if (
+                            (originalRawValue === undefined || (typeof originalRawValue === 'string' && originalRawValue.trim().startsWith('='))) &&
+                            Number(cell) !== Number(formattedText)
+                        ) {
+                            const cellStr = (cell ?? "").toString();
+                            if (cellStr.length <= 12 && cellStr.includes('.')) {
+                                formattedText = cellStr;
+                            }
+                        }
+                    }
+                    if (formattedText === "") {
+                        const originalRawValue = sheetData[startRow + rowIndex]?.[colIndex];
+                        const originalString = (originalRawValue !== null && originalRawValue !== undefined) ? String(originalRawValue) : "";
+                        const isFormula = (typeof originalRawValue === 'string' && originalRawValue.trim().startsWith('='));
+                        if (
+                            !isFormula &&
+                            originalString !== "" &&
+                            !isNaN(Number(originalString)) &&
+                            Math.abs(Number(originalString) - Number(cell)) < 0.000001
+                        ) {
+                            formattedText = originalString;
+                        } else {
+                            formattedText = (cell ?? "").toString();
+                        }
+                    }
+                    const cellStyle = {
+                        text: formattedText,
+                        alignment: "center",
+                        bold: false,
+                        color: "#000000",
+                        fillColor: null,
+                        noWrap: false,
+                    };
+                    if (style) {
+                        if (style.fontColor) cellStyle.color = style.fontColor;
+                        if (style.backgroundColor) cellStyle.fillColor = style.backgroundColor;
+                        if (style.bold) cellStyle.bold = true;
+                        if (typeof style.className === "string") {
+                            if (style.className.includes("htLeft")) cellStyle.alignment = "left";
+                            if (style.className.includes("htRight")) cellStyle.alignment = "right";
+                            if (style.className.includes("htCenter")) cellStyle.alignment = "center";
+                        }
+                    }
+                    // --- APPLY MULTIPLE CONDITIONAL RULES ---
+                    // Optimized lookup using Map
+                    const ruleKey = `${startRow + rowIndex}-${colIndex}`;
+                    const applicableRules = ruleMap.get(ruleKey);
+                    if (applicableRules) {
+                        for (const rule of applicableRules) {
+                            const isConditionMet = evaluateCondition(cell, rule, hfInstance, sheetKey);
+                            if (isConditionMet) {
+                                if (rule.fontColor) cellStyle.color = rule.fontColor;
+                                if (rule.backgroundColor) cellStyle.fillColor = rule.backgroundColor;
+                                if (rule.bold) cellStyle.bold = true;
+                            }
+                        }
+                    }
+                    const isMergedMasterCell =
+                        tableMergedCells.some(
+                            (m) => m.row === rowIndex && m.col === colIndex
+                        );
+                    if (!isMergedMasterCell && (cellStyle.text.length > 20 || maxCols > 10)) {
+                        cellStyle.alignment = "center";
+                    }
+                    return cellStyle;
+                })
+            );
+            // Apply merged cells logic...
+            tableMergedCells.forEach(({ row, col, rowspan, colspan }) => {
+                if (
+                    row >= 0 &&
+                    col >= 0 &&
+                    row < tableBody.length &&
+                    col < tableBody[row].length &&
+                    row + rowspan <= tableBody.length &&
+                    col + colspan <= tableBody[row].length
+                ) {
+                    tableBody[row][col].rowSpan = rowspan;
+                    tableBody[row][col].colSpan = colspan;
+                    for (let r = row; r < row + rowspan; r++) {
+                        for (let c = col; c < col + colspan; c++) {
+                            if (r !== row || c !== col) {
+                                if (tableBody[r] && tableBody[r][c]) {
+                                    tableBody[r][c] = {};
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            // Clean final body (remove empty rows/cols logic)
+            const filteredRows = tableBody.filter(row =>
+                row.some(cell =>
+                    cell && cell.text && cell.text.toString().trim() !== ""
+                )
+            );
+            const nonEmptyColumnIndexes = [];
+            for (let colIndex = 0; colIndex < maxCols; colIndex++) {
+                const hasContent = filteredRows.some(row => {
+                    const cell = row[colIndex];
+                    if (!cell || typeof cell !== "object") return false;
+                    if (!("text" in cell)) return false;
+                    return cell.text.toString().trim() !== "";
+                });
+                if (hasContent) nonEmptyColumnIndexes.push(colIndex);
+            }
+            const finalTableBody = filteredRows.map(row =>
+                nonEmptyColumnIndexes.map(i => {
+                    const cell = row[i];
+                    if (!cell || typeof cell !== "object" || !("text" in cell)) {
+                        return { text: "", alignment: "center", noWrap: false };
+                    }
+                    const cleanCell = {
+                        text: (cell.text ?? "").toString(),
+                        alignment: cell.alignment || "center",
+                        bold: !!cell.bold,
+                        color: cell.color || "#000000",
+                        fillColor: cell.fillColor || null,
+                        noWrap: false,
+                    };
+                    if (cell.rowSpan && cell.rowSpan > 1) cleanCell.rowSpan = cell.rowSpan;
+                    if (cell.colSpan && cell.colSpan > 1) cleanCell.colSpan = cell.colSpan;
+                    return cleanCell;
+                })
+            );
+            const expectedCols = nonEmptyColumnIndexes.length;
+            for (let r = 0; r < finalTableBody.length; r++) {
+                while (finalTableBody[r].length < expectedCols) {
+                    finalTableBody[r].push({ text: "", alignment: "center", noWrap: false });
+                }
+            }
+            for (let r = 0; r < finalTableBody.length; r++) {
+                for (let c = 0; c < finalTableBody[r].length; c++) {
+                    const cell = finalTableBody[r][c];
+                    if (!cell || typeof cell !== "object") {
+                        finalTableBody[r][c] = { text: "", alignment: "center", noWrap: false };
+                        continue;
+                    }
+                    if (cell.colSpan && cell.colSpan > 1) {
+                        const availableCols = finalTableBody[r].length - c;
+                        if (cell.colSpan > availableCols) cell.colSpan = availableCols;
+                    }
+                    if (cell.rowSpan && cell.rowSpan > 1) {
+                        const availableRows = finalTableBody.length - r;
+                        if (cell.rowSpan > availableRows) cell.rowSpan = availableRows;
+                    }
+                }
+            }
+            const columnCountSafe = finalTableBody[0]?.length || 1;
+             for (let r = 0; r < finalTableBody.length; r++) {
+                while (finalTableBody[r].length < columnCountSafe) {
+                    finalTableBody[r].push({ text: "", alignment: "center", noWrap: false });
+                }
+            }
+            const columnCount = columnCountSafe;
+            const widths = columnCount > 13 ? Array(columnCount).fill("auto") : Array(columnCount).fill("*");
+            return {
+                columns: [
+                    {
+                        width: "*",
+                        stack: [
+                            {
+                                table: {
+                                    headerRows: 1,
+                                    widths,
+                                    body: finalTableBody,
+                                },
+                                layout: Layout,
+                                fontSize,
+                                dontBreakRows: true,
+                            }
+                        ],
+                        margin: columnCount > 13 ? [50, 0, 50, 0] : [0, 0, 0, 0],
+                        alignment: "center",
+                    },
+                ],
+                alignment: "center",
+                columnGap: 0,
+            };
+        });
+    } catch (err) {
+        console.error("Error generating PDF:", err);
+        return [
+            {
+                text: `Error generating table: ${err.message}`,
+                color: "red",
+                margin: [0, 10, 0, 10],
+            },
+        ];
+    }
+};
+module.exports = { generatePdfFromSheet };

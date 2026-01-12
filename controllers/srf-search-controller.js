@@ -4,6 +4,7 @@ const customer = require("../models").customer;
 const Lab = require("../models").Lab;
 const { Op } = require("sequelize");
 const { errorHandler } = require("../helpers/error-handler");
+const instrumentTypeModel = require("../models").instrument_type;
 
 const searchBySerialNo = async (req, res, next) => {
 
@@ -245,8 +246,50 @@ const searchByInwardNo = async (req, res, next) => {
         return errorHandler(error, req, res, next);
     }
 }
+
+const searchByInstrumentName = async (req, res, next) => {
+    try {
+        const { labId, instrument_name } = req.body;
+
+        if (!labId) {
+            let action = "Lab Id Is Required";
+            const error = new Error(action);
+            error.code = 500;
+            return errorHandler(error, req, res, next);
+        }
+        const items = await Item.findAll({
+            where: {
+                lab_id: labId,
+                rstatus: 1
+            },
+            include: [
+                {
+                    model: instrumentTypeModel,
+                    as: "intrument_type",
+                    where: instrument_name
+                        ? {
+                            instrument_full_name: {
+                                [Op.iLike]: `%${instrument_name}%`
+                            }
+                        }
+                        : undefined
+                }
+            ],
+            order: [["srf_item_id", "ASC"]]
+        });
+        res.status(200).json({
+            status: "SUCCESS",
+            code: 200,
+            message: "SRF Items Fetched Successfully",
+            items
+        });
+    } catch (error) {
+        console.log(error)
+    }
+}
 exports.searchBySerialNo = searchBySerialNo;
 exports.searchByDispatchNo = searchByDispatchNo;
 exports.searchByIdentificationDetails = searchByIdentificationDetails;
 exports.SearchBySRFItems = SearchBySRFItems;
 exports.searchByInwardNo = searchByInwardNo;
+exports.searchByInstrumentName = searchByInstrumentName

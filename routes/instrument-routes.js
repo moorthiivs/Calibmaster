@@ -18,6 +18,8 @@ router.get("/instrument-parameters/:instrumentId", instrumentController.fetchOne
 
 router.put("/instrument-parameters-update", instrumentController.instrumentParametersUpdate);
 
+router.delete("/instrument-delete", instrumentController.deleteinstrument);
+
 router.delete("/instrument-parameters-delete", instrumentController.deleteinstrumentParameter);
 
 module.exports = router;
