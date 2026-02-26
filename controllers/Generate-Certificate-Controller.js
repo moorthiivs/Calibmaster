@@ -40,6 +40,7 @@ const archiver = require("archiver");
 const signatureDate = moment().tz('Asia/Kolkata').format('DD-MM-YYYY hh:mm A');
 const { format } = require('date-fns')
 
+const { parse, subDays, isAfter, isBefore, isEqual } = require("date-fns");
 
 const fonts = {
     Roboto: {
@@ -54,6 +55,12 @@ const fonts = {
         italics: path.join(__dirname, '../fonts/DejaVuSans-Oblique.ttf'),
         bolditalics: path.join(__dirname, '../fonts/DejaVuSans-BoldOblique.ttf'),
     },
+    Calibri: {
+        normal: path.join(__dirname, '../fonts/calibri/Calibri.ttf'),
+        bold: path.join(__dirname, '../fonts/calibri/Calibribold.ttf'),
+        italics: path.join(__dirname, '../fonts/calibri/Calibriitalic.ttf'),
+        bolditalics: path.join(__dirname, '../fonts/calibri/Calibribolditalic.ttf'),
+    }
 };
 
 const printer = new PdfPrinter(fonts);
@@ -123,7 +130,6 @@ const sendMail = async (srfItemsQuery, filePath) => {
     }
 }
 
-
 const isValid = (value) => {
     if (value === null || value === undefined) return false;
 
@@ -135,10 +141,6 @@ const isValid = (value) => {
 
     return true;
 };
-
-
-
-const footerLongText = "The Calibration Certificate is valid only for the condition of the received DUC at the time under the stated condition of calibration. The calibration certificate shall not be reproduced in full without written approval of Lab Management. DUC: Device Under Calibration. Calibration Measurement are traceable to SI Units through unbroken chain of calibration from competent laboratory.Recommended due date for calibration is provided by customer.";
 
 const generate = async (req, res, next) => {
 
@@ -209,33 +211,29 @@ const generate = async (req, res, next) => {
         const selectedSheet_Obs = excelTable.dataValues.print_on_observation;
 
         const ExcelProcedureTablelayout = {
-            //hLineWidth: (i, node) => i === 0 || i === node.table.body.length ? 1 : 1,
             hLineWidth: (i, node) => {
-                if (i === 0) return 0.1;
+                if (i === 0) return 0.5;
                 return 0.5;
             },
             vLineWidth: () => 0.5,
             hLineColor: () => '#000000',
             vLineColor: () => '#000000',
-            paddingLeft: () => 2,
-            paddingRight: () => 2,
-            paddingTop: () => 3,
-            paddingBottom: () => 3
+            paddingLeft: () => 2, paddingRight: () => 2, paddingTop: () => 3, paddingBottom: () => 3
         };
         const observationTablelayout = {
-            //hLineWidth: () => 0.7,
             hLineWidth: (i, node) => {
-                if (i === 0) return 0.1;
+                if (i === 0) return 0.5;
                 return 0.5;
             },
             vLineWidth: () => 0.5,
             hLineColor: () => '#000000',
-            vLineColor: () => '#000000'
+            vLineColor: () => '#000000',
+            paddingLeft: () => 2, paddingRight: () => 2, paddingTop: () => 3, paddingBottom: () => 3
         };
 
         // Generate table content for both certificate and observation
-        const ExcelProcedureTable = await generatePdfFromSheet(excelData, mergedCells, Styles, selectedSheet_Cert, decimalPoint, ExcelProcedureTablelayout, fontSize = 7);
-        const observationTable = isValid(selectedSheet_Obs) ? await generatePdfFromSheet(excelData, mergedCells, Styles, selectedSheet_Obs, decimalPoint, observationTablelayout, fontSize = 6) : null
+        const ExcelProcedureTable = await generatePdfFromSheet(excelData, mergedCells, Styles, selectedSheet_Cert, decimalPoint, ExcelProcedureTablelayout, fontSize = 8);
+        const observationTable = isValid(selectedSheet_Obs) ? await generatePdfFromSheet(excelData, mergedCells, Styles, selectedSheet_Obs, decimalPoint, observationTablelayout, fontSize = 8) : null
 
         // Validate generation
         if (!ExcelProcedureTable) {
@@ -326,30 +324,7 @@ const generate = async (req, res, next) => {
         else
             customer_address += '.';
 
-        // let date_of_issue = reportGenerateDate || new Date().toLocaleDateString("en-GB", { timeZone: "Asia/Kolkata" });
-        // //let date_of_issue = (item?.srf?.issue_date) ? item?.srf?.issue_date : "--";
-        // let received_date = item?.srf?.customer_dc_date;
-        // let cal_date = item?.calibration_done_date;
-        // let due_date = item?.calibration_due_date;
         const condition = item?.remarks;
-
-        // if (received_date != null) {
-        //     received_date = new Date(received_date).toLocaleDateString('en-GB'); // Formats as DD/MM/YYYY
-        // } else {
-        //     received_date = "-";
-        // }
-
-        // if (cal_date != null) {
-        //     cal_date = new Date(cal_date).toLocaleDateString('en-GB'); // Formats as DD/MM/YYYY
-        // } else {
-        //     cal_date = "-";
-        // }
-
-        // if (due_date != null) {
-        //     due_date = new Date(due_date).toLocaleDateString('en-GB'); // Formats as DD/MM/YYYY
-        // } else {
-        //     due_date = "-";
-        // }
 
 
         // date_of_issue → if reportGenerateDate exists, format it, else take today's date
@@ -549,20 +524,43 @@ const generate = async (req, res, next) => {
         const defaultTemp = "20 ± 2°C";
         const defaultRH = "50 ± 10%";
 
-        // Row1 (TEMP & RH defaults)
+
+        // let row1 = [
+        //     { text: 'TEMP', alignment: 'center', bold: true },
+        //     { text: defaultTemp, alignment: 'center' },
+        //     { text: 'RH', alignment: 'center', bold: true },
+        //     { text: defaultRH, alignment: 'center' },
+        // ];
+
+
+        // let row2 = [
+        //     { text: 'ACTUAL', alignment: 'center', bold: true },
+        //     { text: `${temperature || '-'}`, alignment: 'center' },
+        //     { text: 'ACTUAL', alignment: 'center', bold: true },
+        //     { text: `${humidity || '-'}`, alignment: 'center' },
+        // ];
+        // Row 1
         let row1 = [
-            { text: 'TEMP', alignment: 'center', bold: true },
-            { text: defaultTemp, alignment: 'center' },
-            { text: 'RH', alignment: 'center', bold: true },
-            { text: defaultRH, alignment: 'center' },
+            {
+                text: 'ENVIRONMENTAL\nCONDITIONS',
+                rowSpan: 2,
+                alignment: 'center',
+                bold: true,
+                margin: [0, 5, 0, 5]
+            },
+            { text: 'TEMP', alignment: 'center', bold: true, margin: [0, 2, 0, 2] },
+            { text: defaultTemp, alignment: 'center', margin: [0, 2, 0, 2] },
+            { text: 'RH', alignment: 'center', bold: true, margin: [0, 2, 0, 2] },
+            { text: defaultRH, alignment: 'center', margin: [0, 2, 0, 2] }
         ];
 
-        // Row2 (Actual Values)
+        // Row 2
         let row2 = [
-            { text: 'ACTUAL', alignment: 'center', bold: true },
-            { text: `${temperature || '-'}`, alignment: 'center' },
-            { text: 'ACTUAL', alignment: 'center', bold: true },
-            { text: `${humidity || '-'}`, alignment: 'center' },
+            {}, // required empty cell because of rowSpan
+            { text: 'ACTUAL', alignment: 'center', bold: true, },
+            { text: `${temperature || '-'}`, alignment: 'center', },
+            { text: 'ACTUAL', alignment: 'center', bold: true, },
+            { text: `${humidity || '-'}`, alignment: 'center', }
         ];
 
         if (AtmosphericPressure) {
@@ -589,17 +587,17 @@ const generate = async (req, res, next) => {
 
         const totalCols = row1.length;
 
-        const headerRow = [
-            {
-                text: 'ENVIRONMENTAL CONDITIONS',
-                alignment: 'center',
-                colSpan: totalCols,
-                bold: true
-            },
-            ...Array(totalCols - 1).fill({})
-        ];
+        // const headerRow = [
+        //     {
+        //         text: 'ENVIRONMENTAL CONDITIONS',
+        //         alignment: 'center',
+        //         colSpan: totalCols,
+        //         bold: true
+        //     },
+        //     ...Array(totalCols - 1).fill({})
+        // ];
 
-        environmentalbody.push(headerRow);
+        //environmentalbody.push(headerRow);
         environmentalbody.push(row1);
         environmentalbody.push(row2);
 
@@ -685,35 +683,25 @@ const generate = async (req, res, next) => {
             pageOrientation: 'portrait',
             pageMargins: [10, headerMargin, 10, 127],
             background: (currentPage, pageSize) => {
-                // return {
-                //     image: labLogo_1_Buffer,
-                //     width: 200,
-                //     height: 300,
-                //     opacity: 0.1,
-                //     absolutePosition: {
-                //         x: (pageSize.width - 200) / 2,
-                //         y: (pageSize.height - 300) / 2
-                //     }
-                // };
                 return [
                     {
                         canvas: [
-                            { type: 'line', x1: 10, y1: 10, x2: 585, y2: 10, lineWidth: 1 },   // Top line (10 from top)
-                            { type: 'line', x1: 10, y1: 10, x2: 10, y2: 830, lineWidth: 1 },   // Left line (10 from left)
-                            { type: 'line', x1: 10, y1: 830, x2: 585, y2: 830, lineWidth: 1 }, // Bottom line (10 from bottom)
-                            { type: 'line', x1: 585, y1: 10, x2: 585, y2: 830, lineWidth: 1 }  // Right line (10 from right)
+                            { type: 'line', x1: 10, y1: 10, x2: 585, y2: 10, lineWidth: 2.5 },
+                            { type: 'line', x1: 10, y1: 10, x2: 10, y2: 830, lineWidth: 2.5 },
+                            { type: 'line', x1: 10, y1: 830, x2: 585, y2: 830, lineWidth: 2.5 },
+                            { type: 'line', x1: 585, y1: 10, x2: 585, y2: 830, lineWidth: 2.5 }
                         ]
-
-                    }, {
-                        image: labLogo_1_Buffer,
-                        width: 200,
-                        height: 300,
-                        opacity: 0.1,
-                        absolutePosition: {
-                            x: (pageSize.width - 200) / 2,
-                            y: (pageSize.height - 300) / 2
-                        }
                     }
+                    // , {
+                    //     image: labLogo_1_Buffer,
+                    //     width: 200,
+                    //     height: 300,
+                    //     opacity: 0.1,
+                    //     absolutePosition: {
+                    //         x: (pageSize.width - 200) / 2,
+                    //         y: (pageSize.height - 300) / 2
+                    //     }
+                    // }
                 ]
             },
             header: function (currentPage, pageCount) {
@@ -1086,7 +1074,15 @@ const generate = async (req, res, next) => {
                                     { text: `${item.m_make || '-'} / ${item.m_model || '-'}`, alignment: 'center' },
                                     { text: item.m_calibration_agency || '-', alignment: 'center' },
                                     { text: `${item.m_serial_no || "-"} / ${item.m_identification_details || "-"}`, alignment: 'center' },
-                                    { text: item.m_validity || '-', alignment: 'center' },
+                                    {
+                                        text: item.m_validity || '-', alignment: 'center', fillColor: (() => {
+                                            if (!item.m_validity) return null;
+
+                                            const today = new Date();
+                                            const validityDate = new Date(item.m_validity.split('/').reverse().join('-'));
+                                            return validityDate < today ? '#ff0000' : null;
+                                        })()
+                                    },
                                     { text: item.m_certificate_no || '-', alignment: 'center' },
                                     { text: item.m_traceability || '-', alignment: 'center' },
                                 ];
@@ -1122,9 +1118,6 @@ const generate = async (req, res, next) => {
                     layout: {
                         hLineWidth: function () { return 0.5; },
                         vLineWidth: function () { return 0.5; },
-                        // hLineColor: function (i, node) {
-                        //     return (i === node.table.body.length) ? 'white' : 'black';
-                        // },
                     }
                 },
                 ...imageContent,
@@ -1135,14 +1128,15 @@ const generate = async (req, res, next) => {
                         stack: [
                             {
                                 text: 'REMARKS:',
+                                bold: true,
                                 decoration: 'underline',
-                                margin: [3, 3, 0, 3]
+                                margin: [3, 1, 0, 1]
                             },
                             {
                                 style: 'remarksList',
                                 ol: remarks,
                                 lineHeight: 1.5,
-                                margin: [3, 0, 0, 0]
+                                margin: [3, 0, 1.3, 0]
                             }
                         ]
                     })
@@ -1167,40 +1161,13 @@ const generate = async (req, res, next) => {
 
             defaultStyle: {
                 columnGap: 0,
-                font: 'Roboto',
+                font: 'Calibri',
+                fontSize: 8.5
             },
 
             styles: {
-                firstTable: {
-                    fontSize: 8
-                },
-                secondTable: {
-                    fontSize: 8
-                },
-                thirdTable: {
-                    fontSize: 8
-                },
-                fivthTable: {
-                    fontSize: 8
-                },
-                fourthTable: {
-                    fontSize: 8
-                },
-                sixthTable: {
-                    fontSize: 8
-                },
-                seventhTable: {
-                    fontSize: 8
-                },
                 ninethTable: {
-                    fontSize: 8,
-                    font: 'DejaVu',
-                },
-                remarks_style: {
-                    fontSize: 8
-                },
-                remarksList: {
-                    fontSize: 8
+                    font: 'Calibri',
                 },
                 mainTable: {
                     alignment: 'center'
@@ -1233,6 +1200,7 @@ const generate = async (req, res, next) => {
             certificate_number,
             calibrated_employee_name,
             approved_employee_name,
+            authorized_employee_name,
             instrumentDynamicRows,
             standard_details_Table,
             EParameterData?.dataValues,
@@ -1364,9 +1332,6 @@ const generate = async (req, res, next) => {
     }
 }
 
-
-
-
 const download = async (req, res, next) => {
     try {
         const { srf_item_id, type } = req.body;
@@ -1410,8 +1375,6 @@ const download = async (req, res, next) => {
         return errorHandler(error, req, res, next);
     }
 };
-
-
 
 const bulkDownload_Certificate = async (req, res, next) => {
     try {
@@ -1479,11 +1442,10 @@ const bulkDownload_Certificate = async (req, res, next) => {
     }
 };
 
-
 const verify_certificate = async (req, res, next) => {
 
     try {
-        const { srf_item_id } = req.body;
+        const { lab_id, srf_id, srf_item_id } = req.body;
 
         let isGenerateCertificate = await ProcedureResult.findOne({
             where: { srf_item_id }
@@ -1493,6 +1455,94 @@ const verify_certificate = async (req, res, next) => {
             where: { srf_item_id },
             attributes: ["calibration_done_date"],
         });
+
+        let cmssettings_permissions_data = await CMSsettingsPermissions.findAll({
+            where: { lab_id: lab_id },
+            order: [
+                ['cmssetting_permission_id', 'ASC'],
+            ],
+        });
+
+        const blockCalibrationSetting = cmssettings_permissions_data.find(
+            (item) => item.setting_name === "BLOCK_CALIBRATION_BEFORE_DUE"
+        );
+
+        const blockDays = blockCalibrationSetting
+            ? Number(blockCalibrationSetting.setting_value)
+            : 0;
+
+
+        let masterResult = await masterResultTable.findOne({
+            where: { lab_id, srf_id, srf_item_id },
+        });
+
+        let standard_details_Table = await standard_details_tableData(masterResult?.master_list_equipments)
+
+        let expiredMasters = [];
+        let blockedMasters = [];
+
+        if (standard_details_Table?.length > 0) {
+            standard_details_Table.forEach((master) => {
+
+                if (!master.m_validity) return;
+                const dateFormat = master.m_validity.includes("/")
+                    ? "dd/MM/yyyy"
+                    : "dd-MM-yyyy";
+
+                const validityDate = parse(
+                    master.m_validity,
+                    dateFormat,
+                    new Date()
+                );
+
+                const today = new Date();
+
+                // Normalize time
+                validityDate.setHours(0, 0, 0, 0);
+                today.setHours(0, 0, 0, 0);
+
+                // 🔴 EXPIRED CHECK
+                if (isAfter(today, validityDate)) {
+                    expiredMasters.push(`${master.m_identification_details}-${master.m_description} (Expired on: ${format(validityDate, "dd-MM-yyyy")})`);
+                    return;
+                }
+
+                // 🟠 BLOCK BEFORE DUE CHECK
+                if (blockDays > 0) {
+
+                    const blockStartDate = subDays(validityDate, blockDays);
+
+                    const isInBlockRange =
+                        (isAfter(today, blockStartDate) || isEqual(today, blockStartDate)) &&
+                        (isBefore(today, validityDate) || isEqual(today, validityDate));
+
+                    if (isInBlockRange) {
+                        blockedMasters.push(`${master.m_identification_details}-${master.m_description} (Expired on: ${format(validityDate, "dd-MM-yyyy")})`);
+                    }
+                }
+            });
+        }
+
+        const isExpired = expiredMasters.length > 0;
+        const isBlockedBeforeDue = blockedMasters.length > 0;
+
+        const masterdeviceexpire = blockCalibrationSetting.is_enable ? {
+            isExpired,
+            isBlockedBeforeDue,
+            blockDays,
+            expiredMasters,
+            blockedMasters,
+            // message: isExpired
+            //     ? `Master expired: Please Recalibrate ${expiredMasters.join(", ")} then Update device Generate Certificate`
+            //     : isBlockedBeforeDue
+            //         ? `Calibration blocked ${blockDays} day(s) before validity date for: ${blockedMasters.join(", ")}`
+            //         : null
+            message: isExpired
+                ? `Certificate issuance is prohibited. The validity of the following master instrument(s) has expired: ${expiredMasters.join(", ")}. Recalibration and validity update are mandatory prior to certificate generation.`
+                : isBlockedBeforeDue
+                    ? `Certificate issuance is restricted. The following master instrument(s) are within the restricted period of ${blockDays} day(s) prior to validity expiry: ${blockedMasters.join(", ")}. Recalibration is required before proceeding.`
+                    : null
+        } : [];
 
 
         // Returns true if a record exists, false otherwise
@@ -1512,7 +1562,7 @@ const verify_certificate = async (req, res, next) => {
         const check_draft = certificate?.draftFileName ? true : false
         const iscalibration_done = calibration_done?.calibration_done_date ? true : false
 
-        return res.json({ isGenerateCertificate: isGenerated, check, check_uncertainty, check_observation, check_draft, iscalibration_done });
+        return res.json({ masterdeviceexpire, isGenerateCertificate: isGenerated, check, check_uncertainty, check_observation, check_draft, iscalibration_done });
     } catch (err) {
         console.log(err);
         let action = "Failed to verify certificate";
@@ -1613,135 +1663,6 @@ function capitalizeFirstLetter(str) {
         .map(word => word.charAt(0).toUpperCase() + word.slice(1))
         .join(' ');
 }
-// Is  Ranges lc sperate column 
-
-
-// function buildRangeLcTypeRow(range, lc, type, masterResult = {}, isEnabled) {
-//     const rawCells = [];
-
-//     // Add RANGE if provided
-//     if (range) {
-//         rawCells.push({ text: 'RANGE:', bold: false }, { text: range, alignment: 'center' });
-//     }
-
-//     // Add L.C. if provided
-//     if (lc) {
-//         rawCells.push({ text: 'L.C:', bold: false }, { text: lc, alignment: 'center' });
-//     }
-
-//     // Add TYPE if provided
-//     if (type) {
-//         rawCells.push({ text: 'TYPE:', bold: false }, { text: type, alignment: 'center' });
-//     }
-
-//     // Add WITNESSED BY if masterResult contains valid witness names
-//     if (isEnabled("WITNESSBY_PRINT_CERTIFICATE") && Array.isArray(masterResult.witnessed_by) && masterResult.witnessed_by.length > 0) {
-//         const names = masterResult.witnessed_by
-//             .map(w => {
-//                 if (w.name && w.designation) {
-//                     return `${capitalizeEachWord(w.name)} - (${capitalizeEachWord(w.designation)})`;
-//                 } else if (w.name) {
-//                     return capitalizeEachWord(w.name);
-//                 }
-//                 return null;
-//             })
-//             .filter(Boolean)
-//             .join(', ');
-
-//         if (names) {
-//             rawCells.push({ text: 'WITNESSED BY:', bold: false }, { text: names, alignment: 'center' });
-//         }
-//     }
-
-//     const rows = [];
-
-//     // Group every 2 labels and values into a row (i.e., 4 columns per row)
-//     for (let i = 0; i < rawCells.length; i += 4) {
-//         const row = rawCells.slice(i, i + 4);
-
-//         // If row has less than 4 cells, fill empty cells (borderless)
-//         while (row.length < 4) {
-//             row.push({ text: '', border: [false, false, false, false] });
-//         }
-
-//         rows.push(row);
-//     }
-
-//     return rows;
-// }
-
-// function formatDynamicRowsFromOriginalRanges(rangesArray, masterResult = [], isEnabled, type) {
-//     if (!Array.isArray(rangesArray)) return null;
-
-//     const keyValuePairs = [];
-
-//     console.log(rangesArray, "rangesArray");
-
-//     for (const obj of rangesArray) {
-//         const uom = (obj.InstrumentparameterUOM && obj.InstrumentparameterUOM.toString().toLowerCase() !== 'select')
-//             ? obj.InstrumentparameterUOM
-//             : '';
-//         for (const [key, value] of Object.entries(obj)) {
-//             if (key !== 'InstrumentUOMID' && key !== 'InstrumentparameterUOM') {
-//                 keyValuePairs.push({
-//                     name: key.toUpperCase() + ':',
-//                     value: `${value} ${uom}`.trim()
-//                 });
-//             }
-//         }
-//     }
-
-//     // Add Witnessed By row
-//     if (isEnabled("WITNESSBY_PRINT_CERTIFICATE") && masterResult?.length > 0) {
-//         const witnessNames = masterResult.map(w => {
-//             if (w.name && w.designation) {
-//                 return `${capitalizeEachWord(w.name)} - (${capitalizeEachWord(w.designation)})`;
-//             } else if (w.name) {
-//                 return capitalizeEachWord(w.name);
-//             }
-//             return null;
-//         })
-//             .filter(Boolean)
-//             .join(', ');
-
-//         keyValuePairs.push({
-//             name: 'WITNESSED BY:',
-//             value: capitalizeEachWord(witnessNames)
-//         });
-//     }
-
-//     if (type) {
-//         keyValuePairs.push({
-//             name: 'INSTRUMENT TYPE:',
-//             value: type
-//         });
-//     }
-
-//     if (keyValuePairs.length === 0) return null;
-
-//     const rows = [];
-//     for (let i = 0; i < keyValuePairs.length; i += 2) {
-//         const row = [];
-
-//         const first = keyValuePairs[i];
-//         row.push({ text: first.name, bold: false });
-//         row.push({ text: first.value, alignment: 'center' });
-
-//         if (keyValuePairs[i + 1]) {
-//             const second = keyValuePairs[i + 1];
-//             row.push({ text: second.name, bold: false });
-//             row.push({ text: second.value, alignment: 'center' });
-//         } else {
-//             row.push({}, {}); // fill remaining columns if odd entry
-//         }
-
-//         rows.push(row);
-//     }
-
-//     return rows;
-// }
-
-
 
 const cleanValue = (val) =>
     typeof val === 'string' ? val.replace(/\s+/g, ' ').trim() : val;
@@ -1849,189 +1770,25 @@ function buildRangeLcTypeRow(range, lc, type, masterResult = {}, isEnabled) {
     return rows;
 }
 
-
-// function formatDynamicRowsFromOriginalRanges(
-//     rangesArray,
-//     masterResult = [],
-//     isEnabled,
-//     type
-// ) {
-//     if (!Array.isArray(rangesArray) || rangesArray.length === 0) return null;
-//     let rangeValue = null;
-//     let lcValue = null;
-//     let uom = '';
-
-//     const keyValuePairs = [];
-
-//     // -----------------------------
-//     // STEP 1: Extract RANGE / LC
-//     // -----------------------------
-//     for (const obj of rangesArray) {
-//         if (!obj || typeof obj !== 'object') continue;
-
-//         // Pick first valid UOM
-//         if (
-//             !uom &&
-//             obj.InstrumentparameterUOM &&
-//             obj.InstrumentparameterUOM.toString().toLowerCase() !== 'select'
-//         ) {
-//             uom = obj.InstrumentparameterUOM;
-//         }
-
-//         for (const [key, value] of Object.entries(obj)) {
-//             if (!value) continue;
-
-//             const normalizedKey = key.toLowerCase().replace(/\./g, '').trim();
-
-//             if (
-//                 normalizedKey === 'range' ||
-//                 normalizedKey === 'ranges' ||
-//                 normalizedKey.includes('range')
-//             ) {
-//                 //rangeValue = value;
-//                 rangeValue = cleanValue(value);
-
-//             }
-
-//             if (
-//                 normalizedKey === 'lc' ||
-//                 normalizedKey === 'l c' ||
-//                 normalizedKey.includes('leastcount')
-//             ) {
-//                 //lcValue = value;
-//                 lcValue = cleanValue(value);
-//             }
-//         }
-//     }
-
-//     const validRange =
-//         typeof rangeValue === 'string' && rangeValue.trim() !== ''
-//             ? rangeValue
-//             : null;
-//     const validLC = isValidNumber(lcValue) ? lcValue : null;
-
-
-//     // -----------------------------
-//     // STEP 2: Push RANGE / LC row
-//     // -----------------------------
-//     if (validRange || validLC) {
-//         let display = '';
-
-//         if (validRange && validLC) {
-//             display = `${validRange} / ${validLC}`;
-//         } else if (validRange) {
-//             display = `${validRange}`;
-//         } else {
-//             display = `${validLC}`;
-//         }
-
-//         if (uom) display += ` ${uom}`;
-
-//         keyValuePairs.push({
-//             name: 'RANGE / L.C:',
-//             value: cleanValue(display)
-//         });
-//     }
-
-//     // -----------------------------
-//     // STEP 3: OLD LOGIC for OTHER KEYS
-//     // -----------------------------
-//     for (const obj of rangesArray) {
-//         const localUom =
-//             obj.InstrumentparameterUOM &&
-//                 obj.InstrumentparameterUOM.toLowerCase() !== 'select'
-//                 ? obj.InstrumentparameterUOM
-//                 : '';
-
-//         for (const [key, value] of Object.entries(obj)) {
-//             if (
-//                 !value ||
-//                 key === 'InstrumentUOMID' ||
-//                 key === 'InstrumentparameterUOM'
-//             ) continue;
-
-//             const normalizedKey = key.toLowerCase().replace(/\./g, '').trim();
-
-//             // ❌ Skip Range & LC (already handled)
-//             if (
-//                 normalizedKey.includes('range') ||
-//                 normalizedKey === 'lc' ||
-//                 normalizedKey.includes('leastcount')
-//             ) {
-//                 continue;
-//             }
-
-//             keyValuePairs.push({
-//                 name: `${key.toUpperCase()}:`,
-//                 value: `${cleanValue(value)}${cleanValue(localUom) ? ' ' + cleanValue(localUom) : ''}`
-//             });
-//         }
-//     }
-
-//     // -----------------------------
-//     // STEP 4: Witness
-//     // -----------------------------
-//     if (
-//         isEnabled("WITNESSBY_PRINT_CERTIFICATE") &&
-//         Array.isArray(masterResult) &&
-//         masterResult.length > 0
-//     ) {
-//         const witnessNames = masterResult
-//             .map(w =>
-//                 w.name && w.designation
-//                     ? `${capitalizeEachWord(w.name)} - (${capitalizeEachWord(w.designation)})`
-//                     : w.name
-//                         ? capitalizeEachWord(w.name)
-//                         : null
-//             )
-//             .filter(Boolean)
-//             .join(', ');
-
-//         if (witnessNames) {
-//             keyValuePairs.push({
-//                 name: 'WITNESSED BY:',
-//                 value: capitalizeEachWord(witnessNames)
-//             });
-//         }
-//     }
-
-//     // -----------------------------
-//     // STEP 5: Instrument Type
-//     // -----------------------------
-//     if (type) {
-//         keyValuePairs.push({
-//             name: 'INSTRUMENT TYPE:',
-//             value: cleanValue(type)
-//         });
-//     }
-
-//     if (keyValuePairs.length === 0) return null;
-
-//     // -----------------------------
-//     // STEP 6: Build PDF rows (2 cols)
-//     // -----------------------------
-//     const rows = [];
-
-//     for (let i = 0; i < keyValuePairs.length; i += 2) {
-//         const row = [];
-
-//         const first = keyValuePairs[i];
-//         row.push({ text: first.name });
-//         row.push({ text: first.value, alignment: 'center' });
-
-//         if (keyValuePairs[i + 1]) {
-//             const second = keyValuePairs[i + 1];
-//             row.push({ text: second.name });
-//             row.push({ text: second.value, alignment: 'center' });
-//         } else {
-//             row.push({ text: '' }, { text: '' });
-//         }
-
-//         rows.push(row);
-//     }
-
-//     return rows;
-// }
+const applyTableVAlignWorkaround = (tableRows) => {
+    const rowHeightApprox = 15; // Approximate line height for fontSize 8-9
+    tableRows.forEach(row => {
+        if (Array.isArray(row)) {
+            row.forEach(cell => {
+                if (cell && typeof cell === 'object' && cell.rowSpan && cell.rowSpan > 1 && cell.vAlign) {
+                    if (cell.vAlign === 'middle') {
+                        const topMargin = ((cell.rowSpan - 1) * rowHeightApprox) / 2;
+                        cell.margin = [0, topMargin, 0, 0];
+                    } else if (cell.vAlign === 'bottom') {
+                        const topMargin = (cell.rowSpan - 1) * rowHeightApprox;
+                        cell.margin = [0, topMargin, 0, 0];
+                    }
+                }
+            });
+        }
+    });
+    return tableRows;
+};
 
 
 function formatDynamicRowsFromOriginalRanges(
@@ -2048,7 +1805,7 @@ function formatDynamicRowsFromOriginalRanges(
     let lcValue = null;
     let uom = '';
 
-    const keyValuePairs = [];
+    let keyValuePairs = [];
 
     // -----------------------------
     // STEP 1: Extract RANGE / LC
@@ -2197,7 +1954,8 @@ function formatDynamicRowsFromOriginalRanges(
     // -----------------------------
     if (type) {
         keyValuePairs.push({
-            name: 'INSTRUMENT TYPE:',
+            //name: 'INSTRUMENT TYPE:',
+            name: 'INSTRUMENT/GAUGE SIZE:',
             value: cleanValue(type)
         });
     }
@@ -2207,7 +1965,43 @@ function formatDynamicRowsFromOriginalRanges(
     // -----------------------------
     // STEP 7: Build PDF Rows (2 columns)
     // -----------------------------
-    const rows = [];
+    let rows = [];
+    const rangeItem = keyValuePairs.find(k => k.name.includes('RANGE'));
+    const setNegItem = keyValuePairs.find(k => k.name.includes('SETVALUENEG'));
+    const setPosItem = keyValuePairs.find(k => k.name.includes('SETVALUEPOS'));
+
+    // ✅ SPECIAL CUSTOMER FORMAT
+    if (rangeItem && setNegItem && setPosItem) {
+
+        rows.push([
+            {
+                text: rangeItem.name,
+                rowSpan: 2,
+                vAlign: 'middle'   // ✅ vertical middle
+            },
+            {
+                text: rangeItem.value,
+                alignment: 'center', // horizontal center
+                rowSpan: 2,
+                vAlign: 'middle'     // ✅ vertical middle
+            },
+            { text: setNegItem.name },
+            { text: setNegItem.value, alignment: 'center' }
+        ]);
+
+        rows.push([
+            {}, // required empty cell for rowSpan
+            {},
+            { text: setPosItem.name },
+            { text: setPosItem.value, alignment: 'center' }
+        ]);
+
+        keyValuePairs = keyValuePairs.filter(k =>
+            !k.name.includes('RANGE') &&
+            !k.name.includes('SETVALUENEG') &&
+            !k.name.includes('SETVALUEPOS')
+        );
+    }
 
     for (let i = 0; i < keyValuePairs.length; i += 2) {
         const row = [];
@@ -2227,7 +2021,8 @@ function formatDynamicRowsFromOriginalRanges(
         rows.push(row);
     }
 
-    return rows;
+    //return rows;
+    return applyTableVAlignWorkaround(rows);
 }
 
 
@@ -2277,8 +2072,335 @@ const Customerportalcertificate = async (pdfURL, fileName, masterURL, m_certific
 
 }
 
+
+const previewCertificate = async (req, res, next) => {
+    try {
+        const { previewType, previewData, isNabl, cmeid } = req.body;
+
+
+        const excelTable = await calibmasterexcel.findOne({
+            where: {
+                cmeid
+            },
+            attributes: ["diagram_image"],
+
+        });
+
+        const procedureimages = excelTable?.diagram_image || null;
+
+        const imageContent = await generateImageContent(procedureimages);
+
+        let excelData = previewData?.excelData || {};
+        let mergedCells = previewData?.Mergedcell || {};
+        let Styles = previewData?.Styles || {};
+        let decimalPoint = previewData?.decimalPrecision || {};
+        let selectedSheet_Cert = previewData?.selectedSheet_Cert;
+        let selectedSheet_Obs = previewData?.selectedSheet_Obs;
+
+        const ExcelProcedureTablelayout = {
+            hLineWidth: (i, node) => (i === 0 ? 0.5 : 0.5),
+            vLineWidth: () => 0.5,
+            hLineColor: () => '#000000',
+            vLineColor: () => '#000000',
+            paddingLeft: () => 2, paddingRight: () => 2, paddingTop: () => 3, paddingBottom: () => 3
+        };
+        const observationTablelayout = {
+            hLineWidth: (i, node) => (i === 0 ? 0.5 : 0.5),
+            vLineWidth: () => 0.5,
+            hLineColor: () => '#000000',
+            vLineColor: () => '#000000',
+            paddingLeft: () => 2, paddingRight: () => 2, paddingTop: () => 3, paddingBottom: () => 3
+        };
+
+        const ExcelProcedureTable = selectedSheet_Cert ? await generatePdfFromSheet(excelData, mergedCells, Styles, selectedSheet_Cert, decimalPoint, ExcelProcedureTablelayout, 8) : [];
+        const observationTable = selectedSheet_Obs ? await generatePdfFromSheet(excelData, mergedCells, Styles, selectedSheet_Obs, decimalPoint, observationTablelayout, 8) : null;
+
+        const item = {
+            calibrationAt: 'Lab',
+            intrument_type: {
+                instrument: { instrument_name: 'Dummy Instrument', instrument_discipline_id: 1, instrument_group_id: 1 },
+                range_minimum_uom: 'mm', range_maximum_uom: 'mm', least_count_uom: 'mm', size_spec_uom: 'mm', range_minimum: '0', least_count: '0.01', type: 'Standard'
+            },
+            srf: {
+                dataValues: {
+                    customer_dc: 'DC-DUMMY-001'
+                },
+                customer: { customer_name: 'Dummy Customer Pvt Ltd', address1: '123 Dummy Street', address2: 'Dummy Area', city: 'Dummy City', state: 'XY', pincode: '123456' },
+                srf_number: 'SRF-DUMMY-123', customer_dc_date: new Date().toISOString()
+            },
+            make: 'Dummy Make', model: 'DM-1000', serial_no: 'SN-00001', identification_details: 'ID-00001',
+            calibration_done_date: new Date().toISOString(), calibration_due_date: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString(),
+            remarks: 'Received in good condition', dispatch_dc: 'DC-001', inward_no: 'INW-001', url_number: 'ULR-DUMMY-001'
+        };
+
+        const masterResult = {
+            ulr_number: 'ULR-DUMMY-123456789', description: 'Calibration of Dummy Instrument', ref_std: 'IS 12345', calibration_procedure: 'WI/CAL/01',
+            temperature: { mean: '20.0' }, humidity: { mean: '50.0' }, atmospheric_pressure: '1013', frequency: '50', 
+            remarks: ['The results given in Calibration Certificate are valid only to the particular instrument submitted for calibration under the above stated condition, certificate shall not be reproduced with out the written permission of the Laboratory.','Condition of the MI / Gauges as Received.:Found OK.'], witnessed_by: 'Self', master_list_equipments: [],
+            calibrated_employee_master: { employee_full_name: 'John Doe', employee_role: 'Calibration Engineer', employee_signature: '' },
+            approved_employee_master: { employee_full_name: 'Jane Doe', employee_role: 'Technical Manager', employee_signature: '' },
+            authorizedby_employee_master: { employee_full_name: 'Authorized Signatory', employee_role: 'Quality Manager', employee_signature: '' }
+        };
+
+        const lab = {
+            lab_name: 'Dummy Testing Laboratory', address1: '456 Tech Park', address2: 'Industrial Area', city: 'Demo City', state: 'Demo State', pincode: '987654',
+            lab_website: 'www.dummylab.com', contact_email: 'info@dummylab.com', contact_number1: '123-456-7890',
+            brand_logo_filename: undefined, seal_image_filename: undefined, nabl_logo_filename: undefined
+        };
+
+        const certificate_number = 'CERT-DUMMY-0001';
+        const date_of_issue = Object.keys(format).length ? format(new Date(), "dd-MM-yyyy") : new Date().toLocaleDateString('en-GB');
+        const cal_date = date_of_issue;
+        const received_date = date_of_issue;
+        const srf = item.srf.srf_number;
+        const customer_name = item.srf.customer.customer_name;
+        const customer_address = '123 Dummy Street, Dummy Area, Dummy City, XY - 123456.';
+        const calibrationAt = item.calibrationAt;
+        const disciplineName = 'Dummy Discipline';
+        const groupName = 'Dummy Group';
+
+        const description = item.intrument_type.instrument.instrument_name;
+        const condition = item.remarks;
+        const make = item.make;
+        const model = item.model;
+        const slNo = item.serial_no;
+        const idNo = item.identification_details;
+
+        const standard_details_Table = [
+            {
+                m_description: 'Dummy Calibrator', m_make: 'Dummy Brand', m_model: 'DM-100', m_serial_no: 'DC-001',
+                m_certificate_no: 'CERT-001', m_validity: '31/12/2025', m_traceability: 'NABL', m_identification_details: 'ID-001'
+            }
+        ];
+
+        let ebody = [];
+        ebody.push([
+            { text: 'ENVIRONMENTAL\nCONDITIONS', rowSpan: 2, alignment: 'center', bold: true, margin: [0, 5, 0, 5] },
+            { text: 'TEMP', alignment: 'center', bold: true, margin: [0, 2, 0, 2] },
+            { text: '20 ± 2°C', alignment: 'center', margin: [0, 2, 0, 2] },
+            { text: 'RH', alignment: 'center', bold: true, margin: [0, 2, 0, 2] },
+            { text: '50 ± 10%', alignment: 'center', margin: [0, 2, 0, 2] }
+        ]);
+        ebody.push([
+            {},
+            { text: 'ACTUAL', alignment: 'center', bold: true },
+            { text: '20.0°C', alignment: 'center' },
+            { text: 'ACTUAL', alignment: 'center', bold: true },
+            { text: '50.0%', alignment: 'center' }
+        ]);
+
+        const thirdTableBody = [
+            [
+                { text: 'DESCRIPTION:' }, { text: description, alignment: 'center' },
+                { text: 'DUC RECEIPT CONDITION:' }, { text: condition, alignment: 'center' }
+            ],
+            [
+                { text: 'MAKE:' }, { text: make, alignment: 'center' },
+                { text: 'MODEL:' }, { text: model, alignment: 'center' }
+            ],
+            [
+                { text: 'SL.NO:' }, { text: slNo, alignment: 'center' },
+                { text: 'ID.NO:' }, { text: idNo, alignment: 'center' }
+            ],
+            [
+                { text: 'RANGE:' }, { text: item.intrument_type.range_minimum, colSpan: 1, alignment: 'center' },
+                { text: 'LEAST COUNT:' }, { text: item.intrument_type.least_count, colSpan: 1, alignment: 'center' }
+            ],
+            [
+                { text: 'CALIBRATION PROCEDURE :', alignment: 'left', bold: true },
+                { colSpan: 3, alignment: 'left', stack: ['Calibration of Dummy Instrument As per IS 12345 As per WI/CAL/01'] }, {}, {}
+            ]
+        ];
+
+        const isNABL = isNabl === true;
+        const format_no_cert = isNABL ? "LAB/F/25/ Rev:07" : "LAB/F/26/ Rev:01";
+        const format_no_obser = isNABL ? "LAB/F/25A/ Rev:04" : "LAB/F/26A/ Rev:01";
+        const headerMargin = isNABL ? 93 : 88;
+
+        const docDefinition = {
+            pageSize: 'A4', pageOrientation: 'portrait', pageMargins: [10, headerMargin, 10, 127],
+            background: (currentPage, pageSize) => [
+                {
+                    canvas: [
+                        { type: 'line', x1: 10, y1: 10, x2: 585, y2: 10, lineWidth: 2.5 },
+                        { type: 'line', x1: 10, y1: 10, x2: 10, y2: 830, lineWidth: 2.5 },
+                        { type: 'line', x1: 10, y1: 830, x2: 585, y2: 830, lineWidth: 2.5 },
+                        { type: 'line', x1: 585, y1: 10, x2: 585, y2: 830, lineWidth: 2.5 }
+                    ]
+                }
+            ],
+            header: function (currentPage, pageCount) {
+                if (isNABL) {
+                    return [{
+                        table: {
+                            widths: [100, '*', 110],
+                            body: [[
+                                { text: 'NABL LOGO HERE', alignment: 'center', margin: [0, 25, 0, 25], border: [true, true, true, true] },
+                                { text: "CALIBRATION CERTIFICATE", alignment: 'center', fontSize: 16, bold: true, margin: [0, 25, 0, 25], border: [true, true, true, true] },
+                                { text: "COMPANY LOGO HERE\n" + lab.address1, alignment: 'center', margin: [0, 20, 0, 5], fontSize: 9, border: [true, true, true, true] }
+                            ]]
+                        },
+                        layout: { hLineWidth: () => 0.5, vLineWidth: () => 0.5 }, margin: [10, 10, 10, 0]
+                    }];
+                } else {
+                    return [{
+                        table: {
+                            widths: ['*', 135.4],
+                            body: [[
+                                { text: "CALIBRATION CERTIFICATE", alignment: 'center', fontSize: 16, bold: true, margin: [80, 25, 0, 25], border: [false, true, false, true] },
+                                { text: "COMPANY LOGO HERE\n" + lab.address1, alignment: 'center', margin: [0, 20, 0, 5], fontSize: 9, border: [true, true, false, true] }
+                             ]]
+                        },
+                        layout: { hLineWidth: () => 0.5, vLineWidth: () => 0.5 }, margin: [10, 10, 10, 0]
+                    }];
+                }
+            },
+            footer: function (currentPage, pageCount) {
+                const signatureTable = {
+                    table: {
+                        widths: ['16.6%', '16.6%', '16.6%', '16.6%', '16.6%', '16.6%'],
+                        body: [
+                            [{ text: 'Calibrated By', alignment: 'center', fontSize: 8 }, { text: '', alignment: 'center' }, { text: 'Reviewd by', alignment: 'center', fontSize: 8 }, { text: '', alignment: 'center' }, { text: 'Authorized By', alignment: 'center', fontSize: 8 }, { text: '', alignment: 'center' }],
+                            [{ text: 'Name', alignment: 'center', fontSize: 8 }, { text: 'John Doe', alignment: 'center', fontSize: 8 }, { text: 'Name', alignment: 'center', fontSize: 8 }, { text: 'Jane Doe', alignment: 'center', fontSize: 8 }, { text: 'Name', alignment: 'center', fontSize: 8 }, { text: 'Authorized Signatory', alignment: 'center', fontSize: 8 }]
+                        ]
+                    },
+                    layout: { hLineWidth: (i, node) => (i === 0 ? 0.5 : (i === node.table.body.length ? 0.1 : 0.5)), vLineWidth: () => 0.3 }, margin: [10, 0, 8, 0]
+                };
+                const addressStack = { stack: [{ text: lab.lab_name, alignment: 'center', fontSize: 9, bold: true, margin: [20, 0, 0, 1] }, { text: lab.address2 + ' ' + lab.city + ' - ' + lab.pincode, alignment: 'center', fontSize: 8, margin: [20, 1, 0, 1] }, { text: 'Ph: ' + lab.contact_number1, alignment: 'center', fontSize: 8, margin: [20, 1, 0, 1] }, { text: 'E-mail id: ' + lab.contact_email, alignment: 'center', fontSize: 8, margin: [20, 1, 0, 0] }] };
+                const qrCell = isNABL ? { text: 'QR LOGO', width: 50, alignment: 'center', margin: [0, 10, 0, 0] } : { text: '', width: 50 };
+                const footerTable = {
+                    table: { widths: isNABL ? ['*', 60] : ['*'], body: isNABL ? [[addressStack, qrCell]] : [[addressStack]] },
+                    layout: { hLineWidth: () => 0.5, vLineWidth: (i) => (i === 1 ? 0 : 0.5), paddingLeft: () => 5, paddingRight: () => 5, paddingTop: () => 5, paddingBottom: () => 5 }, margin: [10, 0, 10, 0]
+                };
+                const out = [signatureTable, footerTable];
+                if (currentPage === pageCount) out.push({ table: { widths: ['*'], body: [[{ text: "***End of Certificate***", alignment: "center", fontSize: 9, bold: true }]] }, layout: 'noBorders', margin: [isNABL ? 0 : 40, 0, 26, 0] });
+                out.push({ table: { widths: ['*', 'auto'], body: [[{ text: 'Page ' + String(currentPage).padStart(2, '0') + ' of ' + String(pageCount).padStart(2, '0'), alignment: "center", fontSize: 8 }, { text: format_no_cert, alignment: "right", fontSize: 8 }]] }, layout: 'noBorders', margin: [isNABL ? 60 : 95, 0, isNABL ? 20 : 13, 15] });
+                return out;
+            },
+            content: [
+                {
+                    style: 'firstTable', table: {
+                        widths: ['*', '*', '*', '*'],
+                        body: [
+                            [{ text: "CERTIFICATE NUMBER:", border: [true, false, true, true] }, { text: certificate_number, alignment: 'center', border: [true, false, true, true] }, { text: "DATE OF ISSUE:", border: [true, false, true, true] }, { text: date_of_issue, alignment: 'center', border: [true, false, true, true] }],
+                            [{ text: "ULR NUMBER:" }, { text: item.url_number, alignment: 'center' }, { text: "RECEIVED DATE:" }, { text: received_date, alignment: 'center' }],
+                            [{ text: [{ text: 'CUSTOMER NAME & ADDRESS:', bold: true }, '\n' + customer_name, '\n' + customer_address], rowSpan: 3, colSpan: 2, lineHeight: 1 }, {}, { text: "CAL.DATE:" }, { text: cal_date, alignment: 'center' }],
+                            [{}, {}, { text: 'SRF.NO:' }, { text: srf, alignment: 'center' }],
+                            [{}, {}, { text: 'SANSERA LAB ID NO:' }, { text: item.inward_no, alignment: 'center' }],
+                            [{ text: 'Customer Reference No:' }, { text: item.dispatch_dc, alignment: 'center' }, { text: 'CALIBRATED AT:' }, { text: calibrationAt, alignment: 'center' }],
+                            [{ text: "DISCIPLINE:" }, { text: disciplineName, alignment: "center" }, { text: "GROUP:" }, { text: groupName, alignment: "center" }]
+                        ]
+                    }, layout: { hLineWidth: (i, node) => (i === 0 ? 0.1 : 0.5), vLineWidth: () => 0.5 }
+                },
+                { style: 'secondTable', table: { widths: ['*'], body: [[{ text: 'DUC DETAILS', alignment: 'center', bold: true }]] }, layout: { hLineWidth: () => 0.5, vLineWidth: () => 0.5, hLineColor: (i, node) => (i === node.table.body.length ? 'white' : 'white') } },
+                { style: 'thirdTable', table: { widths: ['25%', '25%', '25%', '25%'], body: thirdTableBody }, layout: { hLineWidth: () => 0.5, vLineWidth: () => 0.5, hLineColor: (i, node) => (i === node.table.body.length ? 'white' : 'black') } },
+                { style: 'fivthTable', table: { widths: ['*'], body: [[{ text: 'STANDARD DETAILS', alignment: 'center', bold: true }]] }, layout: { hLineWidth: () => 0.5, vLineWidth: () => 0.5, hLineColor: (i, node) => (i === node.table.body.length ? 'white' : 'black') } },
+                {
+                    style: 'sixthTable', table: {
+                        widths: Array(8).fill('14.28%'),
+                        body: [
+                            [{ text: 'DESCRIPTION', alignment: 'center', bold: true }, { text: 'MAKE / MODEL', alignment: 'center', bold: true }, { text: 'Calibration Agency', alignment: 'center', bold: true }, { text: 'SL.NO / ID.NO', alignment: 'center', bold: true }, { text: 'VALIDITY', alignment: 'center', bold: true }, { text: 'CERTIFICATE.NO', alignment: 'center', bold: true }, { text: 'TRACEABILITY', alignment: 'center', bold: true }],
+                            ...standard_details_Table.map(s => [{ text: s.m_description + ' - ' + s.m_identification_details, alignment: 'center' }, { text: s.m_make + ' / ' + s.m_model, alignment: 'center' }, { text: '-', alignment: 'center' }, { text: s.m_serial_no + ' / ' + s.m_identification_details, alignment: 'center' }, { text: s.m_validity, alignment: 'center' }, { text: s.m_certificate_no, alignment: 'center' }, { text: s.m_traceability, alignment: 'center' }])
+                        ]
+                    }, layout: { hLineWidth: () => 0.5, vLineWidth: () => 0.5, hLineColor: (i, node) => (i === node.table.body.length ? 'white' : 'black') }
+                },
+                { style: "thirdTable", table: { widths: Array(5).fill("*"), body: ebody }, margin: [0, 0, 0, 0], layout: { hLineWidth: () => 0.5, vLineWidth: () => 0.5 } },
+                ...Array.isArray(imageContent) ? imageContent : [],
+                ...(Array.isArray(ExcelProcedureTable) ? ExcelProcedureTable : []),
+                { stack: [{ text: 'REMARKS:', bold: true, decoration: 'underline', margin: [3, 1, 0, 1] }, { style: 'remarksList', ol: masterResult.remarks, lineHeight: 1.5, margin: [3, 0, 1.3, 0] }], id: 'remark_part' }
+            ],
+            defaultStyle: { columnGap: 0, font: 'Calibri', fontSize: 8.5 }
+        };
+
+        const chunks = [];
+        let combinedPdfDoc = null;
+
+        if (previewType === 'observation' || previewType === 'both') {
+            const observationBuffer = await generateObservationReport(
+                fs,
+                path,
+                printer,
+                observationTable,
+                observationTablelayout,
+                item,
+                masterResult,
+                lab,
+                certificate_number,
+                'John Doe',
+                'Jane Doe',
+                'Authorized Signatory',
+                [],
+                standard_details_Table,
+                { issue_date: new Date() },
+                format_no_obser,
+                imageToBuffer,
+                true // isPreview
+            );
+
+            if (previewType === 'observation') {
+                res.set({ "Content-Type": "application/pdf" });
+                return res.send(observationBuffer);
+            } else if (previewType === 'both') {
+                // Return Certificate if they selected "both". Combining requires pdf-lib which isn't imported cleanly here yet,
+                // The user's earlier requirement implies they want to see the exact layouts.
+                // Normally pdfmake doesn't let you embed another pdfmake buffer nicely. 
+                // Wait, if both is passed, pdfmake cannot combine two completely different doc definitions (margins, headers etc are top level).
+                // Let's use pdf-lib to merge them, if it's available.
+                try {
+                    const { PDFDocument } = require('pdf-lib');
+
+                    const certBuffer = await new Promise((resolve) => {
+                        const certPdf = printer.createPdfKitDocument(docDefinition);
+                        const cChunks = [];
+                        certPdf.on("data", c => cChunks.push(c));
+                        certPdf.on("end", () => resolve(Buffer.concat(cChunks)));
+                        certPdf.end();
+                    });
+
+                    const pdfDocCombined = await PDFDocument.create();
+
+                    // Add Cert pages
+                    const certDoc = await PDFDocument.load(certBuffer);
+                    const certPages = await pdfDocCombined.copyPages(certDoc, certDoc.getPageIndices());
+                    certPages.forEach(page => pdfDocCombined.addPage(page));
+
+                    // Add Obs pages
+                    const obsDoc = await PDFDocument.load(observationBuffer);
+                    const obsPages = await pdfDocCombined.copyPages(obsDoc, obsDoc.getPageIndices());
+                    obsPages.forEach(page => pdfDocCombined.addPage(page));
+
+                    const finalPdfBytes = await pdfDocCombined.save();
+                    res.set({ "Content-Type": "application/pdf" });
+                    return res.send(Buffer.from(finalPdfBytes));
+
+                } catch (pdfLibError) {
+                    console.error("PDF-LIB Merge Error:", pdfLibError);
+                    // Fallback to sending just the Certificate if merging fails
+                    combinedPdfDoc = printer.createPdfKitDocument(docDefinition);
+                }
+            }
+        } else {
+            combinedPdfDoc = printer.createPdfKitDocument(docDefinition);
+        }
+
+        if (combinedPdfDoc) {
+            combinedPdfDoc.on("data", chunk => chunks.push(chunk));
+            combinedPdfDoc.on("end", () => {
+                const buffer = Buffer.concat(chunks);
+                res.set({ "Content-Type": "application/pdf" });
+                return res.send(buffer);
+            });
+            combinedPdfDoc.end();
+        }
+
+    } catch (err) {
+        console.log("previewCertificate error:", err);
+        return res.status(500).json({ message: "Certificate Create Error" });
+    }
+}
 exports.generate = generate;
 exports.download = download;
 exports.verify_certificate = verify_certificate;
 exports.standard_details = standard_details;
 exports.bulkDownload_Certificate = bulkDownload_Certificate;
+exports.previewCertificate = previewCertificate;

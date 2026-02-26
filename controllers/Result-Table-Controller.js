@@ -101,7 +101,7 @@ const create = async (req, res, next) => {
             // save excel json here
 
             if (ExceljsonData) {
-                const { sheets, merges, styles, decimalPrecision
+                const { sheets, merges, styles, decimalPrecision, permissions
                 } = ExceljsonData
                 const ProcedureResultTable = await ProcedureResult.update(
                     {
@@ -109,6 +109,7 @@ const create = async (req, res, next) => {
                         Mergedcell: merges,
                         Styles: styles,
                         decimalPrecision,
+                        permissions,
                         updatedby: userid,
                         print_on_certificate: PrintonCertificate,
                         print_on_observation: ObservationCertificate || null
@@ -124,9 +125,9 @@ const create = async (req, res, next) => {
 
         } else {
 
-            const { sheets, merges, styles, decimalPrecision
+            const { sheets, merges, styles, decimalPrecision,
+                permissions
             } = ExceljsonData
-
             const newMasterTable = new MasterTable({
                 lab_id, instrument_type_id, srf_id, srf_item_id,
                 master_design_procedure_id,
@@ -148,6 +149,7 @@ const create = async (req, res, next) => {
                     Mergedcell: merges,
                     Styles: styles,
                     decimalPrecision,
+                    permissions,
                     srf_id,
                     srf_item_id,
                     labid: lab_id,

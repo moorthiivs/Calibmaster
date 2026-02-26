@@ -5,6 +5,7 @@ const { errorHandler } = require('../helpers/error-handler')
 const fs = require('fs')
 const path = require('path')
 const xlsx = require('xlsx')
+const ExcelJS = require('exceljs')
 // Temporary association for joins
 calibmasterexcel.belongsTo(MasterTable, {
   foreignKey: 'master_design_procedure_id',
@@ -99,79 +100,164 @@ const CreateCalibmasterExcel = async (req, res, next) => {
       savedImages = StoreProcedureImages(imageArray, userId);
     }
 
-    const workbook = xlsx.readFile(uploadPath);
-    const sheetNames = workbook.SheetNames;
-
-    // const allSheetsData = {};
-    // sheetNames.forEach((sheetName) => {
-    //   const sheet = workbook.Sheets[sheetName];
-    //   const jsonData = [];
-
-    //   if (sheet && sheet["!ref"]) {
-    //     const range = xlsx.utils.decode_range(sheet["!ref"]);
-    //     for (let r = range.s.r; r <= range.e.r; r++) {
-    //       const row = [];
-    //       for (let c = range.s.c; c <= range.e.c; c++) {
-    //         const addr = xlsx.utils.encode_cell({ r, c });
-    //         const cell = sheet[addr];
-    //         if (cell) {
-    //           row.push(cell.f ? `=${cell.f}` : cell.v !== undefined ? cell.v : "");
-    //         } else {
-    //           row.push("");
-    //         }
-    //       }
-    //       jsonData.push(row);
-    //     }
-    //   }
-
-    //   allSheetsData[sheetName] = jsonData;
-    // });
-
     let sheetData = {};
     let mergedCellsData = {};
+    let stylesData = {};
+
+    if (fileName.toLowerCase().endsWith('.xlsx')) {
+      // ✅ ExcelJS Path (supports Styles)
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.readFile(uploadPath);
+
+      workbook.eachSheet((worksheet, sheetId) => {
+        const sheetName = worksheet.name;
+        const sheetRows = [];
+        const sheetMerges = [];
+        const sheetStyles = {};
+
+        // Determine max dimensions
+        let maxRow = 0;
+        let maxCol = 0;
+        worksheet.eachRow((row, rowNumber) => {
+          maxRow = Math.max(maxRow, rowNumber);
+          row.eachCell((cell, colNumber) => {
+            maxCol = Math.max(maxCol, colNumber);
+          });
+        });
+
+        // Initialize grid
+        for (let r = 0; r < maxRow; r++) {
+          sheetRows[r] = new Array(maxCol).fill(null);
+        }
+
+        // Extract Data & Styles
+        worksheet.eachRow((row, rowNumber) => {
+          const rIdx = rowNumber - 1; // 0-based
+          row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+            const cIdx = colNumber - 1; // 0-based
+
+            // 1. Value / Formula
+            let val = null;
+            if (cell.formula) {
+              const f = String(cell.formula);
+              val = f.startsWith('=') ? f : '=' + f;
+            } else {
+              val = cell.value;
+              if (val && typeof val === 'object') {
+                if (val.richText) val = val.richText.map(t => t.text).join('');
+                else if (val.text) val = val.text;
+                else if (val.result !== undefined) val = val.result; // formula result fallback
+              }
+            }
+
+            if (rIdx < maxRow && cIdx < maxCol) {
+              sheetRows[rIdx][cIdx] = val;
+            }
+
+            // 2. Styles
+            const style = {};
+            let hasStyle = false;
+
+            // Font
+            if (cell.font) {
+              if (cell.font.bold) { style.bold = true; hasStyle = true; }
+              if (cell.font.italic) { style.italic = true; hasStyle = true; }
+              if (cell.font.color && cell.font.color.argb) {
+                let argb = cell.font.color.argb;
+                if (argb.length === 8) argb = argb.substring(2);
+                style.fontColor = '#' + argb;
+                hasStyle = true;
+              }
+            }
+
+            // Fill
+            if (cell.fill && cell.fill.type === 'pattern' && cell.fill.fgColor && cell.fill.fgColor.argb) {
+              let argb = cell.fill.fgColor.argb;
+              if (argb.length === 8) argb = argb.substring(2);
+              style.backgroundColor = '#' + argb;
+              hasStyle = true;
+            }
+
+            // Alignment
+            if (cell.alignment && cell.alignment.horizontal) {
+              const align = cell.alignment.horizontal;
+              if (['left', 'center', 'right', 'justify'].includes(align)) {
+                style.align = align;
+                hasStyle = true;
+              }
+            }
+
+            if (hasStyle) {
+              style.row = rIdx;
+              style.col = cIdx;
+              sheetStyles[`${rIdx}-${cIdx}`] = style;
+            }
+          });
+        });
+
+        // 3. Merges
+        if (worksheet.model.merges) {
+          worksheet.model.merges.forEach(rangeStr => {
+            const range = xlsx.utils.decode_range(rangeStr);
+            sheetMerges.push({
+              row: range.s.r,
+              col: range.s.c,
+              rowspan: range.e.r - range.s.r + 1,
+              colspan: range.e.c - range.s.c + 1
+            });
+          });
+        }
+
+        sheetData[sheetName] = sheetRows;
+        mergedCellsData[sheetName] = sheetMerges;
+        stylesData[sheetName] = sheetStyles;
+      });
+
+    } else {
+      // ✅ Fallback: XLSX Logic (Legacy support)
+      const workbook = xlsx.readFile(uploadPath);
+      workbook.SheetNames.forEach(sheetName => {
+        const worksheet = workbook.Sheets[sheetName];
+        const range = worksheet['!ref'] ? xlsx.utils.decode_range(worksheet['!ref']) : { e: { r: 0, c: 0 } };
+        const cellData = [];
+
+        for (let r = 0; r <= range.e.r; r++) {
+          const row = [];
+          for (let c = 0; c <= range.e.c; c++) {
+            const cellAddress = xlsx.utils.encode_cell({ r, c });
+            const cell = worksheet[cellAddress];
+
+            if (cell) {
+              if (cell.f) {
+                const formula = String(cell.f);
+                row.push(formula.startsWith('=') ? formula : `=${formula}`);
+              } else {
+                row.push(cell.v !== undefined ? cell.v : null);
+              }
+            } else {
+              row.push(null);
+            }
+          }
+          cellData.push(row);
+        }
+
+        const mergedCells = (worksheet['!merges'] || []).map(merge => ({
+          row: merge.s.r,
+          col: merge.s.c,
+          rowspan: merge.e.r - merge.s.r + 1,
+          colspan: merge.e.c - merge.s.c + 1
+        }));
+
+        sheetData[sheetName] = cellData;
+        mergedCellsData[sheetName] = mergedCells;
+      });
+    }
 
     const allSheetsData = {
       sheets: sheetData,
-      merges: mergedCellsData
+      merges: mergedCellsData,
+      styles: stylesData
     };
-
-    workbook.SheetNames.forEach(sheetName => {
-      const worksheet = workbook.Sheets[sheetName];
-      const range = worksheet['!ref'] ? xlsx.utils.decode_range(worksheet['!ref']) : { e: { r: 0, c: 0 } };
-      const cellData = [];
-
-      for (let r = 0; r <= range.e.r; r++) {
-        const row = [];
-        for (let c = 0; c <= range.e.c; c++) {
-          const cellAddress = xlsx.utils.encode_cell({ r, c });
-          const cell = worksheet[cellAddress];
-
-          if (cell) {
-            // For formula cells, return the formula with = prefix
-            if (cell.f) {
-              row.push(`=${cell.f}`);
-            }
-            // For regular cells, return the value
-            else {
-              row.push(cell.v !== undefined ? cell.v : null);
-            }
-          } else {
-            row.push(null);
-          }
-        }
-        cellData.push(row);
-      }
-
-      const mergedCells = (worksheet['!merges'] || []).map(merge => ({
-        row: merge.s.r,
-        col: merge.s.c,
-        rowspan: merge.e.r - merge.s.r + 1,
-        colspan: merge.e.c - merge.s.c + 1
-      }));
-
-      sheetData[sheetName] = cellData;
-      mergedCellsData[sheetName] = mergedCells;
-    });
 
     const newEntry = await calibmasterexcel.create({
       FileName: fileName,
@@ -204,6 +290,9 @@ const FetchCalibmasterExcel = async (req, res, next) => {
     const result = await calibmasterexcel.findAll({
       where: { labid },
       order: [['cmeid', 'DESC']],
+      attributes: {
+        exclude: ['ExcelData']   // 👈 Skip ExcelData from DB result
+      },
       include: [
         {
           model: MasterTable,
@@ -213,7 +302,7 @@ const FetchCalibmasterExcel = async (req, res, next) => {
         }
       ]
     })
-    
+
     if (!result) {
       const error = new Error('Failed to fetched Calibmaster Excel Sheet')
       error.code = 500
@@ -382,8 +471,7 @@ const DeleteCalibmasterExcel = async (req, res, next) => {
 }
 
 
-// const updateProcedureImage = async (req, res, next) => {
-
+// const updateProcedureImage = async (req, res) => {
 //   try {
 //     const { images, procedureId, userId } = req.body;
 
@@ -391,137 +479,229 @@ const DeleteCalibmasterExcel = async (req, res, next) => {
 //       return res.status(400).json({ message: 'No images provided' });
 //     }
 
+//     // Load existing DB images
+//     const procedure = await calibmasterexcel.findByPk(procedureId);
+//     if (!procedure) {
+//       return res.status(404).json({ message: 'Procedure not found' });
+//     }
+//     const existingImages = Array.isArray(procedure.diagram_image)
+//       ? procedure.diagram_image
+//       : [];
+
+//     // ✅ Separate incoming images
+//     const newImagesToSave = [];
+//     const finalImages = [];
+
+//     images.forEach((img) => {
+//       if (img && typeof img === "string" && img.startsWith("data:")) {
+//         newImagesToSave.push(img); // base64 → needs saving
+//       } else if (img) {
+//         finalImages.push(img); // already filename → keep
+//       }
+//     });
+
+//     // ✅ Save only base64 images
+//     const savedImages = newImagesToSave.map((imageData) => {
+//       const decoded = decodeBase64Image(imageData);
+//       if (!decoded) return null;
+//       const fileExtension = decoded.type.split("/")[1];
+//       const imgFileName = `${Math.floor(Math.random() * 9999999)}-${procedureId}.${fileExtension}`;
+//       fs.writeFileSync(`public/procedure_images/${imgFileName}`, decoded.data);
+//       return imgFileName;
+//     }).filter(Boolean); // remove nulls
+
+//     // ✅ Create final updated list
+//     const updatedImages = [...finalImages, ...savedImages];
+
+//     // ✅ Save to DB
+//     await procedure.update({ diagram_image: updatedImages });
+
+//     return res.status(200).json({
+//       message: "Images updated successfully",
+//       images: updatedImages,
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     return res
+//       .status(500)
+//       .json({ message: "Failed to update images", error: error.message });
+//   }
+// };
+
+
+const updateProcedureImage = async (req, res) => {
+  try {
+    const { images, procedureId } = req.body;
+
+    if (!images || !Array.isArray(images) || images.length === 0) {
+      return res.status(400).json({ message: "No images provided" });
+    }
+
+    const procedure = await calibmasterexcel.findByPk(procedureId);
+    if (!procedure) {
+      return res.status(404).json({ message: "Procedure not found" });
+    }
+
+    const finalImages = [];
+
+    for (const img of images) {
+
+      // ===============================
+      // CASE 1: Base64 Image → Save File
+      // ===============================
+      if (img?.name?.startsWith("data:")) {
+
+        const decoded = decodeBase64Image(img.name);
+        if (!decoded) continue;
+
+        const fileExtension = decoded.type.split("/")[1];
+        const imgFileName = `${Math.floor(Math.random() * 9999999)}-${procedureId}.${fileExtension}`;
+
+        fs.writeFileSync(
+          `public/procedure_images/${imgFileName}`,
+          decoded.data
+        );
+
+        finalImages.push({
+          name: imgFileName,
+          width: img.width || null,
+          height: img.height || null,
+        });
+
+      }
+
+      // ===============================
+      // CASE 2: Already Saved Image
+      // ===============================
+      else if (img?.name) {
+
+        finalImages.push({
+          name: img.name,
+          width: img.width || null,
+          height: img.height || null,
+        });
+
+      }
+    }
+
+    // ✅ Save Proper JSON
+    await procedure.update({
+      diagram_image: finalImages,
+    });
+
+    return res.status(200).json({
+      message: "Images updated successfully",
+      images: finalImages,
+    });
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      message: "Failed to update images",
+      error: error.message,
+    });
+  }
+};
+
+
+// const deleteProcedureImage = async (req, res, next) => {
+//   try {
+//     const { imageId, procedureId } = req.query;
+
+//     console.log(imageId, procedureId, "imageId, procedureId");
+
 //     if (!procedureId) {
 //       return res.status(400).json({ message: 'Procedure ID is required' });
 //     }
 
-//     if (!userId) {
-//       return res.status(400).json({ message: 'User ID is required' });
-//     }
-
-//     // Save images to disk and get filenames
-//     const savedImages = images.map(imageData => {
-//       const DecodeImg = decodeBase64Image(imageData);
-//       const imageBuffer = DecodeImg.data;
-//       const fileExtension = DecodeImg.type.split('/')[1];
-//       const imgFileName = `${Math.floor(Math.random() * 9999999)}-${procedureId}.${fileExtension}`;
-//       fs.writeFileSync(`public/procedure_images/${imgFileName}`, imageBuffer);
-//       return imgFileName;
-//     });
-
-//     // Update the DB record with new images
 //     const procedure = await calibmasterexcel.findByPk(procedureId);
 //     if (!procedure) {
 //       return res.status(404).json({ message: 'Procedure not found' });
 //     }
 
 //     const existingImages = procedure.diagram_image || [];
-//     const updatedImages = [...existingImages, ...savedImages];
+//     if (!existingImages.includes(imageId)) {
+//       return res.status(404).json({ message: 'Image not found in procedure' });
+//     }
+
+//     const updatedImages = existingImages.filter(img => img !== imageId);
+
+//     // Remove file from folder
+//     const filePath = path.join(__dirname, '../public/procedure_images', imageId);
+//     if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
 
 //     await procedure.update({ diagram_image: updatedImages });
 
-//     return res.status(200).json({ message: 'Images updated successfully', images: updatedImages });
+//     return res.status(200).json({ message: 'Image deleted successfully', images: updatedImages });
 //   } catch (error) {
 //     console.error(error);
-//     return res.status(500).json({ message: 'Failed to update images', error: error.message });
+//     return res.status(500).json({ message: 'Failed to delete image', error: error.message });
 //   }
-// };
+// }
 
 
-
-const updateProcedureImage = async (req, res) => {
-  try {
-    const { images, procedureId, userId } = req.body;
-
-    if (!images || !Array.isArray(images) || images.length === 0) {
-      return res.status(400).json({ message: 'No images provided' });
-    }
-
-    // Load existing DB images
-    const procedure = await calibmasterexcel.findByPk(procedureId);
-    if (!procedure) {
-      return res.status(404).json({ message: 'Procedure not found' });
-    }
-    const existingImages = Array.isArray(procedure.diagram_image)
-      ? procedure.diagram_image
-      : [];
-
-    // ✅ Separate incoming images
-    const newImagesToSave = [];
-    const finalImages = [];
-
-    images.forEach((img) => {
-      if (img && typeof img === "string" && img.startsWith("data:")) {
-        newImagesToSave.push(img); // base64 → needs saving
-      } else if (img) {
-        finalImages.push(img); // already filename → keep
-      }
-    });
-
-    // ✅ Save only base64 images
-    const savedImages = newImagesToSave.map((imageData) => {
-      const decoded = decodeBase64Image(imageData);
-      if (!decoded) return null;
-      const fileExtension = decoded.type.split("/")[1];
-      const imgFileName = `${Math.floor(Math.random() * 9999999)}-${procedureId}.${fileExtension}`;
-      fs.writeFileSync(`public/procedure_images/${imgFileName}`, decoded.data);
-      return imgFileName;
-    }).filter(Boolean); // remove nulls
-
-    // ✅ Create final updated list
-    const updatedImages = [...finalImages, ...savedImages];
-
-    // ✅ Save to DB
-    await procedure.update({ diagram_image: updatedImages });
-
-    return res.status(200).json({
-      message: "Images updated successfully",
-      images: updatedImages,
-    });
-  } catch (error) {
-    console.error(error);
-    return res
-      .status(500)
-      .json({ message: "Failed to update images", error: error.message });
-  }
-};
-
-
-const deleteProcedureImage = async (req, res, next) => {
+const deleteProcedureImage = async (req, res) => {
   try {
     const { imageId, procedureId } = req.query;
 
-    console.log(imageId, procedureId, "imageId, procedureId");
-
-    if (!procedureId) {
-      return res.status(400).json({ message: 'Procedure ID is required' });
+    if (!procedureId || !imageId) {
+      return res.status(400).json({
+        message: "Procedure ID and Image ID are required",
+      });
     }
 
     const procedure = await calibmasterexcel.findByPk(procedureId);
     if (!procedure) {
-      return res.status(404).json({ message: 'Procedure not found' });
+      return res.status(404).json({ message: "Procedure not found" });
     }
 
     const existingImages = procedure.diagram_image || [];
-    if (!existingImages.includes(imageId)) {
-      return res.status(404).json({ message: 'Image not found in procedure' });
+
+    // 🔥 Find image object by name
+    const imageExists = existingImages.find(
+      (img) => img?.name === imageId
+    );
+
+    if (!imageExists) {
+      return res.status(404).json({
+        message: "Image not found in procedure",
+      });
     }
 
-    const updatedImages = existingImages.filter(img => img !== imageId);
+    // 🔥 Remove only that object
+    const updatedImages = existingImages.filter(
+      (img) => img?.name !== imageId
+    );
 
-    // Remove file from folder
-    const filePath = path.join(__dirname, '../public/procedure_images', imageId);
-    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    // 🔥 Delete physical file
+    const filePath = path.join(
+      __dirname,
+      "../public/procedure_images",
+      imageId
+    );
 
-    await procedure.update({ diagram_image: updatedImages });
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
 
-    return res.status(200).json({ message: 'Image deleted successfully', images: updatedImages });
+    // 🔥 Update DB
+    await procedure.update({
+      diagram_image: updatedImages,
+    });
+
+    return res.status(200).json({
+      message: "Image deleted successfully",
+      images: updatedImages,
+    });
+
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: 'Failed to delete image', error: error.message });
+    return res.status(500).json({
+      message: "Failed to delete image",
+      error: error.message,
+    });
   }
-}
-
+};
 
 
 module.exports = {

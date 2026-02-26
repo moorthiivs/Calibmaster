@@ -11,11 +11,13 @@ async function generateObservationReport(
   certificate_number,
   calibrated_employee_name,
   approved_employee_name,
+  authorized_employee_name,
   instrumentDynamicRows,
   standard_details_Table,
   EParameterData,
   format_no_obser,
-  imageToBuffer
+  imageToBuffer,
+  isPreview
 ) {
   let cal_date = item?.calibration_done_date ? new Date(item?.calibration_done_date).toLocaleDateString("en-GB") : 'NA'
   let due_date = item?.calibration_due_date ? new Date(item?.calibration_due_date).toLocaleDateString("en-GB") : 'NA'
@@ -264,6 +266,7 @@ async function generateObservationReport(
   try {
     const docDefinition = {
       pageSize: "A4",
+      pageOrientation: 'portrait',
       pageMargins: [10, 62, 10, 92],
       background: (currentPage, pageSize) => {
         return [
@@ -358,7 +361,9 @@ async function generateObservationReport(
           [
             { text: "Calibrated By :", alignment: "center", bold: true, border: [true, true, true, true] },
             { text: "", border: [true, true, true, true] },
-            { text: "Approved By :", alignment: "center", bold: true, border: [true, true, true, true] },
+            { text: "Reviewed By :", alignment: "center", bold: true, border: [true, true, true, true] },
+            { text: "", border: [true, true, true, true] },
+            { text: "Authorized  By :", alignment: "center", bold: true, border: [true, true, true, true] },
             { text: "", border: [true, true, true, true] }
           ],
 
@@ -367,14 +372,16 @@ async function generateObservationReport(
             { text: "Name", alignment: "center", border: [true, false, true, true] },
             { text: calibrated_employee_name || "-", alignment: "center", border: [true, false, true, true] },
             { text: "Name", alignment: "center", border: [true, false, true, true] },
-            { text: approved_employee_name || "-", alignment: "center", border: [true, false, true, true] }
+            { text: approved_employee_name || "-", alignment: "center", border: [true, false, true, true] },
+            { text: 'Name', alignment: 'center', fontSize: 8, },
+            { text: authorized_employee_name || "-", alignment: 'center', fontSize: 8, }
           ],
 
           // REMARKS
           [
             { text: "Remarks :", bold: true, border: [true, true, false, true] },
-            { text: "", colSpan: 3, border: [false, true, true, true] },
-            {}, {}
+            { text: "", colSpan: 5, border: [false, true, true, true] },
+            {}, {}, {}, {}
           ]
         ];
 
@@ -383,10 +390,10 @@ async function generateObservationReport(
           footerTableBody.push([
             {
               text: "***End of Observation Sheet***",
-              colSpan: 4,
+              colSpan: 6,
               alignment: "center",
               bold: true,
-              margin: [0, 4, 0, 2],
+              margin: [0, 20, 0, 2],
               border: [false, false, false, false]
             },
             {}, {}, {}
@@ -399,7 +406,8 @@ async function generateObservationReport(
             {
               style: "Tables",
               table: {
-                widths: ["15%", "35%", "15%", "35%"],
+                //widths: ["15%", "35%", "15%", "35%"],
+                widths: ["16%", "17%", "16%", "17%", "16%", "18%"],
                 body: footerTableBody
               },
               layout: {
@@ -471,7 +479,8 @@ async function generateObservationReport(
       ],
       defaultStyle: {
         columnGap: 0,
-        font: "Roboto",
+        font: "Calibri",
+        fontSize: 8.5,
       },
       styles: {
         header: {
@@ -486,15 +495,15 @@ async function generateObservationReport(
           alignment: "center",
           margin: [0, 0, 0, 5],
         },
-        Tables: {
-          fontSize: 8,
-        },
-        tableHeadings: {
-          fontSize: 8,
-        },
+        // Tables: {
+        //   fontSize: 8,
+        // },
+        // tableHeadings: {
+        //   fontSize: 8,
+        // },
         ninethTable: {
-          fontSize: 6,
-          font: "DejaVu",
+          //fontSize: 8,
+          font: "Calibri",
         },
       },
     };
@@ -516,8 +525,12 @@ async function generateObservationReport(
       pdfDoc.on("data", (chunk) => chunks.push(chunk));
       pdfDoc.on("end", () => {
         const buffer = Buffer.concat(chunks);
-        fs.writeFileSync(outputPath, buffer);
-        resolve(fileName);
+        if (isPreview) {
+          resolve(buffer);
+        } else {
+          fs.writeFileSync(outputPath, buffer);
+          resolve(fileName);
+        }
       });
       pdfDoc.on("error", reject);
       pdfDoc.end();

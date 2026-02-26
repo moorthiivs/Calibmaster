@@ -65,6 +65,13 @@ module.exports = {
         setting_lable: "Witness By Print on Certificate",
         setting_description: "Determines whether 'Witness By' should be printed on the certificate PDF.",
         setting_value: "NO"
+      },
+      {
+        cmssetting_id: 8,
+        setting_name: "BLOCK_CALIBRATION_BEFORE_DUE",
+        setting_lable: "Block Calibration Before Due Date",
+        setting_description: "Prevents calibration before due date",
+        setting_value: "NO"
       }
     ], { ignoreDuplicates: true, });
   },

@@ -2,64 +2,6 @@ const path = require('path');
 const fs = require('fs');
 const { imageSize } = require('image-size');
 
-
-
-// async function generateImageContent(procedureimages) {
-//     const content = [];
-
-//     if (!procedureimages || !Array.isArray(procedureimages)) {
-//         return content;
-//     }
-
-//     try {
-//         const imageBuffers = await Promise.all(
-//             procedureimages
-//                 .filter(image => typeof image === 'string')
-//                 .map(async (image) => {
-//                     try {
-//                         const imagePath = path.resolve(__dirname, `../public/procedure_images/${image.trim()}`);
-//                         return await imageToBuffer(imagePath);
-//                     } catch (error) {
-//                         console.error(`Error loading image ${image}:`, error);
-//                         return false;
-//                     }
-//                 })
-//         );
-
-//         const validImageBuffers = imageBuffers.filter(buffer => buffer !== false);
-
-//         if (validImageBuffers.length > 0) {
-//             for (const imageData of validImageBuffers) {
-//                 content.push({
-//                     stack: [
-//                         {
-//                             text: 'PROCEDURE DIAGRAM',
-//                             alignment: 'center',
-//                             bold: true,
-//                             fontSize: 10,
-//                             margin: [0, 0, 0, 5]
-//                         },
-//                         {
-//                             image: imageData,
-//                             width: 500, // Adjust width to fit A4 with some padding (max ~550)
-//                             alignment: 'center',
-//                             margin: [0, 0, 0, 15]
-//                         }
-//                     ],
-//                     alignment: 'center',
-//                     margin: [0, 10, 0, 10]
-//                 });
-//             }
-//         }
-//     } catch (error) {
-//         console.error('Error generating image content:', error);
-//     }
-
-//     return content;
-// }
-
-
-
 async function imageToBuffer(imagePath) {
     try {
         if (!fs.existsSync(imagePath)) {
@@ -95,10 +37,19 @@ async function generateImageContent(procedureimages) {
     try {
         const imageBuffers = await Promise.all(
             procedureimages
-                .filter(image => typeof image === 'string' && image.trim() !== '')
-                .map(async (image) => {
+                .filter(img => img && (typeof img === "string" || img.name))
+                .map(async (imgObj) => {
                     try {
-                        const imagePath = path.resolve(__dirname, `../public/procedure_images/${image.trim()}`);
+
+                        const imageName = typeof imgObj === "string"
+                            ? imgObj
+                            : imgObj.name;
+
+
+                        if (!imageName) return false;
+
+
+                        const imagePath = path.resolve(__dirname, `../public/procedure_images/${imageName.trim()}`);
 
                         if (!fs.existsSync(imagePath)) {
                             console.warn(`⚠️ Skipping missing image: ${imagePath}`);
@@ -117,7 +68,14 @@ async function generateImageContent(procedureimages) {
                         const buffer = await imageToBuffer(imagePath);
                         if (!buffer) return false;
 
-                        return { buffer, dimensions };
+                        return {
+                            buffer,
+                            dimensions,
+                            userWidth:
+                                typeof imgObj === "object" ? imgObj.width : null,
+                            userHeight:
+                                typeof imgObj === "object" ? imgObj.height : null,
+                        };
                     } catch (error) {
                         console.error(`❌ Error loading image ${image}:`, error);
                         return false;
@@ -130,9 +88,11 @@ async function generateImageContent(procedureimages) {
         if (validImages.length === 1) {
             // ✅ Single Image → Print normally
             const img = validImages[0];
-            const maxWidth = 450;
-            let finalWidth = Math.min(img.dimensions.width, maxWidth);
-            let finalHeight = (img.dimensions.height / img.dimensions.width) * finalWidth;
+            const userWidth = img.userWidth
+            const userHeight = img.userHeight
+            const maxWidth = 300;
+            let finalWidth = userWidth || Math.min(img.dimensions.width, maxWidth);
+            let finalHeight = userHeight || (img.dimensions.height / img.dimensions.width) * finalWidth;
 
             content.push({
                 stack: [
@@ -148,52 +108,48 @@ async function generateImageContent(procedureimages) {
                         width: finalWidth,
                         height: finalHeight,
                         alignment: 'center',
-                        margin: [0, 0, 0, 5]
+                        margin: [0, 0, 0, 0]
                     }
                 ],
                 alignment: 'center',
-                margin: [0, 10, 0, 5]
+                margin: [0, 2, 0, 2]
             });
         }
         else if (validImages.length === 2) {
-            // ✅ Two Images → Side by Side
-            const maxWidthPerImage = 220; // Half of A4 width roughly (500 / 2 - 15)
-            const row = [];
 
-            for (const img of validImages) {
-                let width = Math.min(img.dimensions.width, maxWidthPerImage);
-                let height = (img.dimensions.height / img.dimensions.width) * width;
 
-                row.push({
+            const maxWidthPerImage = 200;
+
+            const imageColumns = validImages.map(img => {
+                let userwidth = img.userWidth;
+                let userheight = img.userHeight;
+                let width = userwidth ? userwidth : Math.min(img.dimensions.width, maxWidthPerImage);
+                let height = userheight ? userheight : (img.dimensions.height / img.dimensions.width) * width;
+
+                return {
                     image: img.buffer,
                     width,
                     height,
-                    margin: [5, 0, 5, 0],
                     alignment: 'center'
-                });
-            }
+                };
+            });
 
             content.push({
-                stack: [
-                    // {
-                    //     text: 'PROCEDURE DIAGRAM',
-                    //     alignment: 'center',
-                    //     bold: true,
-                    //     fontSize: 10,
-                    //     margin: [0, 0, 0, 5]
-                    // },
+                columns: [
+                    { width: '*', text: '' },   // left spacer
                     {
-                        columns: row,
-                        columnGap: 10,
-                        alignment: 'center',
-                        margin: [0, 0, 0, 15]
-                    }
+                        width: 'auto',
+                        columns: imageColumns,
+                        columnGap: 20
+                    },
+                    { width: '*', text: '' }    // right spacer
                 ],
-                alignment: 'center',
                 margin: [0, 10, 0, 10]
             });
         } else {
             for (const img of validImages) {
+                const userWidth = img.userWidth
+                const userHeight = img.userHeight
                 const maxWidth = 450;
                 let finalWidth = Math.min(img.dimensions.width, maxWidth);
                 let finalHeight = (img.dimensions.height / img.dimensions.width) * finalWidth;

@@ -5,6 +5,7 @@ const MasterListEquipment = require("../models").MasterListEquipment;
 
 const { errorHandler } = require("../helpers/error-handler");
 const { decodeBase64Image } = require("../helpers/image-decoded-handler");
+const MasterTable = require("../models").master_design_procedure;
 
 function StoreMasterCalibrationImage(imageData) {
     try {
@@ -88,7 +89,7 @@ const create = async (req, res, next) => {
                 error.code = 500;
                 return errorHandler(error, req, res, next);
             }
-            
+
             const newMasterListEquipment = new MasterListEquipment(req.body);
             const result = await newMasterListEquipment.save();
 
@@ -247,13 +248,64 @@ const update = async (req, res, next) => {
         }
         delete req.body.master_calibration;
 
-        // return res.json(req.body);
+        //return res.json(req.body);
 
         if (result) {
             await MasterListEquipment.update(
                 req.body,
                 { where: { master_list_equipment_id } }
             )
+            // Step 2: Fetch fresh updated master record
+            const updatedMaster = await MasterListEquipment.findOne({
+                where: { master_list_equipment_id }
+            });
+
+            if (!updatedMaster) {
+                throw new Error("Failed to fetch updated master record");
+            }
+
+            const updatedMasterJSON = updatedMaster.toJSON();
+            let updatedCount = 0;
+            let updatedProcedures = [];
+
+
+            const procedures = await MasterTable.findAll();
+
+            for (const procedure of procedures) {
+
+                let equipments = procedure.master_list_equipments;
+                let updated = false;
+
+                equipments = equipments.map(eq => {
+
+                    let parsed = typeof eq === "string" ? JSON.parse(eq) : eq;
+
+                    if (typeof parsed === "string") {
+                        parsed = JSON.parse(parsed);
+                    }
+
+                    if (Number(parsed.master_list_equipment_id) === Number(master_list_equipment_id)) {
+                        parsed = updatedMasterJSON;
+                        updated = true;
+                    }
+
+                    return parsed;
+                });
+
+                if (updated) {
+
+                    await procedure.update({
+                        master_list_equipments: equipments
+                    });
+
+                    updatedCount++;
+
+                    updatedProcedures.push({
+                        master_design_procedure_id: procedure.master_design_procedure_id,
+                        calibration_procedure: procedure.calibration_procedure.trim()
+                    });
+                }
+            }
             return res.status(200).json({
                 msg: true, code: 200, response: "Record updated successfully!!!"
             });

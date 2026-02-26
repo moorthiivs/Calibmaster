@@ -1,6 +1,6 @@
 {
     "development": {
-        "username": "calib67hadmin",
+     "username": "calib67hadmin",
         "password": "dBtrAAI2p75xBipNmCD05sYxp35Z680",
         "database": "releasev4-calibmaster-sansera",
         "host": "sansera-engineering-calibmaster-customerportal-db.postgres.database.azure.com",

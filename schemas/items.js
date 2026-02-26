@@ -10,7 +10,7 @@ const innerschema = {
       type: ["string", "null"]
     },
     serialno: {
-      type: "string",
+      type: ["string", "null"]
     },
     remarks: {
       type: "string",

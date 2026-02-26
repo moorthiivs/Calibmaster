@@ -1,4 +1,261 @@
-const { HyperFormula } = require("hyperformula");
+const { HyperFormula, FunctionPlugin } = require("hyperformula");
+
+// Register the custom MODE function plugin for HyperFormula
+class ModePlugin extends FunctionPlugin {
+    mode(ast, state) {
+        return this.runFunction(
+            ast.args,
+            state,
+            this.metadata("MODE"),
+            (range, precision) => {
+                try {
+                    // Debug raw inputs
+
+                    let flat = [];
+
+                    if (Array.isArray(range)) {
+                        // Handle raw array input
+                        flat = range.flat().filter((v) => v !== null && v !== undefined && v !== "");
+                    } else if (range?.data) {
+                        // Handle SimpleRangeValue with visible data property (some versions)
+                        flat = range.data.flat().filter((v) => v !== null && v !== undefined && v !== "");
+                    } else if (range && (typeof range[Symbol.iterator] === 'function')) {
+                        // Handle SimpleRangeValue (iterable)
+                        for (const cell of range) {
+                            if (cell !== null && cell !== undefined && cell !== "") {
+                                flat.push(cell);
+                            }
+                        }
+                    } else if (range !== null && range !== undefined && range !== "") {
+                        // Handle scalar input (single cell)
+                        flat = [range];
+                    }
+
+                    if (flat.length === 0) return "#N/A";
+
+                    // Use default precision of 4 as per user preference in previous edits
+                    // They asked to remove the decimal argument but still want decimals to work.
+                    // Using a safety round of 4 ensures 9.9801 vs 9.9802 are matching if they should.. 
+                    // wait, actually 9.9801 is 4 decimals. 
+                    // Let's use 9 digits to be safe for "exact" matching but handling float epsilon.
+                    // Or stick to 4 if that's what they wanted.
+                    // User edited to 4. I will respect 4.
+                    let decimalPlaces = 4;
+
+                    if (precision) {
+                        decimalPlaces = precision
+                    }
+                    const processedValues = flat.map(v => {
+                        const num = parseFloat(v);
+                        if (!isNaN(num)) {
+                            return parseFloat(num.toFixed(decimalPlaces));
+                        }
+                        return v;
+                    });
+
+                    const counts = {};
+                    let maxCount = 0;
+                    let modeVal = processedValues[0];
+
+                    for (const v of processedValues) {
+                        const key = String(v);
+                        counts[key] = (counts[key] || 0) + 1;
+                        if (counts[key] > maxCount) {
+                            maxCount = counts[key];
+                            modeVal = v;
+                        }
+                    }
+
+                    // If user specified precision explicitly, return as fixed-point string to preserve trailing zeros (e.g. 9.980)
+                    if (precision !== undefined && precision !== null && typeof modeVal === 'number') {
+                        return modeVal.toFixed(decimalPlaces);
+                    }
+
+                    return modeVal;
+                } catch (err) {
+                    console.error("MODE Function Error:", err);
+                    return "#ERROR!";
+                }
+            }
+        );
+    }
+}
+
+ModePlugin.implementedFunctions = {
+    MODE: {
+        method: "mode",
+        parameters: [
+            { argumentType: "RANGE" },
+            { argumentType: "SCALAR", optional: true, defaultValue: 3 }
+        ],
+    },
+};
+
+// Register the plugin globally
+HyperFormula.registerFunctionPlugin(ModePlugin, {
+    enGB: { MODE: "MODE" },
+    enUS: { MODE: "MODE" },
+});
+
+// Helper to convert column letter to index (e.g., "A" -> 0, "Z" -> 25, "AA" -> 26)
+const getColIndexFromLetter = (letter) => {
+    let column = 0;
+    const length = letter.length;
+    for (let i = 0; i < length; i++) {
+        column += (letter.charCodeAt(i) - 64) * Math.pow(26, length - i - 1);
+    }
+    return column - 1;
+};
+
+// Helper to evaluate conditional formatting rules
+const evaluateCondition = (cellValue, rule, hfInstance, currentSheetName) => {
+    const { condition } = rule;
+    if (!condition) return false;
+
+    const op = condition.operator;
+
+    // Function to resolve values (static numbers or cell references like "=Sheet1!A1")
+    const resolveValue = (val) => {
+        if (typeof val === 'string' && val.trim().startsWith('=')) {
+            const refExp = val.trim().substring(1); // remove "="
+
+            // Parse reference: [SheetName]![Column][Row] or just [Column][Row]
+            const parts = refExp.split('!');
+            let targetSheetName = currentSheetName;
+            let cellStr = refExp;
+
+            if (parts.length > 1) {
+                targetSheetName = parts[0].replace(/^'|'$/g, ""); // Remove surrounding quotes if present
+                cellStr = parts[1];
+            }
+
+            const match = cellStr.match(/^([A-Za-z]+)([0-9]+)$/);
+            if (match) {
+                const colLetter = match[1].toUpperCase();
+                const rowNum = parseInt(match[2], 10);
+
+                const col = getColIndexFromLetter(colLetter);
+                const row = rowNum - 1; // 0-indexed
+
+                const sheetId = hfInstance.getSheetId(targetSheetName);
+                if (sheetId !== undefined) {
+                    const cellVal = hfInstance.getCellValue({ sheet: sheetId, row, col });
+                    // Return recursive resolution not needed for simple raw values usually, 
+                    // but getCellValue returns calculated value.
+                    return cellVal;
+                }
+            }
+            return parseFloat(val); // Fallback if parsing fails
+        }
+        return isNaN(Number(val)) ? val : Number(val);
+    };
+
+    const cVal = Number(cellValue);
+    const isValidNumber = !isNaN(cVal) && cellValue !== "" && cellValue !== null;
+
+    if (op === 'formula') {
+        const sheetId = hfInstance.getSheetId(currentSheetName);
+        if (sheetId !== undefined) {
+             const result = hfInstance.calculateFormula(condition.value, sheetId, { row: rule.row, col: rule.col });
+             // Check for True/Non-zero
+             if (result === true || (typeof result === 'number' && !isNaN(result) && result !== 0) || result === "TRUE") {
+                 return true;
+             }
+        }
+        return false;
+    }
+
+    if (op === 'between') {
+        // Tolerance Logic: (Center - Min) <= Val <= (Center + Max)
+        if ((condition.CenterRef && (typeof condition.CenterRef === 'object' || condition.CenterRef !== "")) || (condition.CenterValue !== "" && condition.CenterValue !== undefined)) {
+            let center = null;
+
+            // 1. Try CenterRef
+            if (condition.CenterRef && typeof condition.CenterRef === 'object' && condition.CenterRef.col !== undefined && condition.CenterRef.row !== undefined) {
+                // Fix: Check for cross-sheet reference
+                const targetSheetName = condition.CenterRef.sheet || currentSheetName;
+                const sheetId = hfInstance.getSheetId(targetSheetName);
+
+                if (sheetId !== undefined) {
+                    const refVal = hfInstance.getCellValue({
+                        sheet: sheetId,
+                        row: condition.CenterRef.row,
+                        col: condition.CenterRef.col
+                    });
+
+                    const floatVal = parseFloat(refVal);
+                    if (!isNaN(floatVal)) {
+                        center = floatVal;
+                    }
+                }
+            }
+
+            // 2. Fallback to CenterValue
+            if ((center === null || isNaN(center)) && condition.CenterValue !== "" && condition.CenterValue !== undefined) {
+                center = Number(resolveValue(condition.CenterValue));
+            }
+
+            // 3. Fallback to condition.value (if it contains a formula or value to be used as center)
+            if ((center === null || isNaN(center)) && condition.value !== "" && condition.value !== undefined) {
+                center = Number(resolveValue(condition.value));
+            }
+
+            if (center !== null && !isNaN(center)) {
+                const minTol = Number(resolveValue(condition.minValue));
+                const maxTol = Number(resolveValue(condition.maxValue));
+
+                if (!isValidNumber || isNaN(minTol) || isNaN(maxTol)) return false;
+
+                const lower = center - minTol;
+                const upper = center + maxTol;
+                const epsilon = 0.000001;
+
+                // User Request: "if user cell value enterd more then this show error"
+                // Interpretation: Apply ERROR STYLE (Red) if value is OUT OF TOLERANCE.
+                // Range: [center - min, center + max] is SAFE.
+                // Condition Met (Style Applied) if: val < lower OR val > upper.
+
+                const formattedRangeLower = lower - epsilon;
+                const formattedRangeUpper = upper + epsilon;
+
+                // Return TRUE (apply style) if outside range
+                return cVal < formattedRangeLower || cVal > formattedRangeUpper;
+            }
+        }
+
+        // Standard Range: Min <= Val <= Max
+        const min = Number(resolveValue(condition.minValue));
+        const max = Number(resolveValue(condition.maxValue));
+        if (!isValidNumber) return false;
+        return cVal >= min && cVal <= max;
+    }
+
+    const tVal = resolveValue(condition.value);
+
+    // If both are numbers, compare numerically
+    if (isValidNumber && !isNaN(Number(tVal))) {
+        const nTVal = Number(tVal);
+        switch (op) {
+            case '=': return Math.abs(cVal - nTVal) < 0.000001; // Float tolerance
+            case '>': return cVal > nTVal;
+            case '<': return cVal < nTVal;
+            case '!=': return Math.abs(cVal - nTVal) >= 0.000001;
+            case '>=': return cVal >= nTVal;
+            case '<=': return cVal <= nTVal;
+        }
+    }
+
+    // Fallback to string comparison
+    const sCVal = String(cellValue);
+    const sTVal = String(tVal);
+
+    switch (op) {
+        case '=': return sCVal == sTVal;
+        case '!=': return sCVal != sTVal;
+    }
+
+    return false;
+};
 
 const generatePdfFromSheet = async (
     handsontableJson,
@@ -17,7 +274,6 @@ const generatePdfFromSheet = async (
 
         const sheetData = handsontableJson[sheetKey] || [];
         const mergedCells = MergedCells?.[sheetKey] || [];
-        ///const stylesArray = Styles?.[sheetKey] || [];
 
         const rawStyleObj = Styles?.[sheetKey] || {};
         const stylesArray = Object.values(rawStyleObj).filter(item => typeof item === "object" && item?.row !== undefined);
@@ -51,8 +307,6 @@ const generatePdfFromSheet = async (
         const evaluatedDatas = hfInstance.getSheetSerialized(sheetId);
         //console.log(evaluatedDatas, 'Evaluated Data Without Rounding');
         const evaluatedData = hfInstance.getSheetValues(sheetId);
-
-
         const maxCols = Math.max(...evaluatedData.map((row) => row.length), 0);
 
         const paddedData = evaluatedData.map((row) => {
@@ -60,12 +314,15 @@ const generatePdfFromSheet = async (
             return row.concat(newRow.slice(row.length));
         });
 
+
+
         const splitTables = [];
         let currentChunk = [];
         let startRowIndexes = [];
 
         paddedData.forEach((row, idx) => {
-            const isEmptyRow = row.every((cell) => cell === "");
+            // Treat null, undefined, and empty string as empty to ensure correct table splitting
+            const isEmptyRow = row.every((cell) => cell === null || cell === undefined || String(cell).trim() === "" || cell === 'remove');
             if (isEmptyRow) {
                 // Split the current chunk if it has data
                 if (currentChunk.length) {
@@ -172,44 +429,6 @@ const generatePdfFromSheet = async (
                     ) {
                         formattedText = Number(cell).toFixed(decimalPlaces);
 
-                        // const originalRawValue = sheetData[startRow + rowIndex]?.[colIndex];
-                        // const originalString = (originalRawValue !== null && originalRawValue !== undefined) ? String(originalRawValue) : "";
-                        // formattedText = originalString;
-
-                        // console.log(formattedText, "formattedText if");
-
-
-                        // const originalRawValue = sheetData[startRow + rowIndex]?.[colIndex];
-                        // if (
-                        //     originalRawValue != null &&
-                        //     typeof originalRawValue === 'string' &&
-                        //     !originalRawValue.trim().startsWith('=') &&
-                        //     !isNaN(Number(originalRawValue)) &&
-                        //     Number(originalRawValue) == cell &&
-                        //     (
-                        //         // Case 1: Truncation (20.000 -> 20)
-                        //         (originalRawValue.includes('.') && !formattedText.includes('.')) ||
-                        //         // Case 2: Rounding changes value (0.006 -> 0.01)
-                        //         (Number(originalRawValue) !== Number(formattedText)) ||
-                        //         // Case 3: Loss of trailing zeros/precision (0.09700 -> 0.0970)
-                        //         (originalRawValue.length > formattedText.length && originalRawValue.includes('.') && formattedText.includes('.'))
-                        //     )
-                        // ) {
-                        //     formattedText = originalRawValue;
-                        // }
-
-                        // if (
-                        //     (originalRawValue === undefined || (typeof originalRawValue === 'string' && originalRawValue.trim().startsWith('='))) &&
-                        //     Number(cell) !== Number(formattedText)
-                        // ) {
-                        //     const cellStr = (cell ?? "").toString();
-                        //     if (cellStr.length <= 12 && cellStr.includes('.')) {
-                        //         formattedText = cellStr;
-                        //     }
-                        // }
-
-
-
                         // Override logic for precision preservation
                         const originalRawValue = sheetData[startRow + rowIndex]?.[colIndex];
                         const originalString = (originalRawValue !== null && originalRawValue !== undefined) ? String(originalRawValue) : "";
@@ -241,31 +460,9 @@ const generatePdfFromSheet = async (
                                 formattedText = cellStr;
                             }
                         }
-
-
                     }
 
-                    // if (formattedText === "") {
-                    //     formattedText = (cell ?? "").toString();
-                    // }
                     if (formattedText === "") {
-                        // Check if we can preserve the original string format (e.g. "0.000")
-                        // This applies when no specific decimalPoint is configured for the cell
-                        // const originalRawValue = sheetData[startRow + rowIndex]?.[colIndex];
-
-                        // if (
-                        //     originalRawValue != null &&
-                        //     typeof originalRawValue === 'string' &&
-                        //     !originalRawValue.trim().startsWith('=') &&
-                        //     !isNaN(Number(originalRawValue)) &&
-                        //     // Ensure the numeric values match (avoid displaying "0.000" for a value that evaluated to 0.1 etc, though unlikely if no formula)
-                        //     Number(originalRawValue) == cell
-                        // ) {
-                        //     formattedText = originalRawValue;
-                        // } else {
-                        //     formattedText = (cell ?? "").toString();
-                        // }
-
                         const originalRawValue = sheetData[startRow + rowIndex]?.[colIndex];
                         const originalString = (originalRawValue !== null && originalRawValue !== undefined) ? String(originalRawValue) : "";
                         const isFormula = (typeof originalRawValue === 'string' && originalRawValue.trim().startsWith('='));
@@ -297,11 +494,7 @@ const generatePdfFromSheet = async (
                     };
 
                     if (style) {
-                        if (conditionalStyles) {
-                            if (conditionalStyles.fontColor) cellStyle.color = conditionalStyles.fontColor;
-                            if (conditionalStyles.backgroundColor) cellStyle.fillColor = conditionalStyles.backgroundColor;
-                        }
-
+                        // Apply static styles first
                         if (style.fontColor) cellStyle.color = style.fontColor;
                         if (style.backgroundColor) cellStyle.fillColor = style.backgroundColor;
                         if (style.bold) cellStyle.bold = true;
@@ -313,9 +506,26 @@ const generatePdfFromSheet = async (
                         }
                     }
 
-                    // if (cellStyle.text.length > 20 || maxCols > 10) {
-                    //     cellStyle.alignment = "center";
-                    // }
+                    // Apply conditional formatting (Overwrites static styles if condition met)
+                    if (Array.isArray(conditionalStyles) && conditionalStyles.length > 0) {
+                        const cellRow = startRow + rowIndex;
+                        const cellCol = colIndex;
+
+                        // Find all rules that apply to this specific cell
+                        const applicableRules = conditionalStyles.filter(rule =>
+                            rule.row === cellRow && rule.col === cellCol
+                        );
+
+                        // Apply styles from all matching rules
+                        for (const rule of applicableRules) {
+                            const isConditionMet = evaluateCondition(cell, rule, hfInstance, sheetKey);
+                            if (isConditionMet) {
+                                if (rule.fontColor) cellStyle.color = rule.fontColor;
+                                if (rule.backgroundColor) cellStyle.fillColor = rule.backgroundColor;
+                                if (rule.bold) cellStyle.bold = true;
+                            }
+                        }
+                    }
 
                     const isMergedMasterCell =
                         tableMergedCells.some(
@@ -358,50 +568,39 @@ const generatePdfFromSheet = async (
                 }
             });
 
-            // const nonEmptyColumnIndexes = [];
-            // for (let colIndex = 0; colIndex < maxCols; colIndex++) {
-            //     const isNonEmptyColumn = tableBody.some(
-            //         (row) => row[colIndex]?.text !== ""
-            //     );
-            //     if (isNonEmptyColumn) {
-            //         nonEmptyColumnIndexes.push(colIndex);
-            //     }
-            // }
+            // --- Identify kept rows for RowSpan adjustment ---
+            const keptRowIndicesMap = new Map(); // Original Index -> New Index (or -1)
+            let newRowCounter = 0;
+            const filteredRows = [];
 
-            // const finalTableBody = tableBody.map((row) =>
-            //     nonEmptyColumnIndexes.map((colIndex) => row[colIndex])
-            // );
-
-            // const columnCount = nonEmptyColumnIndexes.length;
-            // const widths = columnCount > 13 ? Array(columnCount).fill("auto") : Array(columnCount).fill("*");
-
-
-
-
-            // --- Remove empty rows ---
-            const filteredRows = tableBody.filter(row =>
-                row.some(cell =>
+            tableBody.forEach((row, origIndex) => {
+                const hasContent = row.some(cell =>
                     cell && cell.text && cell.text.toString().trim() !== ""
-                )
-            );
+                );
 
-            // --- Remove empty columns (after merges) ---
+                if (hasContent) {
+                    filteredRows.push(row);
+                    keptRowIndicesMap.set(origIndex, newRowCounter++);
+                } else {
+                    keptRowIndicesMap.set(origIndex, -1);
+                }
+            });
+
+            // --- Remove empty columns (Calculate locally for each chunk) ---
             const nonEmptyColumnIndexes = [];
             for (let colIndex = 0; colIndex < maxCols; colIndex++) {
-                const hasContent = filteredRows.some(row => {
+                const hasContent = tableData.some(row => {
                     const cell = row[colIndex];
-                    if (!cell || typeof cell !== "object") return false;
-                    if (!("text" in cell)) return false;
-                    return cell.text.toString().trim() !== "";
+                    return cell !== null && cell !== undefined && String(cell).trim() !== "";
                 });
                 if (hasContent) nonEmptyColumnIndexes.push(colIndex);
             }
 
 
             // --- Build clean body ---
-            const finalTableBody = filteredRows.map(row =>
-                nonEmptyColumnIndexes.map(i => {
-                    const cell = row[i];
+            const finalTableBody = filteredRows.map((row, newRowIndex) =>
+                nonEmptyColumnIndexes.map((origColIndex) => {
+                    const cell = row[origColIndex];
                     if (!cell || typeof cell !== "object" || !("text" in cell)) {
                         return { text: "", alignment: "center", noWrap: false };
                     }
@@ -415,8 +614,34 @@ const generatePdfFromSheet = async (
                         noWrap: false,
                     };
 
-                    if (cell.rowSpan && cell.rowSpan > 1) cleanCell.rowSpan = cell.rowSpan;
-                    if (cell.colSpan && cell.colSpan > 1) cleanCell.colSpan = cell.colSpan;
+                    // --- Adjust RowSpan ---
+                    if (cell.rowSpan && cell.rowSpan > 1) {
+                        // Find the original row index for this cell
+                        const origRowIndex = tableBody.indexOf(row);
+
+                        if (origRowIndex !== -1) {
+                            const spanEnd = origRowIndex + cell.rowSpan;
+                            let visibleRowsInSpan = 0;
+                            for (let r = origRowIndex; r < spanEnd; r++) {
+                                if (keptRowIndicesMap.get(r) !== -1) visibleRowsInSpan++;
+                            }
+
+                            if (visibleRowsInSpan > 1) {
+                                cleanCell.rowSpan = visibleRowsInSpan;
+                            }
+                        }
+                    }
+
+                    // --- Adjust ColSpan ---
+                    if (cell.colSpan && cell.colSpan > 1) {
+                        const spanEnd = origColIndex + cell.colSpan;
+                        // Count how many kept columns are in [origColIndex, spanEnd)
+                        const visibleColsInSpan = nonEmptyColumnIndexes.filter(idx => idx >= origColIndex && idx < spanEnd).length;
+
+                        if (visibleColsInSpan > 1) {
+                            cleanCell.colSpan = visibleColsInSpan;
+                        }
+                    }
 
                     return cleanCell;
                 })
@@ -463,8 +688,15 @@ const generatePdfFromSheet = async (
                 }
             }
 
-            const columnCount = columnCountSafe;
-            const widths = columnCount > 13 ? Array(columnCount).fill("auto") : Array(columnCount).fill("*");
+            
+            let columnCount = columnCountSafe;
+            //const widths = columnCount > 13 ? Array(columnCount).fill("auto") : Array(columnCount).fill("*");
+            let widths = Array(columnCount).fill("*");
+            if (columnCount >= 7) {
+                widths[0] = 'auto';
+            }
+            const isLargeTable = tableData.length > 100;
+
 
             return {
                 columns: [
@@ -479,20 +711,19 @@ const generatePdfFromSheet = async (
                                 },
                                 layout: Layout,
                                 fontSize,
-                                dontBreakRows: true,
-                                //style: "ninethTable",
-
+                                dontBreakRows: !isLargeTable, // Ensure rows don't break awkwardly
                             }
                         ],
-                        //unbreakable: true,
+                        unbreakable: !isLargeTable, // Keep the split chunk together
                         margin: columnCount > 13 ? [50, 0, 50, 0] : [0, 0, 0, 0],
                         alignment: "center",
                     },
                 ],
                 alignment: "center",
                 columnGap: 0,
+                unbreakable: !isLargeTable, // ✅ large tables can break
+                pageBreak: isLargeTable && chunkIndex > 0 ? 'before' : undefined,
             };
-
 
 
         });

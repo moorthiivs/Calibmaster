@@ -23,6 +23,10 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.JSON,
         allowNull: true
       },
+      permissions: {
+        type: DataTypes.JSON,
+        allowNull: true
+      },
       srf_id: DataTypes.INTEGER,
       srf_item_id: DataTypes.INTEGER,
       print_on_certificate: DataTypes.JSON,
