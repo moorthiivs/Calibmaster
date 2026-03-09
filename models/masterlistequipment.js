@@ -83,6 +83,10 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING(100),
         allowNull: true,
       },
+      uncertainty: {
+        type: DataTypes.STRING(100),
+        allowNull: true,
+      },
       history_card_number: {
         type: DataTypes.STRING(100),
         allowNull: false,
@@ -135,7 +139,7 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.DATE,
         allowNull: true
       },
-      electro_parameter:{
+      electro_parameter: {
         type: DataTypes.JSON,
         allowNull: true
       },
