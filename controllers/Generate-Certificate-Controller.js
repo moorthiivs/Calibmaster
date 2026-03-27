@@ -210,6 +210,24 @@ const generate = async (req, res, next) => {
         const selectedSheet_Cert = excelTable.dataValues.print_on_certificate;
         const selectedSheet_Obs = excelTable.dataValues.print_on_observation;
 
+        const cert_pagemargin = {
+            pageMargin: Styles?.[selectedSheet_Cert.value]?.pageMargin,
+            pageOrientation: Styles?.[selectedSheet_Cert.value]?.pageOrientation,
+            printFontSize: Styles?.[selectedSheet_Cert.value]?.printFontSize
+        };
+
+        const obs_pagemargin = {
+            pageMargin: Styles?.[selectedSheet_Obs.value]?.pageMargin,
+            pageOrientation: Styles?.[selectedSheet_Obs.value]?.pageOrientation,
+            printFontSize: Styles?.[selectedSheet_Obs.value]?.printFontSize
+        };
+
+        // ── Page margin settings: read from Styles saved per-sheet in DB ──
+        const certSettings = resolveSheetPageSettings(Styles, selectedSheet_Cert, cert_pagemargin);
+
+        // Observation sheet uses ITS OWN saved settings (independent of cert)
+        const obsSettings = resolveSheetPageSettings(Styles, selectedSheet_Obs, obs_pagemargin);
+
         const ExcelProcedureTablelayout = {
             hLineWidth: (i, node) => {
                 if (i === 0) return 0.5;
@@ -220,6 +238,7 @@ const generate = async (req, res, next) => {
             vLineColor: () => '#000000',
             paddingLeft: () => 2, paddingRight: () => 2, paddingTop: () => 3, paddingBottom: () => 3
         };
+
         const observationTablelayout = {
             hLineWidth: (i, node) => {
                 if (i === 0) return 0.5;
@@ -232,8 +251,9 @@ const generate = async (req, res, next) => {
         };
 
         // Generate table content for both certificate and observation
-        const ExcelProcedureTable = await generatePdfFromSheet(excelData, mergedCells, Styles, selectedSheet_Cert, decimalPoint, ExcelProcedureTablelayout, fontSize = 8);
-        const observationTable = isValid(selectedSheet_Obs) ? await generatePdfFromSheet(excelData, mergedCells, Styles, selectedSheet_Obs, decimalPoint, observationTablelayout, fontSize = 8) : null
+        const ExcelProcedureTable = await generatePdfFromSheet(excelData, mergedCells, Styles, selectedSheet_Cert, decimalPoint, ExcelProcedureTablelayout, certSettings.fontSize);
+
+        const observationTable = isValid(selectedSheet_Obs) ? await generatePdfFromSheet(excelData, mergedCells, Styles, selectedSheet_Obs, decimalPoint, observationTablelayout, obsSettings.fontSize) : null
 
         // Validate generation
         if (!ExcelProcedureTable) {
@@ -371,7 +391,7 @@ const generate = async (req, res, next) => {
         let iselectroParameters = false
         const type = item?.instrument_type_at_calibration || item?.intrument_type?.type;
         //const instrumentDynamicRows = formatDynamicRowsFromOriginalRanges(item?.intrument_type?.ranges, masterResult.witnessed_by);
-        const instrumentDynamicRows = formatDynamicRowsFromOriginalRanges(item?.ranges, masterResult.witnessed_by, isEnabled, type);
+        const instrumentDynamicRows = formatDynamicRowsFromOriginalRanges(item?.ranges, masterResult.witnessed_by, isEnabled, type, description);
         const range = item?.intrument_type?.range_minimum ?? ''
         const lc = item?.intrument_type?.least_count ?? ''
 
@@ -1121,7 +1141,15 @@ const generate = async (req, res, next) => {
                     }
                 },
                 ...imageContent,
-                ...(Array.isArray(ExcelProcedureTable) ? ExcelProcedureTable : []),
+                // ── Excel data block: user-saved margins apply ONLY to this section ──
+                ...(
+                    Array.isArray(ExcelProcedureTable) && ExcelProcedureTable.length > 0
+                        ? [{
+                            stack: ExcelProcedureTable,
+                            margin: [certSettings.marginLeft, certSettings.marginTop, certSettings.marginRight, certSettings.marginBottom]
+                        }]
+                        : []
+                ),
                 {
                     ...(remarks?.length > 0 && {
                         id: 'remark_part',
@@ -1205,7 +1233,9 @@ const generate = async (req, res, next) => {
             standard_details_Table,
             EParameterData?.dataValues,
             format_no_obser,
-            imageToBuffer
+            imageToBuffer,
+            obsSettings,
+            false
         ) : null
 
 
@@ -1795,10 +1825,14 @@ function formatDynamicRowsFromOriginalRanges(
     rangesArray,
     masterResult = [],
     isEnabled,
-    type
+    type,
+    description
 ) {
     if (!Array.isArray(rangesArray) || rangesArray.length === 0) return null;
-
+    const isMeasuringPin = /measuring\s*pin/i.test(description || '');
+    const isTaperMandrel = /TAPER\s*MANDREL/i.test(description || '');
+    const isCoAxialGauge = /CO-AXIAL\s*GAUGE/i.test(description || '');
+    const isConcentricityGauge = /CONCENTRICITY\s*GAUGE/i.test(description || '');
     let rangeMin = null;
     let rangeMax = null;
     let rangeValue = null;
@@ -1866,10 +1900,31 @@ function formatDynamicRowsFromOriginalRanges(
 
     const validLC = isValidNumber(lcValue) ? lcValue : null;
 
+    if (rangeMin !== null && (isMeasuringPin || isTaperMandrel || isCoAxialGauge || isConcentricityGauge)) {
+        keyValuePairs.push({
+            name: 'RANGE MIN:',
+            value: `${cleanValue(rangeMin)}${uom ? ' ' + uom : ''}`
+        });
+    }
+
+    if (rangeMax !== null && (isMeasuringPin || isTaperMandrel || isCoAxialGauge || isConcentricityGauge)) {
+        keyValuePairs.push({
+            name: 'RANGE MAX:',
+            value: `${cleanValue(rangeMax)}${uom ? ' ' + uom : ''}`
+        });
+    }
+
+    if (lcValue !== null && (isMeasuringPin || isTaperMandrel || isCoAxialGauge || isConcentricityGauge)) {
+        keyValuePairs.push({
+            name: 'LC:',
+            value: `${cleanValue(lcValue)}${uom ? ' ' + uom : ''}`
+        });
+    }
+
     // -----------------------------
     // STEP 3: Push RANGE / L.C Row
     // -----------------------------
-    if (finalRange || validLC) {
+    if ((!isMeasuringPin && !isTaperMandrel && !isCoAxialGauge && !isConcentricityGauge) && (finalRange || validLC)) {
         let display = '';
 
         if (finalRange && validLC) {
@@ -1955,7 +2010,7 @@ function formatDynamicRowsFromOriginalRanges(
     if (type) {
         keyValuePairs.push({
             //name: 'INSTRUMENT TYPE:',
-            name: 'INSTRUMENT/GAUGE SIZE:',
+            name: 'INSTRUMENT / GAUGE SIZE:',
             value: cleanValue(type)
         });
     }
@@ -2097,6 +2152,15 @@ const previewCertificate = async (req, res, next) => {
         let selectedSheet_Cert = previewData?.selectedSheet_Cert;
         let selectedSheet_Obs = previewData?.selectedSheet_Obs;
 
+        // ── Page margin settings from frontend ──
+        // Certificate sheet uses its own saved settings
+        const certSettings = await resolveSheetPageSettings(Styles, selectedSheet_Cert, previewData);
+
+        // Observation sheet uses ITS OWN saved settings (independent of cert)
+        const obsSettings = await resolveSheetPageSettings(Styles, selectedSheet_Obs, previewData);
+
+
+
         const ExcelProcedureTablelayout = {
             hLineWidth: (i, node) => (i === 0 ? 0.5 : 0.5),
             vLineWidth: () => 0.5,
@@ -2112,8 +2176,8 @@ const previewCertificate = async (req, res, next) => {
             paddingLeft: () => 2, paddingRight: () => 2, paddingTop: () => 3, paddingBottom: () => 3
         };
 
-        const ExcelProcedureTable = selectedSheet_Cert ? await generatePdfFromSheet(excelData, mergedCells, Styles, selectedSheet_Cert, decimalPoint, ExcelProcedureTablelayout, 8) : [];
-        const observationTable = selectedSheet_Obs ? await generatePdfFromSheet(excelData, mergedCells, Styles, selectedSheet_Obs, decimalPoint, observationTablelayout, 8) : null;
+        const ExcelProcedureTable = selectedSheet_Cert ? await generatePdfFromSheet(excelData, mergedCells, Styles, selectedSheet_Cert, decimalPoint, ExcelProcedureTablelayout, certSettings.fontSize) : [];
+        const observationTable = selectedSheet_Obs ? await generatePdfFromSheet(excelData, mergedCells, Styles, selectedSheet_Obs, decimalPoint, observationTablelayout, obsSettings.fontSize) : null;
 
         const item = {
             calibrationAt: 'Lab',
@@ -2135,8 +2199,8 @@ const previewCertificate = async (req, res, next) => {
 
         const masterResult = {
             ulr_number: 'ULR-DUMMY-123456789', description: 'Calibration of Dummy Instrument', ref_std: 'IS 12345', calibration_procedure: 'WI/CAL/01',
-            temperature: { mean: '20.0' }, humidity: { mean: '50.0' }, atmospheric_pressure: '1013', frequency: '50', 
-            remarks: ['The results given in Calibration Certificate are valid only to the particular instrument submitted for calibration under the above stated condition, certificate shall not be reproduced with out the written permission of the Laboratory.','Condition of the MI / Gauges as Received.:Found OK.'], witnessed_by: 'Self', master_list_equipments: [],
+            temperature: { mean: '20.0' }, humidity: { mean: '50.0' }, atmospheric_pressure: '1013', frequency: '50',
+            remarks: ['The results given in Calibration Certificate are valid only to the particular instrument submitted for calibration under the above stated condition, certificate shall not be reproduced with out the written permission of the Laboratory.', 'Condition of the MI / Gauges as Received.:Found OK.'], witnessed_by: 'Self', master_list_equipments: [],
             calibrated_employee_master: { employee_full_name: 'John Doe', employee_role: 'Calibration Engineer', employee_signature: '' },
             approved_employee_master: { employee_full_name: 'Jane Doe', employee_role: 'Technical Manager', employee_signature: '' },
             authorizedby_employee_master: { employee_full_name: 'Authorized Signatory', employee_role: 'Quality Manager', employee_signature: '' }
@@ -2218,7 +2282,10 @@ const previewCertificate = async (req, res, next) => {
         const headerMargin = isNABL ? 93 : 88;
 
         const docDefinition = {
-            pageSize: 'A4', pageOrientation: 'portrait', pageMargins: [10, headerMargin, 10, 127],
+            pageSize: 'A4',
+            pageOrientation: 'portrait',
+            // Fixed page margins — user's margin applies only to the Excel data block inside content
+            pageMargins: [10, headerMargin, 10, 127],
             background: (currentPage, pageSize) => [
                 {
                     canvas: [
@@ -2249,7 +2316,7 @@ const previewCertificate = async (req, res, next) => {
                             body: [[
                                 { text: "CALIBRATION CERTIFICATE", alignment: 'center', fontSize: 16, bold: true, margin: [80, 25, 0, 25], border: [false, true, false, true] },
                                 { text: "COMPANY LOGO HERE\n" + lab.address1, alignment: 'center', margin: [0, 20, 0, 5], fontSize: 9, border: [true, true, false, true] }
-                             ]]
+                            ]]
                         },
                         layout: { hLineWidth: () => 0.5, vLineWidth: () => 0.5 }, margin: [10, 10, 10, 0]
                     }];
@@ -2306,7 +2373,15 @@ const previewCertificate = async (req, res, next) => {
                 },
                 { style: "thirdTable", table: { widths: Array(5).fill("*"), body: ebody }, margin: [0, 0, 0, 0], layout: { hLineWidth: () => 0.5, vLineWidth: () => 0.5 } },
                 ...Array.isArray(imageContent) ? imageContent : [],
-                ...(Array.isArray(ExcelProcedureTable) ? ExcelProcedureTable : []),
+                // ── Excel data block: user-defined margins apply ONLY to this section ──
+                ...(
+                    Array.isArray(ExcelProcedureTable) && ExcelProcedureTable.length > 0
+                        ? [{
+                            stack: ExcelProcedureTable,
+                            margin: [certSettings.marginLeft, certSettings.marginTop, certSettings.marginRight, certSettings.marginBottom]
+                        }]
+                        : []
+                ),
                 { stack: [{ text: 'REMARKS:', bold: true, decoration: 'underline', margin: [3, 1, 0, 1] }, { style: 'remarksList', ol: masterResult.remarks, lineHeight: 1.5, margin: [3, 0, 1.3, 0] }], id: 'remark_part' }
             ],
             defaultStyle: { columnGap: 0, font: 'Calibri', fontSize: 8.5 }
@@ -2334,6 +2409,7 @@ const previewCertificate = async (req, res, next) => {
                 { issue_date: new Date() },
                 format_no_obser,
                 imageToBuffer,
+                obsSettings,
                 true // isPreview
             );
 
@@ -2397,6 +2473,30 @@ const previewCertificate = async (req, res, next) => {
         console.log("previewCertificate error:", err);
         return res.status(500).json({ message: "Certificate Create Error" });
     }
+}
+
+
+const MM_TO_PT = 2.8346;
+
+function resolveSheetPageSettings(Styles, sheetName, previewData) {
+    try {
+        const sheetStyle = Styles?.[sheetName] || {};
+
+        const userMargin = previewData?.pageMargin || sheetStyle.pageMargin || {};
+        const marginLeft = Math.round((userMargin.left ?? 0) * MM_TO_PT);
+        const marginRight = Math.round((userMargin.right ?? 0) * MM_TO_PT);
+        const marginTop = Math.round((userMargin.top ?? 0) * MM_TO_PT);
+        const marginBottom = Math.round((userMargin.bottom ?? 0) * MM_TO_PT);
+
+        const orientation = previewData?.pageOrientation || sheetStyle.pageOrientation || 'portrait';
+        const fontSize = previewData?.printFontSize || sheetStyle.printFontSize || 8;
+
+        return { marginLeft, marginRight, marginTop, marginBottom, orientation, fontSize };
+    } catch (error) {
+        console.log(error);
+
+    }
+
 }
 exports.generate = generate;
 exports.download = download;

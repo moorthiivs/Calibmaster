@@ -79,7 +79,7 @@ const Dashboard = require('./dashboard-routes')
 const MakeModel = require('./makeModel.routes')
 
 const DataStorage = require('./Data-storage-routes')
-
+const EmployeeTrack = require('./employee-track-routes')
 //Routes of the APP
 router.use("/api/heartbeat", heartbeatRoute);
 router.use("/api/users", usersRoutes);
@@ -180,6 +180,7 @@ router.use('/api/makemodel/', Authorization, MakeModel)
 
 router.use('/api/data-storage/', Authorization, DataStorage)
 
+router.use('/api/employee-track', EmployeeTrack)
 
 router.get("/*", (req, res) => {
     const frontendPath = path.join(__dirname + "../../public/index.html");

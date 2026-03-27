@@ -2,9 +2,9 @@ const { Op } = require("sequelize");
 
 const instrumentCodeMap = {
     "Plain Plug Gauge": "PP",
+    "PLAIN PLUG GAUGE Inches": "PP",
     "Progressive Plug Gauge": "PP",
     "Digital Vernier Caliper": "VC",
-    "Vernier Caliper": "VC",
     "Vernier Caliper": "VC",
     "Depth Caliper ": "VC",
     "Micrometer": "MM",
@@ -44,7 +44,6 @@ const instrumentCodeMap = {
     "Straight Mandrel": "SM",
     "Micrometer setting master": "SM",
     "Co-Axiality Gauge": "CO",
-    "Concentricity Gauge": "CO",
     "Radius Gauge": "RG",
     "Dial Comparator Stand": "DCS",
     "Parallel Block": "PB",
@@ -78,11 +77,11 @@ const instrumentCodeMap = {
     "Concentricity Gauge Inch": "CO",
     "Plain Mandrel": 'PM',
     "V' BLOCK NON MAGNETIC": "VB",
-    "MAGNETIC 'V' BLOCK": "VB",
     "SPLAIN Plug Gauge": "SPP",
     "SPLAIN Ring Gauge": "SPR",
     "SPLAIN Ring Gauge NOGO": "SPR",
-    
+    "CYLINDRICAL PIN GAUGE": "CP",
+    "CYLINDRICAL PIN GAUGE INCH": "CP",
 
 };
 

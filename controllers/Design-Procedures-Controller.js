@@ -206,6 +206,7 @@ const listProcedure = async (req, res, next) => {
         const definedProcedures = await MasterTable.findAll({
             where: { lab_id: lab_id },
             attributes: ['master_design_procedure_id', 'calibration_procedure'],
+            include: ["instrument_type"],
             order: [['master_design_procedure_id', 'DESC']]
         });
 

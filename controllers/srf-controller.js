@@ -2384,7 +2384,7 @@ const updateCalInfo = async (req, res, next) => {
         where: {
           srf_item_id: id,
           rstatus: 1,
-          status: "Not Calibrated",
+          //status: "Not Calibrated",
         },
       });
 
@@ -2761,7 +2761,7 @@ const updateInvoiceInfo = async (req, res, next) => {
   const { invoice_no, invoice_date, invoice_due_date, status, labId } = req.body.invoiceinfo;
 
   try {
-    const updateQuery = await Item.update(
+    await Item.update(
       {
         invoice_no, invoice_date, invoice_due_date, status,
         invoice_file_name: mainLogoImgFileName, updated_timestamp: new Date(),

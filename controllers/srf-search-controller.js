@@ -25,7 +25,18 @@ const searchBySerialNo = async (req, res, next) => {
                 },
                 lab_id: labId, rstatus: 1
             },
-            include: ["intrument_type"],
+            //include: ["intrument_type"],
+            include: [
+                {
+                    association: "intrument_type",
+                    include: [
+                        {
+                            association: "instrument",
+                        }
+                    ]
+                },
+                { model: SRF, as: "srf", include: "customer" }
+            ],
             order: [["srf_item_id", "ASC"]]
         });
 
@@ -63,7 +74,18 @@ const searchByDispatchNo = async (req, res, next) => {
                 lab_id: labId,
                 rstatus: 1
             },
-            include: ["intrument_type"],
+            //include: ["intrument_type"],
+            include: [
+                {
+                    association: "intrument_type",
+                    include: [
+                        {
+                            association: "instrument",
+                        }
+                    ]
+                },
+                { model: SRF, as: "srf", include: "customer" }
+            ],
             order: [["srf_item_id", "ASC"]]
         });
 
@@ -100,7 +122,18 @@ const searchByIdentificationDetails = async (req, res, next) => {
                 },
                 lab_id: labId, rstatus: 1
             },
-            include: ["intrument_type"],
+            //include: ["intrument_type"],
+            include: [
+                {
+                    association: "intrument_type",
+                    include: [
+                        {
+                            association: "instrument",
+                        }
+                    ]
+                },
+                { model: SRF, as: "srf", include: "customer" }
+            ],
             order: [["srf_item_id", "ASC"]]
         });
 
@@ -229,7 +262,18 @@ const searchByInwardNo = async (req, res, next) => {
                 },
                 lab_id: labId, rstatus: 1
             },
-            include: ["intrument_type"],
+            //include: ["intrument_type"],
+            include: [
+                {
+                    association: "intrument_type",
+                    include: [
+                        {
+                            association: "instrument",
+                        }
+                    ]
+                },
+                { model: SRF, as: "srf", include: "customer" }
+            ],
             order: [["srf_item_id", "ASC"]]
         });
 
@@ -272,8 +316,14 @@ const searchByInstrumentName = async (req, res, next) => {
                                 [Op.iLike]: `%${instrument_name}%`
                             }
                         }
-                        : undefined
-                }
+                        : undefined,
+                    include: [
+                        {
+                            association: "instrument"
+                        }
+                    ]
+                },
+                { model: SRF, as: "srf", include: "customer" }
             ],
             order: [["srf_item_id", "ASC"]]
         });

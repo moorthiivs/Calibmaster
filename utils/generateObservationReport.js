@@ -17,6 +17,7 @@ async function generateObservationReport(
   EParameterData,
   format_no_obser,
   imageToBuffer,
+  obsSettings,
   isPreview
 ) {
   let cal_date = item?.calibration_done_date ? new Date(item?.calibration_done_date).toLocaleDateString("en-GB") : 'NA'
@@ -373,8 +374,8 @@ async function generateObservationReport(
             { text: calibrated_employee_name || "-", alignment: "center", border: [true, false, true, true] },
             { text: "Name", alignment: "center", border: [true, false, true, true] },
             { text: approved_employee_name || "-", alignment: "center", border: [true, false, true, true] },
-            { text: 'Name', alignment: 'center', fontSize: 8, },
-            { text: authorized_employee_name || "-", alignment: 'center', fontSize: 8, }
+            { text: 'Name', alignment: 'center', fontSize: 8, border: [true, false, true, true] },
+            { text: authorized_employee_name || "-", alignment: 'center', fontSize: 8, border: [true, false, true, true] }
           ],
 
           // REMARKS
@@ -473,7 +474,15 @@ async function generateObservationReport(
             vLineColor: () => '#000000'
           }
         },
-        ...(Array.isArray(ExcelProcedureTable) ? ExcelProcedureTable : []),
+        // ...(Array.isArray(ExcelProcedureTable) ? ExcelProcedureTable : []),
+        ...(
+          Array.isArray(ExcelProcedureTable) && ExcelProcedureTable.length > 0
+            ? [{
+              stack: ExcelProcedureTable,
+              margin: [obsSettings.marginLeft, obsSettings.marginTop, obsSettings.marginRight, obsSettings.marginBottom]
+            }]
+            : []
+        ),
 
 
       ],

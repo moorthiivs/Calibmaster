@@ -7,6 +7,7 @@ const dotenv = require('dotenv');
 const routers = require('./routes/');
 const srfItemsCronservices = require('./cron-service/srf-items-cron');
 const masterEquipmentsCronservices = require('./cron-service/master-equipments-cron');
+const employeeTrackCron = require('./cron-service/employee-track-cron');
 const cron = require('node-cron');
 const { generateSrfNumber } = require("./utils/srfService");
 
@@ -18,19 +19,33 @@ const app = express();
 // masterEquipmentsCronservices.emailRemainder_1();
 // masterEquipmentsCronservices.emailRemainder_2();
 
-// Cron Job
+// Cron Job for Daily Midnight Reset (auto-logout + email reminders)
 cron.schedule('0 0 * * *', async function () { // run every day at 12:00 AM
   try {
     await srfItemsCronservices.sendNotificationMail_1();
     await srfItemsCronservices.sendNotificationMail_2();
     await masterEquipmentsCronservices.emailRemainder_1();
     await masterEquipmentsCronservices.emailRemainder_2();
+    await employeeTrackCron.autoLogout();
   } catch (err) {
     console.error('Error with cron job setup:', err);
   }
 }, {
   scheduled: true,
-  timezone: "Asia/Kolkata"  // Set the timezone to India Standard Time (IST)
+  timezone: "Asia/Kolkata"
+});
+
+// Heartbeat cron: marks sessions as LOGOUT if their updatedAt went silent for > 2.5 min.
+// This fires every 2 minutes and is the primary safety net for browser closes / sleep mode.
+cron.schedule('*/2 * * * *', async function () {
+  try {
+    await employeeTrackCron.heartbeatLogout();
+  } catch (err) {
+    console.error('Error with heartbeat logout cron:', err);
+  }
+}, {
+  scheduled: true,
+  timezone: "Asia/Kolkata"
 });
 
 const whitelist = ["http://localhost:5173"];

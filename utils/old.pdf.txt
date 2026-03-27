@@ -264,8 +264,7 @@ const generatePdfFromSheet = async (
     selectedSheetInput,
     decimalPoint,
     Layout,
-    fontSize,
-    pageSettings = null
+    fontSize
 ) => {
     try {
         const sheetKey =
@@ -809,54 +808,34 @@ const generatePdfFromSheet = async (
 
             let widths = Array(columnCount).fill("*");
 
+            /// --------------This Only user colwidth audjst with apply ------------------
+            // for (let c = 0; c < columnCount; c++) {
+            //     const origColIndex = nonEmptyColumnIndexes[c];
+            //     const widthVal = (origColIndex !== undefined && userColWidths[origColIndex] > 0) ? userColWidths[origColIndex] : 100;
+            //     widths[c] = widthVal * 0.47; // Match adjusted screen proportions
+            // }
+            /// ---------------------------------------------------------------
+
 
             /// --------------This if user not applied colwidth default coldwidth apply------------------
 
             let hasUserWidths = false;
-            let userWidthCount = 0;
-            let totalAbsoluteWidth = 0;
 
             for (let c = 0; c < columnCount; c++) {
                 const origColIndex = nonEmptyColumnIndexes[c];
+
                 if (
                     origColIndex !== undefined &&
                     userColWidths[origColIndex] !== undefined &&
                     userColWidths[origColIndex] > 0
                 ) {
                     hasUserWidths = true;
-                    userWidthCount++;
-                    totalAbsoluteWidth += userColWidths[origColIndex];
-                } else {
-                    totalAbsoluteWidth += 100; // default for missing width
+                    break;
                 }
             }
 
-            const coverageRatio = userWidthCount / columnCount;
-            const FULL_WIDTH_THRESHOLD = 0.6;
-
-            // Compute scaling logic
-            let finalScale = 1;
-            if (coverageRatio >= FULL_WIDTH_THRESHOLD && pageSettings) {
-                // A4 points: 595.28 x 841.89
-                const isLandscape = pageSettings.orientation === 'landscape';
-                const A4_W = isLandscape ? 841.89 : 595.28;
-                const globalPadding = 20; // 10 left + 10 right from controller's page margin
-                                                                
-                const mLeft = typeof pageSettings.marginLeft === 'number' ? pageSettings.marginLeft : 0;
-                const mRight = typeof pageSettings.marginRight === 'number' ? pageSettings.marginRight : 0;
-                                                                
-                // Effective available width
-                const availW = A4_W - globalPadding - mLeft - mRight;
-                const totalWidthPt = totalAbsoluteWidth * 0.47;
-                                                                
-                if (totalWidthPt > availW && availW > 0) {
-                    finalScale = availW / totalWidthPt;
-                }
-            }
-                                                
-            const pointMultiplier = 0.47 * (finalScale > 0 ? finalScale : 1);
-
-            if (coverageRatio >= FULL_WIDTH_THRESHOLD) {
+            if (hasUserWidths) {
+                // ✅ Use user-defined widths
                 for (let c = 0; c < columnCount; c++) {
                     const origColIndex = nonEmptyColumnIndexes[c];
                     const widthVal =
@@ -865,27 +844,11 @@ const generatePdfFromSheet = async (
                             ? userColWidths[origColIndex]
                             : 100;
 
-                    widths[c] = widthVal * pointMultiplier;
+                    widths[c] = widthVal * 0.47;
                 }
             } else {
                 // ✅ Fallback logic
-                for (let c = 0; c < columnCount; c++) {
-                    const origColIndex = nonEmptyColumnIndexes[c];
-
-                    if (
-                        origColIndex !== undefined &&
-                        userColWidths[origColIndex] !== undefined &&
-                        userColWidths[origColIndex] > 0
-                    ) {
-                        // Keep user-defined width for specific columns
-                        widths[c] = userColWidths[origColIndex] * pointMultiplier;
-                    } else {
-                        // Balance remaining columns
-                        widths[c] = '*';
-                    }
-                }
-
-                if (!hasUserWidths && columnCount >= 7) {
+                if (columnCount >= 7) {
                     widths[0] = 'auto';
                 }
             }
@@ -932,7 +895,7 @@ const generatePdfFromSheet = async (
                                 : 23; // Default 23px from Handsontable config
 
                         // Scale roughly from px -> pt/pdfmake units (approx 0.75 ratio mimicking widths 0.47 if necessary, or 1:1 depending on layout choice). Usually PDF pts are 0.75 * px.
-                        heights[newRowIdx] = heightVal * pointMultiplier;
+                        heights[newRowIdx] = heightVal * 0.47;
                         newRowIdx++;
                     }
                 }
