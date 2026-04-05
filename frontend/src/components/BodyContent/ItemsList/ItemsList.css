@@ -1,0 +1,39 @@
+.srf__items__container {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.items__table__card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+@media (min-width: 900px) {
+  .srf__items__table {
+    width: 100%;
+    max-width: calc(100vw - 120px);
+  }
+}
+
+.items__label {
+  width: 100%;
+  text-align: center;
+}
+
+.srf__submit__container {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  width: 300px;
+}
+
+.add__button__container {
+  padding: 1rem;
+}

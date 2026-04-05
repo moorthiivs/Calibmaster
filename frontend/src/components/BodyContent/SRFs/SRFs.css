@@ -1,0 +1,23 @@
+.basic__card {
+  padding: 1rem;
+}
+
+.srfs__container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.srfs__card {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.srfs__label {
+  width: 100%;
+}

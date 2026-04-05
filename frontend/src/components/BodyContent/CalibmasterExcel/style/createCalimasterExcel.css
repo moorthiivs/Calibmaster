@@ -1,0 +1,22 @@
+.create__Calibmaster__Excel_container{
+display: flex;
+justify-content: center;
+align-items: center;
+width: 100%;
+
+}
+.create__Calibmaster__Excelcard{
+    width: 90%;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+.create_Calibmaster__Excel_form{
+    padding: 10px 20px;
+    margin: 10px 20px;
+}
+.error-text{
+    color: red;
+}

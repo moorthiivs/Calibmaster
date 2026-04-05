@@ -1,0 +1,20 @@
+.users__container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.users__card {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  text-align: center;
+}
+
+.users__label {
+  width: 100%;
+}

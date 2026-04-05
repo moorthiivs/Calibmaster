@@ -1,0 +1,25 @@
+{
+    "development": {
+      "username": "calib67hadmin",
+        "password": "dBtrAAI2p75xBipNmCD05sYxp35Z680",
+        "database": "releasev4-calibmaster-sansera",
+        "host": "sansera-engineering-calibmaster-customerportal-db.postgres.database.azure.com",
+        "dialect": "postgres",
+        "logging": false
+    },
+    "test": {
+        "username": "calib67hadmin",
+        "password": "dBtrAAI2p75xBipNmCD05sYxp35Z680",
+        "database": "releasev4-calibmaster-sansera",
+        "host": "sansera-engineering-calibmaster-customerportal-db.postgres.database.azure.com",
+        "dialect": "postgres"
+    },
+    "production": {
+        "username": "postgres",
+        "password": "root",
+        "database": "Sansera",
+        "host": "127.0.0.1",
+        "dialect": "postgres",
+        "logging": false
+    }
+}

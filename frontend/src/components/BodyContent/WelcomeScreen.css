@@ -1,0 +1,31 @@
+/* .dashboard-container {
+  padding: 24px;
+} */
+
+/* .dashboard-container {
+    max-width: 90%;
+    width: 96%;
+    box-sizing: border-box;
+    padding: 24px;
+} */
+
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+}
+
+.dashboard-cards {
+    margin-bottom: 24px;
+}
+
+@media (max-width: 768px) {
+    .dashboard-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+}

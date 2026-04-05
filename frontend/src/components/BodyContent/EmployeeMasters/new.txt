@@ -1,0 +1,174 @@
+import React, { useContext, useRef, useState } from 'react';
+import SignatureCanvas from 'react-signature-canvas';
+import { Card, Input, Button, Select, FileSelector } from 'react-rainbow-components';
+import { notificationActions } from '../../../store/nofitication';
+import { AuthContext } from '../../../context/auth-context';
+import { useDispatch } from 'react-redux';
+import config from "../../../utils/config.json";
+import { sidebarActions } from '../../../store/sidebar';
+import "./employee.css";
+
+const CreateEmployee = () => {
+    const auth = useContext(AuthContext);
+    const dispatch = useDispatch();
+
+    const [empTitle, setEmpTitle] = useState("");
+    const [empFullName, setEmpFullName] = useState("");
+    const [empRole, setEmpRole] = useState("");
+    const [files, setFiles] = useState(null);
+    const [drawMode, setDrawMode] = useState(false);
+
+    const [empTitleError, setEmpTitleError] = useState("");
+    const [empFullNameError, setEmpFullNameError] = useState("");
+    const [empRoleError, setEmpRoleError] = useState("");
+    const [fileError, setFileError] = useState("");
+
+    const sigCanvasRef = useRef();
+
+    const clearSignature = () => {
+        sigCanvasRef.current.clear();
+        setFiles(null);
+    };
+
+    const convertBase64ToFile = (base64, filename) => {
+        const arr = base64.split(',');
+        const mime = arr[0].match(/:(.*?);/)[1];
+        const bstr = atob(arr[1]);
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        while (n--) {
+            u8arr[n] = bstr.charCodeAt(n);
+        }
+        return new File([u8arr], filename, { type: mime });
+    };
+
+    const handleSubmit = async () => {
+        try {
+            if (!empTitle) return setEmpTitleError("Employee Title is required.");
+            if (!empFullName) return setEmpFullNameError("Employee Full Name is required.");
+            if (!empRole) return setEmpRoleError("Employee Role is required.");
+
+            let signatureFile = files?.[0];
+
+            // Convert drawn signature to file if in draw mode
+            if (drawMode) {
+                if (sigCanvasRef.current.isEmpty()) {
+                    return setFileError("Draw the signature before submitting.");
+                }
+                const base64 = sigCanvasRef.current.toDataURL("image/png");
+                signatureFile = convertBase64ToFile(base64, "signature.png");
+            } else {
+                if (!files || files.length < 1) {
+                    return setFileError("Signature file not selected.");
+                }
+                if (files[0].type !== "image/png") {
+                    return setFileError("Only PNG images are allowed.");
+                }
+            }
+
+            const data = new FormData();
+            data.append("lab_id", auth.labId);
+            data.append("employee_title", empTitle);
+            data.append("employee_full_name", empFullName);
+            data.append("employee_role", empRole);
+            data.append("employee_signature", signatureFile);
+
+            const requestOptions = {
+                method: "POST",
+                headers: {
+                    Authorization: "Bearer " + auth.token,
+                },
+                body: data,
+            };
+
+            let response = await fetch(config.Calibmaster.URL + "/api/employee-master/create", requestOptions);
+            response = await response.json();
+
+            dispatch(notificationActions.changenotification({
+                title: response?.msg,
+                icon: "success",
+                state: true,
+                timeout: 15000,
+            }));
+
+            dispatch(sidebarActions.changesidebar("List-Employee"));
+        } catch (error) {
+            console.log(error);
+        }
+    };
+
+    return (
+        <div className="main_container">
+            <Card className="card_container_1">
+                <h3 className='title'>Create Employee</h3>
+
+                {/* Input Fields */}
+                <div className="input_group">
+                    <Input label="Employee Title" value={empTitle} onChange={e => {
+                        setEmpTitle(e.target.value); setEmpTitleError("")
+                    }} />
+                    {empTitleError && <span className='err'>{empTitleError}</span>}
+                </div>
+
+                <div className="input_group">
+                    <Input label="Employee Full Name" value={empFullName} onChange={e => {
+                        setEmpFullName(e.target.value); setEmpFullNameError("")
+                    }} />
+                    {empFullNameError && <span className='err'>{empFullNameError}</span>}
+                </div>
+
+                <div className="input_group">
+                    <Input label="Employee Role" value={empRole} onChange={e => {
+                        setEmpRole(e.target.value); setEmpRoleError("")
+                    }} />
+                    {empRoleError && <span className='err'>{empRoleError}</span>}
+                </div>
+
+                {/* Toggle Upload or Draw */}
+                <div className="input_group">
+                    <label style={{ marginBottom: 8 }}>
+                        <input
+                            type="checkbox"
+                            checked={drawMode}
+                            onChange={() => {
+                                setDrawMode(!drawMode);
+                                setFileError("");
+                                clearSignature();
+                            }}
+                        />{" "}
+                        Draw Signature Instead of Uploading
+                    </label>
+
+                    {!drawMode ? (
+                        <FileSelector
+                            label="Employee Signature"
+                            placeholder="Drag & Drop or Click to Browse"
+                            bottomHelpText="Only PNG files allowed"
+                            onChange={(e) => {
+                                setFiles(e);
+                                setFileError("");
+                            }}
+                        />
+                    ) : (
+                        <div>
+                            <SignatureCanvas
+                                penColor="black"
+                                canvasProps={{ width: 400, height: 150, className: "sigCanvas" }}
+                                ref={sigCanvasRef}
+                            />
+                            <Button label="Clear" onClick={clearSignature} className="rainbow-m-around_small" />
+                        </div>
+                    )}
+
+                    {fileError && <span className='err'>{fileError}</span>}
+                </div>
+
+                <div className="btn_area">
+                    <Button label="Create" onClick={handleSubmit} variant="brand" />
+                </div>
+            </Card>
+        </div>
+    );
+};
+
+export default CreateEmployee;

@@ -1,0 +1,58 @@
+/* Override default html5-qrcode button */
+.html5-qrcode-element {
+  cursor: pointer;
+  background-color: #1677ff;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 4px 12px;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Hover effect */
+.html5-qrcode-element:hover {
+  background-color: #4096ff;
+  /* AntD hover blue */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Focus/active state */
+.html5-qrcode-element:active {
+  background-color: #0958d9;
+  /* darker active blue */
+  transform: scale(0.96);
+}
+
+/* Space fix between buttons */
+#reader__dashboard_section>div:first-child {
+  margin-bottom: 12px !important;
+}
+
+
+.html5-qrcode-element {
+  padding: 8px 15px;
+  font-size: 14px;
+  border-radius: 10px;
+}
+
+/* Reader container full height */
+#reader {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  height: 100% !important;
+  position: relative;
+}
+
+/* Center shaded region (QR box) */
+/* #qr-shaded-region {
+  margin: auto !important;
+  position: relative !important;
+  top: auto !important;
+  left: auto !important;
+} */
+
+

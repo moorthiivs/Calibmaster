@@ -1,0 +1,75 @@
+.row {
+    display: flex;
+    flex-wrap: nowrap;
+    /* To wrap columns to the next line if needed */
+    margin-bottom: 5px;
+    /* Space between rows */
+}
+
+.delivery-label {
+    background-color: white;
+}
+
+.logo-column {
+    padding: 10px;
+    margin-left: 15px;
+}
+
+.lab-name-column {
+    padding-left: 25px;
+}
+
+.column {
+    padding: 10px;
+    margin: 5px;
+    box-sizing: border-box;
+}
+
+.logoImage {
+    height: 60px;
+    padding-left: 10px;
+}
+
+.footer {
+    padding: 0 20px 20px;
+    font-size: smaller;
+}
+
+.qr-code {
+    /* margin-top: 25px;
+    margin-right: 20px; */
+}
+
+.label-content {
+    padding-right: 10px;
+}
+
+.status__filter__container {
+    max-width: 30%;
+    float: right;
+    position: absolute;
+    display: flex;
+    top: 16px;
+    right: 30px;
+    align-items: center;
+}
+
+.items__label {
+    position: relative;
+}
+
+@media (max-width: 600px) {
+    .status__filter__container {
+        max-width: 50%;
+        position: static;
+        float: none;
+        margin: 0 0 10px 0;
+    }
+
+    .items__label {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+}

@@ -1,0 +1,46 @@
+.token-drag {
+    display: inline-flex;
+    cursor: grab;
+    user-select: none;
+    align-items: center;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    font-weight: 500;
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 0.2s;
+    animation-duration: 0.2s;
+    margin: 0.25rem;
+    border-radius: var(--radius);
+    border-width: 1px;
+    padding: 0.5rem 0.75rem;
+}
+
+.token-drag-default {
+    background-color: #ffffff;
+    border: 1px solid #ccc;
+    border-radius: 12px;
+}
+
+.token-drag-default:hover {
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+}
+
+.token-drag-disabled {
+    background-color: #e0e0e0;
+    border: 1px dashed #aaa;
+    cursor: not-allowed;
+    opacity: 0.6;
+    border-radius: 12px;
+}
+
+.token-drag.dragging {
+    opacity: 0.5;
+    transform: rotate(5deg) scale(0.95);
+}
+
+.token-text {
+    font-family: monospace;
+    font-size: 12px;
+}

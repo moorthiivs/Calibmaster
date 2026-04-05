@@ -1,0 +1,43 @@
+.w80 {
+  width: 80%;
+}
+
+.add__lab__container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  position: relative;
+}
+
+.add__lab__card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.add__lab__label {
+  width: 100%;
+}
+
+.add__lab__form {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.add__lab__item {
+  min-width: 250px;
+  max-width: 350px;
+  width: auto;
+  padding: 1rem;
+}
+
+.add__lab__btn {
+  width: 100%;
+  margin: 1rem;
+}

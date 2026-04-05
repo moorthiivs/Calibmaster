@@ -1,0 +1,17 @@
+.service__unavailable__img {
+  width: 100%;
+  height: 100%;
+}
+
+.service__unavailable__card {
+  width: 500px;
+  height: 500px;
+}
+
+.service__unavailable {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}

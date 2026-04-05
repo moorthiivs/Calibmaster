@@ -1,0 +1,26 @@
+.modal_content_style {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.modal_content_style p {
+    font-weight: bold;
+}
+
+.modal_content_style span {
+    font-weight: normal;
+}
+
+.modal_content_style p {
+    margin-right: 1rem;
+}
+
+.modalCard {
+    width: 100%;
+}
+
+.modalCard img {
+    width: 150px;
+    display: table;
+    margin: 0 auto 1rem auto;
+}

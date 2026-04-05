@@ -1,0 +1,64 @@
+/* .company__logo__container {
+  margin: 0 1rem;
+}
+
+.company__logo {
+  width: 12rem;
+  height: 3.5rem;
+  object-fit: contain;
+} */
+
+
+/* .company__logo__container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 70px;
+  padding: 0 16px;
+  background-color: #ffffff;
+  cursor: pointer;
+}
+
+.company__logo {
+  max-height: 60px;
+  max-width: 100%;
+  object-fit: contain;
+  transition: all 0.3s ease;
+} */
+
+
+.company__logo__containers {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+}
+
+.company__logos {
+  width: 100%;
+  max-width: 120px;
+  height: auto;
+  object-fit: contain;
+  transition: all 0.3s ease-in-out;
+  border-radius: 0;
+}
+
+.expanded-logo {
+  max-width: 120px;
+}
+
+.collapsed-logo {
+  max-width: 60px;
+}
+
+.sidebar__logo__wrapper.collapsed .company__logos {
+  max-width: 40px;
+  border-radius: 10px;
+  /* smaller logo in collapsed sidebar */
+}
+
+.sidebar__logo__wrapper.expanded .company__logos {
+  max-width: 90px;
+  border-radius: 10px;
+  /* bigger logo in expanded sidebar */
+}

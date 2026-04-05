@@ -1,0 +1,12 @@
+.new__item__modal__body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.new__item__item {
+  width: 80%;
+  padding: 1rem;
+  max-width: 350px;
+}

@@ -1,0 +1,98 @@
+@import url("https://fonts.googleapis.com/css2?family=Roboto&family=Oswald&family=STIX+Two+Text:ital@1&display=swap");
+
+.view__srf__item__modal {
+  width: 95% !important;
+}
+
+.srf__item__details__container {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 25% 25% 25% 25%;
+  grid-template-rows: 50px 50px 50px 50px;
+}
+
+@media (min-width: 600px) and (max-width: 800px) {
+  .srf__item__details__container {
+    grid-template-columns: 50% 50%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 600px) {
+  .srf__item__details__container {
+    grid-template-columns: auto;
+    justify-content: center;
+  }
+}
+
+.flex__centered {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.new_file_modal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  padding: 1rem;
+}
+
+.new_file_modal h2 {
+  font-size: 1.5rem;
+  width: 100%;
+  padding: 1rem;
+  text-align: center;
+  font-family: "Trebuchet MS", "Lucida Sans Unicode", "Lucida Grande",
+    "Lucida Sans", Arial, sans-serif;
+}
+
+.button_container {
+  width: 100%;
+  text-align: center;
+  padding: 1rem;
+}
+
+.new_file_error {
+  color: red;
+}
+
+.new_file_success {
+  color: blue;
+}
+
+.normal {
+  font-weight: normal;
+}
+
+.item_label:hover {
+  .label_download {
+    display: flex;
+  }
+
+  .qr-code {
+    filter: blur(3px);
+  }
+}
+
+.item_label {
+  padding: 0 !important;
+}
+
+.label_download {
+  display: none;
+  position: absolute;
+  color: rgb(1, 182, 245);
+}
+
+.label-container {
+  margin: 10px;
+}
+
+@media (max-width: 600px) {
+  .srf__item__detail {
+    width: 100%;
+  }
+}

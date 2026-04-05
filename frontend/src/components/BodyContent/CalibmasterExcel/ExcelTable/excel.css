@@ -1,0 +1,242 @@
+
+.htContextMenu {
+    z-index: 99999 !important; /* Higher than Rainbow modal */
+  }
+  
+  /* 👇 Allow context menu to overflow outside modal container */
+  .rainbow-modal,
+  .rainbow-modal_container,
+  .rainbow-backdrop {
+    overflow: visible !important;
+  }
+  
+
+  /* Toolbar Container */
+.toolbar {
+  min-height: 50px;   /* allow growth */
+  height: auto;
+  flex-wrap: wrap;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  /* justify-content: space-between; */
+  background-color: #f0f4f9;
+  border-radius: 30px;
+  border: 1px solid #d1d5db;
+  padding: 0 15px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+
+.button-group {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap
+}
+
+.toolbar-button {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease,
+    box-shadow 0.3s ease;
+}
+
+.toolbar-button:hover {
+  background: #e0e7ff;
+}
+
+.toolbar-button:active {
+  background: #c7d2fe;
+  transform: scale(0.9);
+  transition: transform 0.1s ease-out; /* Faster transition on click */
+}
+
+.zoom-container {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+  transition: transform 0.3s ease-in-out;
+}
+
+.add-new-sheat-btn, .remove-sheat-btn {
+  height: 40px;
+  width: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+}
+.add-new-sheat-btn, .remove-sheat-btn:hover {
+  background: #f0f4f9;
+}
+
+.color-picker-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.color-input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+}
+
+.color-icon {
+  width: 20px;
+  height: 20px;
+  color: #333;
+}
+
+
+.toolbar-button.active {
+  background: #c7d2fe;
+  box-shadow: inset 0 0 3px rgba(0,0,0,0.3);
+}
+
+.toolbar-button.active svg {
+  fill: #000;
+}
+
+
+.input-wrapper {
+  padding: 8px;
+  background-color: #f5f5f5;
+  border-bottom: 1px solid #ddd;
+  max-width: 100vw;          
+  /* overflow-x: auto;           */
+  box-sizing: border-box;    
+}
+
+.input-wrapper input {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;    
+  padding: 8px 12px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  outline: none;
+  transition: border-color 0.3s ease;
+  background-color: #fff;
+}
+
+.input-wrapper input:focus {
+  border-color: #4a90e2;
+  box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+}
+
+
+.sheet-selector {
+  height: 32px;
+  padding: 4px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background-color: #ffffff;
+  font-size: 14px;
+  cursor: pointer;
+  transition: border-color 0.3s ease, box-shadow 0.2s ease;
+}
+
+.sheet-selector:hover {
+  border-color: #a5b4fc;
+}
+
+.sheet-selector:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+
+td.has-conditional-format {
+  position: relative;
+}
+
+td.has-conditional-format::after {
+  content: '🎯';
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 0.6em;
+}
+
+@media (max-width: 1024px) {
+  .toolbar {
+    padding: 8px 10px;
+    border-radius: 20px;
+  }
+
+  .button-group {
+    gap: 8px;
+  }
+
+  .toolbar-button {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+@media (max-width: 768px) {
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 10px;
+    border-radius: 16px;
+  }
+
+  /* Horizontal scroll for buttons */
+  .button-group {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    scrollbar-width: none; /* Firefox */
+  }
+
+  .button-group::-webkit-scrollbar {
+    display: none; /* Chrome */
+  }
+
+  .toolbar-button {
+    flex: 0 0 auto;
+    width: 34px;
+    height: 34px;
+  }
+
+  .sheet-selector {
+    width: 100%;
+  }
+}
+@media (max-width: 480px) {
+  .toolbar {
+    padding: 8px;
+  }
+
+  .toolbar-button {
+    width: 32px;
+    height: 32px;
+  }
+
+  .input-wrapper input {
+    font-size: 14px;
+  }
+}
+@media (max-width: 768px) {
+  .input-wrapper {
+    padding: 6px;
+  }
+}

@@ -1,0 +1,14 @@
+.delete_table_btn {
+    position: absolute !important;
+    right: 5px;
+    top: 5px;
+}
+
+.print_on_certifcate_area {
+    display: flex;
+    gap: 10px;
+    position: absolute;
+    top: 2%;
+    right: 10%;
+    align-items: center;
+}

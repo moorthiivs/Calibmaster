@@ -1,0 +1,17 @@
+.users__table {
+  width: 100%;
+  max-width: calc(100vw - 120px);
+  padding: 0.5rem 0 1rem 0;
+}
+
+.searchers__container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.rainbow-table_header-container {
+  text-align: center;
+}

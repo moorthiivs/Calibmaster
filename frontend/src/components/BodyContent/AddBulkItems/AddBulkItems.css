@@ -1,0 +1,28 @@
+.bulk_item_container {
+    width: 98%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 1rem 2rem;
+}
+
+.xlsx_template {
+    color: rgb(1, 182, 245);
+    text-decoration: underline;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.disabled {
+    pointer-events: none;
+}
+
+.import_container {
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+}
+.import_btn {
+    height: fit-content;
+    margin: 0 1rem;
+}

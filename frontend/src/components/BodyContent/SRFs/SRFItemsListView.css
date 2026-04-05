@@ -1,0 +1,15 @@
+.dc__info__container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.mtop1 {
+  margin-top: 1rem;
+}
+
+.w100 {
+  width: 100%;
+}

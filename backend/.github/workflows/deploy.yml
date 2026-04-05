@@ -1,0 +1,101 @@
+name: Calibmaster CI/CD Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target Environment'
+        required: true
+        default: 'development'
+        type: choice
+        options:
+          - development
+          - test
+          - production
+      calibmaster_url:
+        description: 'Frontend Calibmaster URL'
+        required: true
+      customer_portal_url:
+        description: 'Frontend CustomerPortal URL'
+        required: true
+      db_host:
+        description: 'Database Host'
+        required: true
+      db_name:
+        description: 'Database Name'
+        required: true
+      db_user:
+        description: 'Database Username'
+        required: true
+      db_pass:
+        description: 'Database Password'
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Backend
+        uses: actions/checkout@v4
+        with:
+          path: calibmaster-backend
+
+      - name: Checkout Frontend
+        uses: actions/checkout@v4
+        with:
+          repository: your-username/calibmaster-frontend  # Update with actual repo path
+          path: calibmaster-frontend
+          token: ${{ secrets.GH_PAT }} # Required if private
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Configure Frontend
+        run: |
+          cd calibmaster-frontend
+          echo '{
+            "Calibmaster": { "URL": "${{ github.event.inputs.calibmaster_url }}" },
+            "CustomerPortal": { "URL": "${{ github.event.inputs.customer_portal_url }}" },
+            "SRF_ITEM_STATUS_LIST": [
+              "Not Calibrated",
+              "Calibrated",
+              "Report Generated",
+              "Dispatched",
+              "Report Dispatched",
+              "Invoice Generated",
+              "Payment Done"
+            ]
+          }' > src/utils/config.json
+
+      - name: Build Frontend
+        run: |
+          cd calibmaster-frontend
+          npm install
+          npm run build
+
+      - name: Sync Frontend Build to Backend
+        run: |
+          cp -r calibmaster-frontend/dist/* calibmaster-backend/public/
+          # Ensure critical folders are preserved (they won't be in dist/ so cp -r is safe if not cleaning)
+
+      - name: Configure Backend
+        run: |
+          cd calibmaster-backend
+          # Use a script or sed to update config/config.json with inputs
+          # This example assumes a simple replacement logic or using the deploy.js in a non-interactive way
+          node -e "
+            const fs = require('fs');
+            const conf = JSON.parse(fs.readFileSync('config/config.json', 'utf8'));
+            const env = '${{ github.event.inputs.environment }}';
+            conf[env].host = '${{ github.event.inputs.db_host }}';
+            conf[env].database = '${{ github.event.inputs.db_name }}';
+            conf[env].username = '${{ github.event.inputs.db_user }}';
+            conf[env].password = '${{ github.event.inputs.db_pass }}';
+            fs.writeFileSync('config/config.json', JSON.stringify(conf, null, 2));
+          "
+
+      - name: Deploy (Example - SCP/FTP/Heroku/etc)
+        run: |
+          echo "Deployment steps go here (e.g., zip and upload, or push to server)"

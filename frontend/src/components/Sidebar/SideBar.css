@@ -1,0 +1,55 @@
+/* .sidebar__container {
+  padding: 0.5rem;
+  background: rgb(255, 255, 255);
+  width: 13% !important;
+  border-bottom-left-radius: 0.875rem;
+  height: calc(100vh - 95px);
+  margin-top: 75px;
+  position: fixed;
+  z-index: 1000;
+  overflow-y: auto;
+} */
+
+.sidebar__container {
+  background: #fff !important;
+  height: 100vh;
+  overflow-y: auto;
+  border-right: 1px solid #eee;
+}
+
+/* .sidebar__logo__wrapper {
+  height: 70px;
+  background-color: transparent !important;
+} */
+
+
+.sidebar__logo__wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 80px;
+  /* adjust as needed */
+  padding: 16px 0;
+  /* background: #fff; */
+  /* Optional white background for contrast */
+  border-bottom: 1px solid #e5e5e5;
+}
+
+
+
+/* Extra small devices (phones, 600px and down) */
+@media only screen and (max-width: 600px) {}
+
+/* Small devices (portrait tablets and large phones, 600px and up) */
+@media only screen and (min-width: 600px) {}
+
+/* Medium devices (landscape tablets, 768px and up) */
+@media only screen and (min-width: 768px) {}
+
+/* Large devices (laptops/desktops, 992px and up) */
+@media only screen and (min-width: 992px) {}
+
+/* Extra large devices (large laptops and desktops, 1200px and up) */
+@media only screen and (min-width: 1200px) {}
+
+@media only screen and (min-width: 1600px) {}

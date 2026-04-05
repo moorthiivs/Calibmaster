@@ -1,0 +1,42 @@
+.ump_container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    width: 100%;
+    margin-bottom: 1rem;
+}
+
+.ump_card {
+    width: 90%;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    padding-bottom: 2rem;
+}
+
+.ump_list_card {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+}
+
+.add_ump_label,
+.btn_area {
+    width: 100%;
+}
+
+.each_input_item {
+    width: 27%;
+    margin-bottom: 1rem;
+    padding: 1rem;
+}
+
+.err_tag {
+    color: red;
+    font-weight: bold;
+    margin-bottom: 1rem;
+}

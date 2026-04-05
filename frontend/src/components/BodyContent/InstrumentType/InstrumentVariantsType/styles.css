@@ -1,0 +1,19 @@
+.instrumentVariant-modal h2 {
+    font-size: 24px;
+    font-weight: 600;
+    color: #333;
+}
+
+.instrumentVariant-modal .input-group {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 40px;
+}
+
+.instrumentVariant-modal .close-button {
+    text-align: right;
+    margin-bottom: 20px;
+}

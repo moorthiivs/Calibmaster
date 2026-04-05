@@ -1,0 +1,36 @@
+.masterlist {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    flex-wrap: wrap;
+}
+
+.add__masterlist__container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    width: 100%;
+    margin-bottom: 1rem;
+}
+
+.card_style {
+    width: 900px;
+    margin-bottom: 1rem;
+}
+
+.label_header {
+    margin-bottom: 1rem;
+}
+
+.each_form {
+    margin-bottom: 1rem;
+}
+
+.mondalContainer {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}

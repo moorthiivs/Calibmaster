@@ -1,0 +1,35 @@
+.jSSmMi {
+    background-color: rgb(239, 241, 245) !important;
+}
+
+.sc-jiDjCn.KLugA {
+    font-size: 14px;
+    font-weight: 900;
+    text-transform: uppercase;
+    color: rgb(63, 73, 84);
+}
+
+.dataContainer {
+    width: calc(100% - 20px);
+    display: grid;
+    grid-template-columns: 25% 25% 25% 25%;
+    grid-template-rows: 50px 50px 50px 50px 50px 50px;
+    padding: 20px 0px 0 20px;
+}
+
+.dataContainer>.customerInfo {
+    text-align: left;
+}
+
+.customerInfo>b {
+    color: #1c1c1c;
+    font-weight: 700;
+}
+
+.customerInfo>span {
+    color: #1c1c1c;
+    font-weight: 700;
+}
+.flex-display {
+    display: flex !important;
+  }

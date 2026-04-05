@@ -1,0 +1,1001 @@
+const { HyperFormula, FunctionPlugin } = require("hyperformula");
+
+// Register the custom MODE function plugin for HyperFormula
+class ModePlugin extends FunctionPlugin {
+    mode(ast, state) {
+        return this.runFunction(
+            ast.args,
+            state,
+            this.metadata("MODE"),
+            (range, precision) => {
+                try {
+                    // Debug raw inputs
+
+                    let flat = [];
+
+                    if (Array.isArray(range)) {
+                        // Handle raw array input
+                        flat = range.flat().filter((v) => v !== null && v !== undefined && v !== "");
+                    } else if (range?.data) {
+                        // Handle SimpleRangeValue with visible data property (some versions)
+                        flat = range.data.flat().filter((v) => v !== null && v !== undefined && v !== "");
+                    } else if (range && (typeof range[Symbol.iterator] === 'function')) {
+                        // Handle SimpleRangeValue (iterable)
+                        for (const cell of range) {
+                            if (cell !== null && cell !== undefined && cell !== "") {
+                                flat.push(cell);
+                            }
+                        }
+                    } else if (range !== null && range !== undefined && range !== "") {
+                        // Handle scalar input (single cell)
+                        flat = [range];
+                    }
+
+                    if (flat.length === 0) return "#N/A";
+
+                    // Use default precision of 4 as per user preference in previous edits
+                    // They asked to remove the decimal argument but still want decimals to work.
+                    // Using a safety round of 4 ensures 9.9801 vs 9.9802 are matching if they should.. 
+                    // wait, actually 9.9801 is 4 decimals. 
+                    // Let's use 9 digits to be safe for "exact" matching but handling float epsilon.
+                    // Or stick to 4 if that's what they wanted.
+                    // User edited to 4. I will respect 4.
+                    let decimalPlaces = 4;
+
+                    if (precision) {
+                        decimalPlaces = precision
+                    }
+                    const processedValues = flat.map(v => {
+                        const num = parseFloat(v);
+                        if (!isNaN(num)) {
+                            return parseFloat(num.toFixed(decimalPlaces));
+                        }
+                        return v;
+                    });
+
+                    const counts = {};
+                    let maxCount = 0;
+                    let modeVal = processedValues[0];
+
+                    for (const v of processedValues) {
+                        const key = String(v);
+                        counts[key] = (counts[key] || 0) + 1;
+                        if (counts[key] > maxCount) {
+                            maxCount = counts[key];
+                            modeVal = v;
+                        }
+                    }
+
+                    // If user specified precision explicitly, return as fixed-point string to preserve trailing zeros (e.g. 9.980)
+                    if (precision !== undefined && precision !== null && typeof modeVal === 'number') {
+                        return modeVal.toFixed(decimalPlaces);
+                    }
+
+                    return modeVal;
+                } catch (err) {
+                    console.error("MODE Function Error:", err);
+                    return "#ERROR!";
+                }
+            }
+        );
+    }
+}
+
+ModePlugin.implementedFunctions = {
+    MODE: {
+        method: "mode",
+        parameters: [
+            { argumentType: "RANGE" },
+            { argumentType: "SCALAR", optional: true, defaultValue: 3 }
+        ],
+    },
+};
+
+// Register the plugin globally
+HyperFormula.registerFunctionPlugin(ModePlugin, {
+    enGB: { MODE: "MODE" },
+    enUS: { MODE: "MODE" },
+});
+
+// Helper to convert column letter to index (e.g., "A" -> 0, "Z" -> 25, "AA" -> 26)
+const getColIndexFromLetter = (letter) => {
+    let column = 0;
+    const length = letter.length;
+    for (let i = 0; i < length; i++) {
+        column += (letter.charCodeAt(i) - 64) * Math.pow(26, length - i - 1);
+    }
+    return column - 1;
+};
+
+// Helper to evaluate conditional formatting rules
+const evaluateCondition = (cellValue, rule, hfInstance, currentSheetName) => {
+    const { condition } = rule;
+    if (!condition) return false;
+
+    const op = condition.operator;
+
+    // Function to resolve values (static numbers or cell references like "=Sheet1!A1")
+    const resolveValue = (val) => {
+        if (typeof val === 'string' && val.trim().startsWith('=')) {
+            const refExp = val.trim().substring(1); // remove "="
+
+            // Parse reference: [SheetName]![Column][Row] or just [Column][Row]
+            const parts = refExp.split('!');
+            let targetSheetName = currentSheetName;
+            let cellStr = refExp;
+
+            if (parts.length > 1) {
+                targetSheetName = parts[0].replace(/^'|'$/g, ""); // Remove surrounding quotes if present
+                cellStr = parts[1];
+            }
+
+            const match = cellStr.match(/^([A-Za-z]+)([0-9]+)$/);
+            if (match) {
+                const colLetter = match[1].toUpperCase();
+                const rowNum = parseInt(match[2], 10);
+
+                const col = getColIndexFromLetter(colLetter);
+                const row = rowNum - 1; // 0-indexed
+
+                const sheetId = hfInstance.getSheetId(targetSheetName);
+                if (sheetId !== undefined) {
+                    const cellVal = hfInstance.getCellValue({ sheet: sheetId, row, col });
+                    // Return recursive resolution not needed for simple raw values usually, 
+                    // but getCellValue returns calculated value.
+                    return cellVal;
+                }
+            }
+            return parseFloat(val); // Fallback if parsing fails
+        }
+        return isNaN(Number(val)) ? val : Number(val);
+    };
+
+    const cVal = Number(cellValue);
+    const isValidNumber = !isNaN(cVal) && cellValue !== "" && cellValue !== null;
+
+    if (op === 'formula') {
+        const sheetId = hfInstance.getSheetId(currentSheetName);
+        if (sheetId !== undefined) {
+            const result = hfInstance.calculateFormula(condition.value, sheetId, { row: rule.row, col: rule.col });
+            // Check for True/Non-zero
+            if (result === true || (typeof result === 'number' && !isNaN(result) && result !== 0) || result === "TRUE") {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    if (op === 'between') {
+        // Tolerance Logic: (Center - Min) <= Val <= (Center + Max)
+        if ((condition.CenterRef && (typeof condition.CenterRef === 'object' || condition.CenterRef !== "")) || (condition.CenterValue !== "" && condition.CenterValue !== undefined)) {
+            let center = null;
+
+            // 1. Try CenterRef
+            if (condition.CenterRef && typeof condition.CenterRef === 'object' && condition.CenterRef.col !== undefined && condition.CenterRef.row !== undefined) {
+                // Fix: Check for cross-sheet reference
+                const targetSheetName = condition.CenterRef.sheet || currentSheetName;
+                const sheetId = hfInstance.getSheetId(targetSheetName);
+
+                if (sheetId !== undefined) {
+                    const refVal = hfInstance.getCellValue({
+                        sheet: sheetId,
+                        row: condition.CenterRef.row,
+                        col: condition.CenterRef.col
+                    });
+
+                    const floatVal = parseFloat(refVal);
+                    if (!isNaN(floatVal)) {
+                        center = floatVal;
+                    }
+                }
+            }
+
+            // 2. Fallback to CenterValue
+            if ((center === null || isNaN(center)) && condition.CenterValue !== "" && condition.CenterValue !== undefined) {
+                center = Number(resolveValue(condition.CenterValue));
+            }
+
+            // 3. Fallback to condition.value (if it contains a formula or value to be used as center)
+            if ((center === null || isNaN(center)) && condition.value !== "" && condition.value !== undefined) {
+                center = Number(resolveValue(condition.value));
+            }
+
+            if (center !== null && !isNaN(center)) {
+                const minTol = Number(resolveValue(condition.minValue));
+                const maxTol = Number(resolveValue(condition.maxValue));
+
+                if (!isValidNumber || isNaN(minTol) || isNaN(maxTol)) return false;
+
+                const lower = center - minTol;
+                const upper = center + maxTol;
+                const epsilon = 0.000001;
+
+                // User Request: "if user cell value enterd more then this show error"
+                // Interpretation: Apply ERROR STYLE (Red) if value is OUT OF TOLERANCE.
+                // Range: [center - min, center + max] is SAFE.
+                // Condition Met (Style Applied) if: val < lower OR val > upper.
+
+                const formattedRangeLower = lower - epsilon;
+                const formattedRangeUpper = upper + epsilon;
+
+                // Return TRUE (apply style) if outside range
+                return cVal < formattedRangeLower || cVal > formattedRangeUpper;
+            }
+        }
+
+        // Standard Range: Min <= Val <= Max
+        const min = Number(resolveValue(condition.minValue));
+        const max = Number(resolveValue(condition.maxValue));
+        if (!isValidNumber) return false;
+        return cVal >= min && cVal <= max;
+    }
+
+    const tVal = resolveValue(condition.value);
+
+    // If both are numbers, compare numerically
+    if (isValidNumber && !isNaN(Number(tVal))) {
+        const nTVal = Number(tVal);
+        switch (op) {
+            case '=': return Math.abs(cVal - nTVal) < 0.000001; // Float tolerance
+            case '>': return cVal > nTVal;
+            case '<': return cVal < nTVal;
+            case '!=': return Math.abs(cVal - nTVal) >= 0.000001;
+            case '>=': return cVal >= nTVal;
+            case '<=': return cVal <= nTVal;
+        }
+    }
+
+    // Fallback to string comparison
+    const sCVal = String(cellValue);
+    const sTVal = String(tVal);
+
+    switch (op) {
+        case '=': return sCVal == sTVal;
+        case '!=': return sCVal != sTVal;
+    }
+
+    return false;
+};
+
+const generatePdfFromSheet = async (
+    handsontableJson,
+    MergedCells,
+    Styles,
+    selectedSheetInput,
+    decimalPoint,
+    Layout,
+    fontSize,
+    pageSettings = null
+) => {
+    try {
+        const sheetKey =
+            typeof selectedSheetInput === "object"
+                ? selectedSheetInput.value
+                : selectedSheetInput;
+
+        const sheetData = handsontableJson[sheetKey] || [];
+        const mergedCells = MergedCells?.[sheetKey] || [];
+
+        const rawStyleObj = Styles?.[sheetKey] || {};
+        const stylesArray = Object.values(rawStyleObj).filter(item => typeof item === "object" && item?.row !== undefined);
+        const conditionalStyles = rawStyleObj.conditionalFormatting || [];
+        const userColWidths = rawStyleObj.colWidths || {};
+        const userRowHeights = rawStyleObj.rowHeights || {};
+
+
+        const hiddenCellsMap = new Set();
+        stylesArray.forEach(style => {
+            if (style.hiddenInPdf && style.row !== undefined && style.col !== undefined) {
+                hiddenCellsMap.add(`${style.row}-${style.col}`);
+            }
+        });
+
+        let decimalPointArray = {};
+
+        if (decimalPoint && typeof decimalPoint === "object") {
+            const allPrecisions = {};
+
+            for (const [sheetName, sheetPrecision] of Object.entries(decimalPoint)) {
+                for (const [cellKey, value] of Object.entries(sheetPrecision)) {
+                    allPrecisions[cellKey] = value;
+                }
+            }
+
+            decimalPointArray = allPrecisions;
+        }
+
+        if (!sheetData.length) return [];
+
+        const hfInstance = HyperFormula.buildFromSheets(handsontableJson, {
+            licenseKey: "gpl-v3",
+        });
+        const sheetId = hfInstance.getSheetId(sheetKey);
+        if (sheetId === undefined) {
+            throw new Error(`Sheet "${sheetKey}" not found`);
+        }
+
+        const evaluatedDatas = hfInstance.getSheetSerialized(sheetId);
+        //console.log(evaluatedDatas, 'Evaluated Data Without Rounding');
+        const evaluatedData = hfInstance.getSheetValues(sheetId);
+        const maxCols = Math.max(...evaluatedData.map((row) => row.length), 0);
+
+        const paddedData = evaluatedData.map((row) => {
+            const newRow = Array(maxCols).fill("");
+            return row.concat(newRow.slice(row.length));
+        });
+
+
+
+        const splitTables = [];
+        let currentChunk = [];
+        let startRowIndexes = [];
+
+        paddedData.forEach((row, idx) => {
+            // Treat null, undefined, and empty string as empty to ensure correct table splitting
+            const isEmptyRow = row.every((cell) => cell === null || cell === undefined || String(cell).trim() === "" || cell === 'remove');
+            if (isEmptyRow) {
+                // Split the current chunk if it has data
+                if (currentChunk.length) {
+                    splitTables.push(currentChunk);
+                    startRowIndexes.push(idx - currentChunk.length);
+                    currentChunk = [];
+                }
+            } else {
+                // Add the row to the current chunk
+                currentChunk.push(row);
+            }
+        });
+
+        if (currentChunk.length) {
+            splitTables.push(currentChunk);
+            startRowIndexes.push(paddedData.length - currentChunk.length);
+        }
+
+
+
+        const cleanMergeDefinitions = (
+            mergedCells,
+            tableData,
+            startRow,
+            endRow,
+            maxCols
+        ) => {
+            return mergedCells
+                .filter(
+                    ({ row, col, rowspan, colspan }) =>
+                        row >= startRow &&
+                        col >= 0 &&
+                        rowspan > 0 &&
+                        colspan > 0 &&
+                        row < endRow &&
+                        col < maxCols &&
+                        row + rowspan - 1 < endRow &&
+                        col + colspan - 1 < maxCols
+                )
+                .map(({ row, col, rowspan, colspan }) => ({
+                    row: row - startRow,
+                    col,
+                    rowspan: Math.min(rowspan, tableData.length - (row - startRow)),
+                    colspan: Math.min(colspan, maxCols - col),
+                }))
+                .filter(
+                    (cell, index, self) =>
+                        index ===
+                        self.findIndex((c) => c.row === cell.row && c.col === cell.col)
+                );
+        };
+
+
+        return splitTables.map((tableData, chunkIndex) => {
+
+            const startRow = startRowIndexes[chunkIndex];
+            const endRow = startRow + tableData.length;
+
+            // --- Compute Margin Gap from Empty Rows ---
+            let gapTop = 0;
+            if (chunkIndex > 0) {
+                const prevChunkEndRow = startRowIndexes[chunkIndex - 1] + splitTables[chunkIndex - 1].length;
+                for (let r = prevChunkEndRow; r < startRow; r++) {
+                    const h = (userRowHeights[r] !== undefined && userRowHeights[r] > 0) ? userRowHeights[r] : 23;
+                    gapTop += h * 0.47;
+                }
+            }
+
+            // Apply styles to each cell
+            const tableStyles = stylesArray
+                .filter((s) => s.row >= startRow && s.row < endRow)
+                .map((s) => ({
+                    ...s,
+                    row: s.row - startRow,
+                }));
+
+            const tableMergedCells = cleanMergeDefinitions(
+                mergedCells,
+                tableData,
+                startRow,
+                endRow,
+                maxCols
+            );
+
+            // Ensure all cells in the table have valid objects
+            const tableBody = tableData.map((row, rowIndex) =>
+                row.map((cell, colIndex) => {
+                    const style = tableStyles.find(
+                        (s) => s.row === rowIndex && s.col === colIndex
+                    );
+
+                    let formattedText = "";
+                    let numericValue = null;
+
+                    let decimalPlaces = null;
+                    // READ decimal places once
+                    if (
+                        decimalPoint &&
+                        typeof decimalPoint === "object" &&
+                        decimalPoint[sheetKey]
+                    ) {
+                        const key = `${startRow + rowIndex}-${colIndex}`;
+                        decimalPlaces = decimalPoint[sheetKey][key];
+                    }
+
+
+                    // ------------------------------
+                    // FIXED: Proper decimal handling
+                    // ------------------------------
+                    // if (
+                    //     decimalPlaces != null &&
+                    //     cell !== null &&
+                    //     cell !== "" &&
+                    //     cell !== undefined &&
+                    //     !isNaN(Number(cell))
+                    // ) {
+                    //     formattedText = Number(cell).toFixed(decimalPlaces);
+
+                    //     // Override logic for precision preservation
+                    //     const originalRawValue = sheetData[startRow + rowIndex]?.[colIndex];
+                    //     const originalString = (originalRawValue !== null && originalRawValue !== undefined) ? String(originalRawValue) : "";
+                    //     const isFormula = (typeof originalRawValue === 'string' && originalRawValue.trim().startsWith('='));
+
+                    //     if (
+                    //         !isFormula &&
+                    //         originalString !== "" &&
+                    //         !isNaN(Number(originalString)) &&
+                    //         Math.abs(Number(originalString) - Number(cell)) < 0.000001 &&
+                    //         (
+                    //             // Case 1: Truncation (20.000 -> 20)
+                    //             (originalString.includes('.') && !formattedText.includes('.')) ||
+                    //             // Case 2: Rounding changes value (0.006 -> 0.01)
+                    //             (Number(originalString) !== Number(formattedText)) ||
+                    //             // Case 3: Loss of trailing zeros/precision (0.09700 -> 0.0970)
+                    //             (originalString.length > formattedText.length && originalString.includes('.') && formattedText.includes('.'))
+                    //         )
+                    //     ) {
+                    //         formattedText = originalString;
+                    //     }
+
+                    //     if (
+                    //         (originalRawValue === undefined || (typeof originalRawValue === 'string' && originalRawValue.trim().startsWith('='))) &&
+                    //         Number(cell) !== Number(formattedText)
+                    //     ) {
+                    //         const cellStr = (cell ?? "").toString();
+                    //         if (cellStr.length <= 12 && cellStr.includes('.')) {
+                    //             formattedText = cellStr;
+                    //         }
+                    //     }
+                    // }
+
+                    // if (formattedText === "") {
+                    //     const originalRawValue = sheetData[startRow + rowIndex]?.[colIndex];
+                    //     const originalString = (originalRawValue !== null && originalRawValue !== undefined) ? String(originalRawValue) : "";
+                    //     const isFormula = (typeof originalRawValue === 'string' && originalRawValue.trim().startsWith('='));
+
+                    //     if (
+                    //         !isFormula &&
+                    //         originalString !== "" &&
+                    //         !isNaN(Number(originalString)) &&
+                    //         // Ensure the numeric values match (avoid displaying "0.000" for a value that evaluated to 0.1 etc, though unlikely if no formula)
+                    //         Math.abs(Number(originalString) - Number(cell)) < 0.000001
+                    //     ) {
+                    //         formattedText = originalString;
+                    //     } else {
+                    //         formattedText = (cell ?? "").toString();
+                    //     }
+                    // }
+
+
+                    const originalRawValue = sheetData[startRow + rowIndex]?.[colIndex];
+                    const isFormula = (typeof originalRawValue === 'string' && originalRawValue.trim().startsWith('='));
+
+                    if (
+                        decimalPlaces != null &&
+                        cell !== null &&
+                        cell !== "" &&
+                        cell !== undefined &&
+                        !isNaN(Number(cell))
+                    ) {
+                        // 1. Force strict rounding to match frontend logic
+                        formattedText = Number(cell).toFixed(decimalPlaces);
+
+                        // 2. ONLY bypass strict rounding if it's NOT a formula AND
+                        // we want to preserve extra manual precision (Optional calibration safeguard)
+                        // To match your "what I see is what I get" requirement, we usually skip this override.
+                        /* const originalString = String(originalRawValue || "");
+                        if (!isFormula && !isNaN(Number(originalString)) && originalString.includes('.')) {
+                            const originalDecimals = originalString.split('.')[1].length;
+                            if (originalDecimals > decimalPlaces) {
+                                // Uncomment the line below only if you want manual long decimals 
+                                // to override the 3-point setting (Not recommended for calibration)
+                                // formattedText = originalString; 
+                            }
+                        }
+                        */
+                    } else {
+                        // Fallback for cells without specific decimal settings
+                        if (cell === null || cell === undefined || cell === "") {
+                            formattedText = "";
+                        } else if (!isNaN(Number(cell)) && !isFormula) {
+                            // If it's a number but no specific precision is set, 
+                            // use the raw string to preserve trailing zeros if any
+                            formattedText = String(originalRawValue || cell);
+                        } else {
+                            formattedText = String(cell);
+                        }
+                    }
+
+                    // ------------------------------
+                    // REMAINING CODE UNCHANGED
+                    // ------------------------------
+                    const cellStyle = {
+                        text: formattedText,
+                        //alignment: "center",
+                        //vAlign: "middle",
+                        alignment: "left",
+                        vAlign: "top",
+                        bold: false,
+                        color: "#000000",
+                        fillColor: null,
+                        noWrap: false,
+                    };
+
+                    if (style) {
+                        // Apply static styles first
+                        if (style.fontColor) cellStyle.color = style.fontColor;
+                        if (style.backgroundColor) cellStyle.fillColor = style.backgroundColor;
+                        if (style.bold) cellStyle.bold = true;
+
+                        if (typeof style.className === "string") {
+                            if (style.className.includes("htLeft")) cellStyle.alignment = "left";
+                            if (style.className.includes("htRight")) cellStyle.alignment = "right";
+                            if (style.className.includes("htCenter")) cellStyle.alignment = "center";
+                            if (style.className.includes("htTop")) cellStyle.vAlign = "top";
+                            if (style.className.includes("htMiddle")) cellStyle.vAlign = "middle";
+                            if (style.className.includes("htBottom")) cellStyle.vAlign = "bottom";
+                        }
+                    }
+
+                    // Apply conditional formatting (Overwrites static styles if condition met)
+                    if (Array.isArray(conditionalStyles) && conditionalStyles.length > 0) {
+                        const cellRow = startRow + rowIndex;
+                        const cellCol = colIndex;
+
+                        // Find all rules that apply to this specific cell
+                        const applicableRules = conditionalStyles.filter(rule =>
+                            rule.row === cellRow && rule.col === cellCol
+                        );
+
+                        // Apply styles from all matching rules
+                        for (const rule of applicableRules) {
+                            const isConditionMet = evaluateCondition(cell, rule, hfInstance, sheetKey);
+                            if (isConditionMet) {
+                                if (rule.fontColor) cellStyle.color = rule.fontColor;
+                                if (rule.backgroundColor) cellStyle.fillColor = rule.backgroundColor;
+                                if (rule.bold) cellStyle.bold = true;
+                            }
+                        }
+                    }
+
+                    const isMergedMasterCell =
+                        tableMergedCells.some(
+                            (m) => m.row === rowIndex && m.col === colIndex
+                        );
+
+                    if (!isMergedMasterCell && (cellStyle.text.length > 20 || maxCols > 10)) {
+                        cellStyle.alignment = "center";
+                    }
+
+
+                    return cellStyle;
+                })
+            );
+
+
+            // Apply merged cells
+            tableMergedCells.forEach(({ row, col, rowspan, colspan }) => {
+                if (
+                    row >= 0 &&
+                    col >= 0 &&
+                    row < tableBody.length &&
+                    col < tableBody[row].length &&
+                    row + rowspan <= tableBody.length &&
+                    col + colspan <= tableBody[row].length
+                ) {
+                    tableBody[row][col].rowSpan = rowspan;
+                    tableBody[row][col].colSpan = colspan;
+
+                    // Mark merged cells (except the first one) as empty
+                    for (let r = row; r < row + rowspan; r++) {
+                        for (let c = col; c < col + colspan; c++) {
+                            if (r !== row || c !== col) {
+                                if (tableBody[r] && tableBody[r][c]) {
+                                    tableBody[r][c] = {};
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // --- Identify kept rows for RowSpan adjustment ---
+            const keptRowIndicesMap = new Map(); // Original Index -> New Index (or -1)
+            let newRowCounter = 0;
+            const filteredRows = [];
+
+            tableBody.forEach((row, origIndex) => {
+                const hasContent = row.some(cell =>
+                    cell && cell.text && cell.text.toString().trim() !== ""
+                );
+
+                if (hasContent) {
+                    filteredRows.push(row);
+                    keptRowIndicesMap.set(origIndex, newRowCounter++);
+                } else {
+                    keptRowIndicesMap.set(origIndex, -1);
+                }
+            });
+
+            // --- Remove empty columns (Calculate locally for each chunk) ---
+            const nonEmptyColumnIndexes = [];
+            for (let colIndex = 0; colIndex < maxCols; colIndex++) {
+                const hasContent = tableBody.some(row => {
+                    // Start checking the physical cell structure
+                    const cell = row[colIndex];
+                    if (cell === null || cell === undefined) return false;
+
+                    // If it has text, it's NOT empty
+                    if (String(cell.text || "").trim() !== "") return true;
+
+                    // IMPORTANT FIX: If it is an explicitly empty object `{}`, 
+                    // this means it was purposely blanked out by the merge loop above because it belongs to a colSpan/rowSpan!
+                    // We CANNOT delete columns that are part of a merge.
+                    if (typeof cell === 'object' && Object.keys(cell).length === 0) return true;
+
+                    return false;
+                });
+                if (hasContent) nonEmptyColumnIndexes.push(colIndex);
+            }
+
+
+            // --- Build clean body ---
+            const finalTableBody = filteredRows.map((row, newRowIndex) =>
+                nonEmptyColumnIndexes.map((origColIndex) => {
+                    const cell = row[origColIndex];
+                    if (!cell || typeof cell !== "object" || !("text" in cell)) {
+                        return { text: "", alignment: "center", noWrap: false };
+                    }
+
+                    const cleanCell = {
+                        text: (cell.text ?? "").toString(),
+                        alignment: cell.alignment || "center",
+                        vAlign: cell.vAlign || "middle",
+                        bold: !!cell.bold,
+                        color: cell.color || "#000000",
+                        fillColor: cell.fillColor || null,
+                        noWrap: false,
+                        //border: [false, false, false, false], // Disable borders globally by default
+                    };
+
+                    // --- PDFMAKE VERTICAL ALIGNMENT HACK ---
+                    // PDFMake lacks reliable native vertical alignment for fixed row heights.
+                    // We simulate it globally by pushing the text down with calculated top margins.
+                    const startOrigRowIndex = tableBody.indexOf(row);
+                    let visibleRowsInSpan = 1;
+                    let totalValignHeight_pt = 0;
+
+                    if (startOrigRowIndex !== -1) {
+                        const defaultHeightPx = 23;
+
+                        if (cell.rowSpan && cell.rowSpan > 1) {
+                            const spanEnd = startOrigRowIndex + cell.rowSpan;
+                            visibleRowsInSpan = 0; // Reset to count visible only
+
+                            for (let r = startOrigRowIndex; r < spanEnd; r++) {
+                                if (keptRowIndicesMap.get(r) !== -1) {
+                                    visibleRowsInSpan++;
+                                    const rIdx = startRow + r;
+                                    const rHeightPx = (userRowHeights[rIdx] !== undefined && userRowHeights[rIdx] > 0)
+                                        ? userRowHeights[rIdx]
+                                        : defaultHeightPx;
+                                    totalValignHeight_pt += (rHeightPx * 0.47);
+                                }
+                            }
+
+                            if (visibleRowsInSpan > 1) {
+                                cleanCell.rowSpan = visibleRowsInSpan;
+                            }
+                        } else {
+                            // Single row height computation
+                            const rIdx = startRow + startOrigRowIndex;
+                            const rHeightPx = (userRowHeights[rIdx] !== undefined && userRowHeights[rIdx] > 0)
+                                ? userRowHeights[rIdx]
+                                : defaultHeightPx;
+                            totalValignHeight_pt = (rHeightPx * 0.47);
+                        }
+                    }
+
+                    const approxFontSize = fontSize || 8;
+                    // Add standard table padding buffer to font height (approx 2pt)
+                    const contentHeight = approxFontSize + 2;
+
+                    // Account for explicit line breaks predicting content height
+                    const textLines = cleanCell.text.split('\n').length;
+                    const totalContentHeight = contentHeight * textLines;
+
+                    if (cleanCell.vAlign === "middle") {
+                        const topMargin = Math.max(0, (totalValignHeight_pt - totalContentHeight) / 2);
+                        cleanCell.margin = [0, topMargin, 0, 0];
+                    } else if (cleanCell.vAlign === "bottom") {
+                        const topMargin = Math.max(0, totalValignHeight_pt - totalContentHeight);
+                        cleanCell.margin = [0, topMargin, 0, 0];
+                    }
+
+                    // --- Adjust ColSpan ---
+                    if (cell.colSpan && cell.colSpan > 1) {
+                        const spanEnd = origColIndex + cell.colSpan;
+                        // Count how many kept columns are in [origColIndex, spanEnd)
+                        const visibleColsInSpan = nonEmptyColumnIndexes.filter(idx => idx >= origColIndex && idx < spanEnd).length;
+
+                        if (visibleColsInSpan > 1) {
+                            cleanCell.colSpan = visibleColsInSpan;
+                        }
+                    }
+
+                    return cleanCell;
+                })
+            );
+
+            // --- Pad uneven rows ---
+            const expectedCols = nonEmptyColumnIndexes.length;
+            for (let r = 0; r < finalTableBody.length; r++) {
+                while (finalTableBody[r].length < expectedCols) {
+                    finalTableBody[r].push({ text: "", alignment: "center", noWrap: false });
+                }
+            }
+
+            // --- ✅ Validate spans to prevent _minWidth crash ---
+            for (let r = 0; r < finalTableBody.length; r++) {
+                for (let c = 0; c < finalTableBody[r].length; c++) {
+                    const cell = finalTableBody[r][c];
+                    if (!cell || typeof cell !== "object") {
+                        finalTableBody[r][c] = { text: "", alignment: "center", noWrap: false };
+                        continue;
+                    }
+
+                    if (cell.colSpan && cell.colSpan > 1) {
+                        const availableCols = finalTableBody[r].length - c;
+                        if (cell.colSpan > availableCols) {
+                            cell.colSpan = availableCols;
+                        }
+                    }
+
+                    if (cell.rowSpan && cell.rowSpan > 1) {
+                        const availableRows = finalTableBody.length - r;
+                        if (cell.rowSpan > availableRows) {
+                            cell.rowSpan = availableRows;
+                        }
+                    }
+                }
+            }
+
+            // --- Final safety: ensure equal column width rows ---
+            const columnCountSafe = finalTableBody[0]?.length || 1;
+            for (let r = 0; r < finalTableBody.length; r++) {
+                while (finalTableBody[r].length < columnCountSafe) {
+                    finalTableBody[r].push({ text: "", alignment: "center", noWrap: false });
+                }
+            }
+
+
+            let columnCount = columnCountSafe;
+
+            let widths = Array(columnCount).fill("*");
+
+
+            /// --------------This if user not applied colwidth default coldwidth apply------------------
+
+            let hasUserWidths = false;
+            let userWidthCount = 0;
+            let totalAbsoluteWidth = 0;
+
+            for (let c = 0; c < columnCount; c++) {
+                const origColIndex = nonEmptyColumnIndexes[c];
+                if (
+                    origColIndex !== undefined &&
+                    userColWidths[origColIndex] !== undefined &&
+                    userColWidths[origColIndex] > 0
+                ) {
+                    hasUserWidths = true;
+                    userWidthCount++;
+                    totalAbsoluteWidth += userColWidths[origColIndex];
+                } else {
+                    totalAbsoluteWidth += 100; // default for missing width
+                }
+            }
+
+            const coverageRatio = userWidthCount / columnCount;
+            const FULL_WIDTH_THRESHOLD = 0.6;
+
+            // Compute scaling logic
+            let finalScale = 1;
+
+            // Extract horizontal margins from pageSettings (passed as 8th argument)
+            const mLeft = (pageSettings && typeof pageSettings.marginLeft === 'number') ? pageSettings.marginLeft : 0;
+            const mRight = (pageSettings && typeof pageSettings.marginRight === 'number') ? pageSettings.marginRight : 0;
+
+            if (pageSettings) {
+                // A4 points: 595.28 x 841.89
+                const isLandscape = pageSettings.orientation === 'landscape';
+                const A4_W = isLandscape ? 841.89 : 595.28;
+                const globalPadding = 20; // 10 left + 10 right from controller's page margin
+                // Extract overhead from Layout (padding and lines)
+                const pL = (Layout && typeof Layout.paddingLeft === 'function') ? Layout.paddingLeft() : 2;
+                const pR = (Layout && typeof Layout.paddingRight === 'function') ? Layout.paddingRight() : 2;
+                const vL = (Layout && typeof Layout.vLineWidth === 'function') ? Layout.vLineWidth() : 0.5;
+
+                // Overhead Pt = (columns * padding) + (vertical lines * thickness)
+                const tableOverhead = (columnCount * (pL + pR)) + ((columnCount + 1) * vL);
+
+                // Effective available width between margins minus table internal overhead
+                const availW = Math.max(0, A4_W - globalPadding - mLeft - mRight - tableOverhead);
+                const totalWidthPt = totalAbsoluteWidth * 0.47;
+                                                                
+                if (availW > 0 && (coverageRatio >= FULL_WIDTH_THRESHOLD || hasUserWidths)) {
+                    // Update: User requested "table col * same pattern" for manual widths.
+                    // This means scaling to fit availW perfectly even if the sum is smaller, 
+                    // achieving the same "proportional fill" behavior as the '*' operator.
+                    finalScale = availW / totalWidthPt;
+                }
+            }
+                                                
+            const pointMultiplier = 0.47 * (finalScale > 0 ? finalScale : 1);
+
+            if (coverageRatio >= FULL_WIDTH_THRESHOLD) {
+                for (let c = 0; c < columnCount; c++) {
+                    const origColIndex = nonEmptyColumnIndexes[c];
+                    const widthVal =
+                        origColIndex !== undefined &&
+                            userColWidths[origColIndex] > 0
+                            ? userColWidths[origColIndex]
+                            : 100;
+
+                    widths[c] = widthVal * pointMultiplier;
+                }
+            } else {
+                // ✅ Fallback logic: Mix of fixed and proportional
+                for (let c = 0; c < columnCount; c++) {
+                    const origColIndex = nonEmptyColumnIndexes[c];
+
+                    if (
+                        origColIndex !== undefined &&
+                        userColWidths[origColIndex] !== undefined &&
+                        userColWidths[origColIndex] > 0
+                    ) {
+                        // Keep user-defined width for specific columns, scaled to availW
+                        widths[c] = userColWidths[origColIndex] * pointMultiplier;
+                    } else {
+                        // Balance remaining columns
+                        widths[c] = '*';
+                    }
+                }
+
+                if (!hasUserWidths && columnCount >= 7) {
+                    widths[0] = 'auto';
+                }
+            }
+            /// ---------------------------------------------------------------
+
+
+
+            // if (columnCount >= 7) {
+            //     widths[0] = 'auto';
+            // }
+
+
+            // --- Row Heights Logic (Mirrors User Col Widths) ---
+            let heights = undefined;
+            let hasUserHeights = false;
+
+            // Check if any row in this chunk has a custom height
+
+            for (let r = 0; r < tableData.length; r++) {
+                const origRowIndex = startRow + r;
+                // Only consider rows that are actually kept (not merged completely)
+                if (
+                    keptRowIndicesMap.get(r) !== -1 &&
+                    userRowHeights[origRowIndex] !== undefined &&
+                    userRowHeights[origRowIndex] > 0
+                ) {
+                    hasUserHeights = true;
+                    break;
+                }
+            }
+
+            if (hasUserHeights) {
+                // Initialize heights array matching the final filtered rows length
+                heights = Array(finalTableBody.length).fill("auto");
+                let newRowIdx = 0;
+
+                for (let r = 0; r < tableData.length; r++) {
+                    // if row wasn't filtered out
+                    if (keptRowIndicesMap.get(r) !== -1) {
+                        const origRowIndex = startRow + r;
+                        const heightVal =
+                            userRowHeights[origRowIndex] !== undefined && userRowHeights[origRowIndex] > 0
+                                ? userRowHeights[origRowIndex]
+                                : 23; // Default 23px from Handsontable config
+
+                        // Scale roughly from px -> pt/pdfmake units (approx 0.75 ratio mimicking widths 0.47 if necessary, or 1:1 depending on layout choice). Usually PDF pts are 0.75 * px.
+                        heights[newRowIdx] = heightVal * pointMultiplier;
+                        newRowIdx++;
+                    }
+                }
+            }
+            /// ---------------------------------------------------------------
+
+            const isLargeTable = tableData.length > 100;
+
+            return {
+                columns: [
+                    {
+                        width: "*",
+                        stack: [
+                            {
+                                table: {
+                                    headerRows: 1,
+                                    widths,
+                                    ...(heights ? { heights } : {}),
+                                    body: finalTableBody,
+                                },
+                                layout: Layout,
+                                fontSize,
+                                dontBreakRows: !isLargeTable, // Ensure rows don't break awkwardly
+                            }
+                        ],
+                        unbreakable: !isLargeTable, // Keep the split chunk together
+                        //margin: columnCount > 13 ? [20, 0, 10, 0] : [0, 0, 0, 0],
+                        alignment: "center",
+                    },
+                ],
+                alignment: "center",
+                columnGap: 0,
+                margin: gapTop > 0 ? [0, gapTop, 0, 0] : undefined, // Apply computed row-height gap
+                unbreakable: !isLargeTable, // ✅ large tables can break
+                pageBreak: isLargeTable && chunkIndex > 0 ? 'before' : undefined,
+            };
+
+
+
+
+        });
+    } catch (err) {
+        console.error("Error generating PDF:", err);
+        return [
+            {
+                text: `Error generating table: ${err.message}`,
+                color: "red",
+                margin: [0, 10, 0, 10],
+            },
+        ];
+    }
+};
+
+module.exports = { generatePdfFromSheet };

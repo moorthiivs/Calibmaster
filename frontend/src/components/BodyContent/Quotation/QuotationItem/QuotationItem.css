@@ -1,0 +1,48 @@
+.quotation__page {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .quotation__page__card {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+  
+  .quotation__page__label {
+    width: 100%;
+  }
+  
+  .quotation__page__form {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+  
+  .quotation__page__item {
+    min-width: 250px;
+    max-width: 350px;
+    width: auto;
+    padding: 1rem;
+  }
+  
+  .quotation__page__btn {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    width: 100%;
+    margin: 1rem;
+    margin-bottom: 2rem;
+  }
+  
+  .quotation__page__item__special {
+    width: 100%;
+    padding: 1rem;
+  }
+  

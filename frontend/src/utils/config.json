@@ -1,0 +1,17 @@
+{
+  "Calibmaster": {
+    "URL": "http://localhost:5000"
+  },
+  "CustomerPortal": {
+    "URL": "http://localhost:5001"
+  },
+  "SRF_ITEM_STATUS_LIST": [ 
+    "Not Calibrated",
+    "Calibrated",
+    "Report Generated",
+    "Dispatched",
+    "Report Dispatched",
+    "Invoice Generated",
+    "Payment Done"
+  ]
+}

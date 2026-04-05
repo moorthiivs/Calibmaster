@@ -1,0 +1,19 @@
+.form__container {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+
+.form__column {
+    flex: 1;
+    min-width: 300px;
+}
+
+.form__group {
+    margin-bottom: 20px;
+}
+
+.error-text {
+    color: red;
+    font-size: 0.875rem;
+}
