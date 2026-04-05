@@ -8,6 +8,34 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target Environment'
+        required: true
+        default: 'development'
+        type: choice
+        options:
+          - development
+          - test
+          - production
+      calibmaster_url:
+        description: 'Frontend Calibmaster URL'
+        required: true
+      customer_portal_url:
+        description: 'Frontend CustomerPortal URL'
+        required: true
+      db_host:
+        description: 'Database Host'
+        required: true
+      db_name:
+        description: 'Database Name'
+        required: true
+      db_user:
+        description: 'Database Username'
+        required: true
+      db_pass:
+        description: 'Database Password'
+        required: true
 
 jobs:
   build:
@@ -16,24 +44,68 @@ jobs:
       contents: read #This is required for actions/checkout
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
       - name: Set up Node.js version
         uses: actions/setup-node@v3
         with:
           node-version: '22.x'
 
-      - name: npm install, build, and test
+      - name: Configure Frontend
+        if: github.event_name == 'workflow_dispatch'
         run: |
+          cd frontend
+          echo '{
+            "Calibmaster": { "URL": "${{ github.event.inputs.calibmaster_url }}" },
+            "CustomerPortal": { "URL": "${{ github.event.inputs.customer_portal_url }}" },
+            "SRF_ITEM_STATUS_LIST": [
+              "Not Calibrated",
+              "Calibrated",
+              "Report Generated",
+              "Dispatched",
+              "Report Dispatched",
+              "Invoice Generated",
+              "Payment Done"
+            ]
+          }' > src/utils/config.json
+
+      - name: Build Frontend
+        run: |
+          cd frontend
           npm install
-          npm run build --if-present
-          npm run test --if-present
+          npm run build
+
+      - name: Sync Frontend Build to Backend
+        run: |
+          cp -r frontend/dist/* backend/public/
+
+      - name: Configure Backend
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          cd backend
+          # Update config/config.json with inputs
+          node -e "
+            const fs = require('fs');
+            const conf = JSON.parse(fs.readFileSync('config/config.json', 'utf8'));
+            const env = '${{ github.event.inputs.environment }}';
+            conf[env].host = '${{ github.event.inputs.db_host }}';
+            conf[env].database = '${{ github.event.inputs.db_name }}';
+            conf[env].username = '${{ github.event.inputs.db_user }}';
+            conf[env].password = '${{ github.event.inputs.db_pass }}';
+            fs.writeFileSync('config/config.json', JSON.stringify(conf, null, 2));
+          "
+
+      - name: Install backend dependencies (for App Service)
+        run: |
+          cd backend
+          npm install
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: node-app
-          path: .
+          path: backend/
 
   deploy:
     runs-on: ubuntu-latest
