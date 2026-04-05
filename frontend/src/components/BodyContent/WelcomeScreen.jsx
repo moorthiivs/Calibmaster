@@ -44,7 +44,7 @@ import DefineProcedure from "./DefineProcedure/DefineProcedure";
 import ListDefinedProcedure from "./DefineProcedure/ListDefinedProcedure";
 import CreateCalibmasterExcel from "./CalibmasterExcel/CreateCalibmasterExcel";
 import ListCalibmasterExcel from "./CalibmasterExcel/ListCalibmasterExcel";
-import AddUlr from "./AddULR/AddUlr";
+import AddULR from "./AddULR/AddULR";
 import ListULR from "./AddULR/ListULR";
 import AddSRF from "./AddSRF/AddSRF";
 import SRFs from "./SRFs/SRFs";
@@ -138,7 +138,7 @@ const WelcomeScreen = () => {
     "/dashboard/procedures": <ListDefinedProcedure />,
     "/dashboard/excel/create": <CreateCalibmasterExcel />,
     "/dashboard/excel": <ListCalibmasterExcel />,
-    "/dashboard/ulr/add": <AddUlr />,
+    "/dashboard/ulr/add": <AddULR />,
     "/dashboard/ulr": <ListULR />,
     "/dashboard/srf/add": <AddSRF />,
     "/dashboard/srf": <SRFs />,

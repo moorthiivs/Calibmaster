@@ -58,7 +58,7 @@ import QuotationConfigList from './Quotation/QuotationConfig/QuotationConfigList
 import QuotationItem from './Quotation/QuotationItem/QuotationItem';
 import QuotationCustomerList from './Quotation/QuotationItem/QuotationCustomerList';
 
-import AddUlr from "./AddULR/AddUlr";
+import AddULR from "./AddULR/AddULR";
 import ListULR from "./AddULR/ListULR";
 
 import CreateUncertaintyParameter from "./Uncertainty-Parameter/CreateUncertaintyParameter";
@@ -125,7 +125,7 @@ const BodyContent = () => {
         {sidebar === "Add-SRF-Config" ? <AddSRFConfig /> : null}
         {sidebar === "List-SRF-Config" ? <ListSRFConfig /> : null}
 
-        {sidebar === "ULR-Setup" ? <AddUlr /> : null}
+        {sidebar === "ULR-Setup" ? <AddULR /> : null}
         {sidebar === "List-ULR" ? <ListULR /> : null}
 
         {sidebar === "Add SRF" ? <AddSRF /> : null}

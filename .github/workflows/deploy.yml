@@ -1,6 +1,12 @@
-name: Calibmaster CI/CD Deployment
+# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
+# More GitHub Actions for Azure: https://github.com/Azure/actions
+
+name: Build and deploy Node.js app to Azure Web App - testingCalibmaster
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       environment:
@@ -32,18 +38,22 @@ on:
         required: true
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read #This is required for actions/checkout
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Set up Node.js version
+        uses: actions/setup-node@v3
         with:
-          node-version: '20'
+          node-version: '22.x'
 
       - name: Configure Frontend
+        if: github.event_name == 'workflow_dispatch'
         run: |
           cd frontend
           echo '{
@@ -71,6 +81,7 @@ jobs:
           cp -r frontend/dist/* backend/public/
 
       - name: Configure Backend
+        if: github.event_name == 'workflow_dispatch'
         run: |
           cd backend
           # Update config/config.json with inputs
@@ -85,6 +96,32 @@ jobs:
             fs.writeFileSync('config/config.json', JSON.stringify(conf, null, 2));
           "
 
-      - name: Deploy (Example - SCP/FTP/Heroku/etc)
+      - name: Install backend dependencies (for App Service)
         run: |
-          echo "Deployment steps go here (e.g., zip and upload, or push to server)"
+          cd backend
+          npm install
+
+      - name: Upload artifact for deployment job
+        uses: actions/upload-artifact@v4
+        with:
+          name: node-app
+          path: .
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    
+    steps:
+      - name: Download artifact from build job
+        uses: actions/download-artifact@v4
+        with:
+          name: node-app
+      
+      - name: 'Deploy to Azure Web App'
+        id: deploy-to-webapp
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'testingCalibmaster'
+          slot-name: 'Production'
+          package: .
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_3502C61805FA45409F39CCA5CDD7D8A1 }}

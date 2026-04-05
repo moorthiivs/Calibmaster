@@ -57,7 +57,7 @@ import QuotationConfig from "./components/BodyContent/Quotation/QuotationConfig/
 import QuotationConfigList from "./components/BodyContent/Quotation/QuotationConfig/QuotationConfigList";
 import QuotationItem from "./components/BodyContent/Quotation/QuotationItem/QuotationItem";
 import QuotationCustomerList from "./components/BodyContent/Quotation/QuotationItem/QuotationCustomerList";
-import AddUlr from "./components/BodyContent/AddULR/AddUlr";
+import AddULR from "./components/BodyContent/AddULR/AddULR";
 import ListULR from "./components/BodyContent/AddULR/ListULR";
 import CreateUncertaintyParameter from "./components/BodyContent/Uncertainty-Parameter/CreateUncertaintyParameter";
 import ListUncertaintyParameter from "./components/BodyContent/Uncertainty-Parameter/ListUncertaintyParameter";
@@ -574,7 +574,7 @@ const AppContent = () => {
               <Route path="uncertainty" element={<ListUncertaintyParameter />} />
               <Route path="srf-config/add" element={<AddSRFConfig />} />
               <Route path="srf-config" element={<ListSRFConfig />} />
-              <Route path="ulr/add" element={<AddUlr />} />
+              <Route path="ulr/add" element={<AddULR />} />
               <Route path="ulr" element={<ListULR />} />
               <Route path="srf/add" element={<AddSRF />} />
               <Route path="srf" element={<SRFs />} />

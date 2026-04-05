@@ -9,7 +9,7 @@ import EditULR from "./EditULR";
 import AddNewULR from "./AddNewULR";
 import Loader from "../../UI/Loader";
 
-const AddUlr = () => {
+const AddULR = () => {
 
     const auth = useContext(AuthContext);
     const dispatch = useDispatch();
@@ -131,4 +131,4 @@ const AddUlr = () => {
     )
 }
 
-export default AddUlr;
+export default AddULR;
