@@ -6,10 +6,9 @@
   "author": "iviewsense ltd,chennai",
   "license": "proprietary",
   "main": "app.js",
-    "scripts": {
+  "scripts": {
     "start": "node app.js",
-    "dev": "nodemon app.js",
-    "deploy": "node deploy.js"
+    "dev": "nodemon app.js"
   },
   "dependencies": {
     "ajv": "^8.11.0",
