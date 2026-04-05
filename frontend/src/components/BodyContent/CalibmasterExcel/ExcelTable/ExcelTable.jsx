@@ -59,7 +59,7 @@ import { formatDate } from "date-fns/format";
 import { useExcelCutCopy, removeOverlay } from "./hooks/useExcelCutCopy";
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { useExcelRowColDelete } from "./hooks/Useexcelrowcoldelete";
+import { useExcelRowColDelete } from "./hooks/useExcelRowColDelete";
 
 registerModePlugin();
 
