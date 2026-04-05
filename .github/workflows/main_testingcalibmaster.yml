@@ -123,5 +123,5 @@ jobs:
         with:
           app-name: 'testingCalibmaster'
           slot-name: 'Production'
-          package: .
+          package: ./backend
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_3502C61805FA45409F39CCA5CDD7D8A1 }}
