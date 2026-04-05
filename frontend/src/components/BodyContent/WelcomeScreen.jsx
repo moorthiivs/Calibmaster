@@ -327,10 +327,10 @@ const WelcomeScreen = () => {
         {auth.department?.toLowerCase() === "admin" || auth.department?.toLowerCase() === "root" ? (
           <div className="max-w-[1400px] mx-auto animate-in fade-in zoom-in-95 duration-500">
             <div className="flex items-center justify-between mb-8 pb-4 border-b border-border/40">
-              <div>
+              {/* <div>
                 <h1 className="text-2xl font-display font-semibold text-foreground tracking-tight">  {getGreeting()}, {capitalizeWords(auth.name || "admin")}</h1>
                 <h4 className="text-muted-foreground text-sm mt-1">Here's your operational overview for today.</h4>
-              </div>
+              </div> */}
 
               <div className="flex gap-3">
                 <DateRangeFilter
