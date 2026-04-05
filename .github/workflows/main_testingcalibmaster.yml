@@ -53,12 +53,11 @@ jobs:
           node-version: '22.x'
 
       - name: Configure Frontend
-        if: github.event_name == 'workflow_dispatch'
         run: |
           cd frontend
           echo '{
-            "Calibmaster": { "URL": "${{ github.event.inputs.calibmaster_url }}" },
-            "CustomerPortal": { "URL": "${{ github.event.inputs.customer_portal_url }}" },
+            "Calibmaster": { "URL": "${{ github.event.inputs.calibmaster_url || secrets.CALIBMASTER_URL }}" },
+            "CustomerPortal": { "URL": "${{ github.event.inputs.customer_portal_url || secrets.CUSTOMER_PORTAL_URL }}" },
             "SRF_ITEM_STATUS_LIST": [
               "Not Calibrated",
               "Calibrated",
@@ -81,18 +80,17 @@ jobs:
           cp -r frontend/dist/* backend/public/
 
       - name: Configure Backend
-        if: github.event_name == 'workflow_dispatch'
         run: |
           cd backend
-          # Update config/config.json with inputs
+          # Update config/config.json with inputs or secrets
           node -e "
             const fs = require('fs');
             const conf = JSON.parse(fs.readFileSync('config/config.json', 'utf8'));
-            const env = '${{ github.event.inputs.environment }}';
-            conf[env].host = '${{ github.event.inputs.db_host }}';
-            conf[env].database = '${{ github.event.inputs.db_name }}';
-            conf[env].username = '${{ github.event.inputs.db_user }}';
-            conf[env].password = '${{ github.event.inputs.db_pass }}';
+            const env = '${{ github.event.inputs.environment || 'development' }}';
+            conf[env].host = '${{ github.event.inputs.db_host || secrets.DB_HOST }}';
+            conf[env].database = '${{ github.event.inputs.db_name || secrets.DB_NAME }}';
+            conf[env].username = '${{ github.event.inputs.db_user || secrets.DB_USER }}';
+            conf[env].password = '${{ github.event.inputs.db_pass || secrets.DB_PASS }}';
             fs.writeFileSync('config/config.json', JSON.stringify(conf, null, 2));
           "
 
