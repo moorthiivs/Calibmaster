@@ -35,17 +35,8 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Backend
+      - name: Checkout Code
         uses: actions/checkout@v4
-        with:
-          path: calibmaster-backend
-
-      - name: Checkout Frontend
-        uses: actions/checkout@v4
-        with:
-          repository: your-username/calibmaster-frontend  # Update with actual repo path
-          path: calibmaster-frontend
-          token: ${{ secrets.GH_PAT }} # Required if private
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -54,7 +45,7 @@ jobs:
 
       - name: Configure Frontend
         run: |
-          cd calibmaster-frontend
+          cd frontend
           echo '{
             "Calibmaster": { "URL": "${{ github.event.inputs.calibmaster_url }}" },
             "CustomerPortal": { "URL": "${{ github.event.inputs.customer_portal_url }}" },
@@ -71,20 +62,18 @@ jobs:
 
       - name: Build Frontend
         run: |
-          cd calibmaster-frontend
+          cd frontend
           npm install
           npm run build
 
       - name: Sync Frontend Build to Backend
         run: |
-          cp -r calibmaster-frontend/dist/* calibmaster-backend/public/
-          # Ensure critical folders are preserved (they won't be in dist/ so cp -r is safe if not cleaning)
+          cp -r frontend/dist/* backend/public/
 
       - name: Configure Backend
         run: |
-          cd calibmaster-backend
-          # Use a script or sed to update config/config.json with inputs
-          # This example assumes a simple replacement logic or using the deploy.js in a non-interactive way
+          cd backend
+          # Update config/config.json with inputs
           node -e "
             const fs = require('fs');
             const conf = JSON.parse(fs.readFileSync('config/config.json', 'utf8'));
