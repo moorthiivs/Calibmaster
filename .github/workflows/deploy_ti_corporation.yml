@@ -1,0 +1,107 @@
+# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
+# More GitHub Actions for Azure: https://github.com/Azure/actions
+
+name: Build and deploy Node.js app to Azure Web App - TI-Corporation
+
+on:
+  push:
+    branches:
+      - TI-Corporation
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read #This is required for actions/checkout
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js version
+        uses: actions/setup-node@v3
+        with:
+          node-version: '22.x'
+
+      - name: Configure Frontend
+        run: |
+          cd frontend
+          echo '{
+            "Calibmaster": { "URL": "${{ secrets.TICORP_CALIBMASTER_URL }}" },
+            "CustomerPortal": { "URL": "${{ secrets.TICORP_CUSTOMER_PORTAL_URL }}" },
+            "SRF_ITEM_STATUS_LIST": [
+              "Not Calibrated",
+              "Calibrated",
+              "Report Generated",
+              "Dispatched",
+              "Report Dispatched",
+              "Invoice Generated",
+              "Payment Done"
+            ]
+          }' > src/utils/config.json
+
+      - name: Build Frontend
+        run: |
+          cd frontend
+          npm install
+          npm run build
+
+      - name: Sync Frontend Build to Backend
+        run: |
+          cp -r frontend/dist/* backend/public/
+
+      - name: Configure Backend
+        run: |
+          cd backend
+          # Update config/config.json with secrets
+          node -e "
+            const fs = require('fs');
+            const conf = JSON.parse(fs.readFileSync('config/config.json', 'utf8'));
+            
+            const host = '${{ secrets.TICORP_DB_HOST }}';
+            const database = '${{ secrets.TICORP_DB_NAME }}';
+            const username = '${{ secrets.TICORP_DB_USER }}';
+            const password = '${{ secrets.TICORP_DB_PASS }}';
+            
+            ['development', 'test', 'production'].forEach(env => {
+              if (!conf[env]) conf[env] = {};
+              conf[env].host = host;
+              conf[env].database = database;
+              conf[env].username = username;
+              conf[env].password = password;
+            });
+            
+            fs.writeFileSync('config/config.json', JSON.stringify(conf, null, 2));
+          "
+
+      - name: Install backend dependencies (for App Service)
+        run: |
+          cd backend
+          npm install
+
+      - name: Upload artifact for deployment job
+        uses: actions/upload-artifact@v4
+        with:
+          name: node-app
+          path: backend/
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    
+    steps:
+      - name: Download artifact from build job
+        uses: actions/download-artifact@v4
+        with:
+          name: node-app
+      
+      - name: 'Deploy to Azure Web App'
+        id: deploy-to-webapp
+        uses: azure/webapps-deploy@v3
+        with:
+          # CHANGE THIS if your Azure app has a different name
+          app-name: 'ticorporation-calibmaster' 
+          slot-name: 'Production'
+          package: .
+          publish-profile: ${{ secrets.TICORP_AZURE_PUBLISH_PROFILE }}
