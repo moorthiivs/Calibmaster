@@ -1,7 +1,8 @@
 import React, { useContext } from "react";
 import { Menu } from "antd";
 import { AuthContext } from "../../context/auth-context";
-import { FaListAlt, } from "react-icons/fa";
+import { FaListAlt, FaTasks } from "react-icons/fa";
+import { MdAssignmentAdd } from "react-icons/md";
 // FontAwesome
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -95,6 +96,26 @@ const DepartmentLevelSidebar = () => {
           <Menu.Item key="/dashboard/srf" icon={<FcWorkflow size={iconsize} />}>SRFs</Menu.Item>
           <Menu.Item key="/dashboard/scanner" icon={<MdOutlineQrCodeScanner size={iconsize} style={{ color: "rgb(51 180 255)" }} />}>QR Scanner</Menu.Item>
         </>
+      )}
+
+      {/* ─── Task Management (NEW) ────────────────────────────────────────── */}
+      {(auth.department === "admin" || auth.department === "Manager") && (
+        <Menu.Item
+          key="/dashboard/tasks/create"
+          icon={<MdAssignmentAdd size={iconsize} style={{ color: "#1f3864" }} />}
+        >
+          Create Task
+        </Menu.Item>
+      )}
+
+      {/* Task List visible to Admin, Manager, Calibration, and CSD */}
+      {(auth.department === "admin" || auth.department === "Manager" || auth.department === "Calibration" || auth.department === "CSD") && (
+        <Menu.Item
+          key="/dashboard/tasks"
+          icon={<FaTasks size={iconsize} style={{ color: "#2e75b6" }} />}
+        >
+          Task List
+        </Menu.Item>
       )}
 
       {/* Admin, CSD, Manager Shared Items */}

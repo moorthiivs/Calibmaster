@@ -76,6 +76,12 @@ import InwardReports from "./components/BodyContent/Reports/InwardReports";
 import MakeModelPage from "./components/BodyContent/MakeAndModel/MakeModelPage";
 import DeletedIndex from "./components/BodyContent/DataStorage/DeletedIndex";
 import EmployeeTrack from "./components/BodyContent/EmployeeTrack/EmployeeTrack";
+
+// ─── Task Management (NEW) ────────────────────────────────────────────────────
+import TaskList from "./Pages/TaskManagement/TaskList";
+import CreateTask from "./Pages/TaskManagement/CreateTask";
+import TaskDetail from "./Pages/TaskManagement/TaskDetail";
+
 import DashboardErrorBoundary from "./components/errors/DashboardErrorBoundary";
 import PageErrorBoundary from "./components/errors/PageErrorBoundary";
 import WarrringModel from "./components/UI/WarrringModel";
@@ -87,9 +93,17 @@ const AppContent = () => {
   const [name, setName] = useState(null);
   const [department, setDepartment] = useState(null);
   const [email, setEmail] = useState(null);
-  const [availability, setAvailability] = useState(false);
+  // ✅ Check if running in Electron
+  const isDesktop = !!window.electron;
+
+  // ✅ Initialize states from cache to allow offline boot
+  const [availability, setAvailability] = useState(() => {
+    return JSON.parse(localStorage.getItem("calibmaster_availability") || "true");
+  });
+  const [version, setVersion] = useState(() => {
+    return localStorage.getItem("calibmaster_version") || "1.0.0";
+  });
   const [labId, setLabId] = useState(null);
-  const [version, setVersion] = useState(null);
   const [networkOnline, setNetworkOnline] = useState(true);
   const [idleTimeoutMinutes, setIdleTimeoutMinutes] = useState(20);
   const [sessionSynced, setSessionSynced] = useState(false);
@@ -105,52 +119,67 @@ const AppContent = () => {
   const channelRef = useRef(null);
 
 
+  // useEffect(() => {
+  //   const handleOnline = () => {
+  //     setNetworkOnline(true);
+  //     notification.success({
+  //       message: "Back Online",
+  //       description: "Internet connection restored.",
+  //       placement: "bottomRight",
+  //     });
+  //     navigate(-1); // go back to last page
+  //   };
+
+  //   const handleOffline = () => {
+  //     setNetworkOnline(false);
+  //     notification.warning({
+  //       message: "Offline Mode",
+  //       description: "You are currently offline. Redirecting...",
+  //       placement: "bottomRight",
+  //     });
+  //     navigate("/offline");
+  //   };
+
+  //   window.addEventListener("online", handleOnline);
+  //   window.addEventListener("offline", handleOffline);
+
+  //   return () => {
+  //     window.removeEventListener("online", handleOnline);
+  //     window.removeEventListener("offline", handleOffline);
+  //   };
+  // }, [navigate]);
+
+
   useEffect(() => {
-    const handleOnline = () => {
-      setNetworkOnline(true);
-      notification.success({
-        message: "Back Online",
-        description: "Internet connection restored.",
-        placement: "bottomRight",
-      });
-      navigate(-1); // go back to last page
-    };
-
-    const handleOffline = () => {
-      setNetworkOnline(false);
-      notification.warning({
-        message: "Offline Mode",
-        description: "You are currently offline. Redirecting...",
-        placement: "bottomRight",
-      });
-      navigate("/offline");
-    };
-
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
-
-    return () => {
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
-    };
-  }, [navigate]);
-
-
-  useEffect(() => {
-    fetch(config.Calibmaster.URL + "/api/heartbeat/check")
-      .then(async (response) => {
+    const checkAvailability = async () => {
+      try {
+        const response = await fetch(config.Calibmaster.URL + "/api/heartbeat/check");
         const data = await response.json();
+
         if (data?.status === "available") {
           setAvailability(true);
           setVersion(data.version);
+          // Sync to cache
+          localStorage.setItem("calibmaster_availability", "true");
+          localStorage.setItem("calibmaster_version", data.version);
         } else {
           setAvailability(false);
+          localStorage.setItem("calibmaster_availability", "false");
         }
-      })
-      .catch(() => {
-        setAvailability(false);
-      });
-  }, []);
+      } catch (err) {
+        console.warn("Heartbeat failed (Offline):", err);
+        // On Desktop, we don't block access if the network fails
+        if (!isDesktop) {
+          setAvailability(false);
+        }
+      }
+    };
+
+    checkAvailability();
+    // Re-check periodically
+    const interval = setInterval(checkAvailability, 60000);
+    return () => clearInterval(interval);
+  }, [isDesktop]);
 
 
   const login = useCallback((uid, token, name, email, department, labid, expirationDate) => {
@@ -536,7 +565,7 @@ const AppContent = () => {
         {!availability && <Route path="*" element={<UnavailablePage />} />}
 
         {/* Login routes */}
-        {availability && !token && (
+        {((availability || isDesktop) && !token) && (
           <>
             <Route path="/" element={<LoginPage />} />
             <Route path="*" element={<Navigate to="/" />} />
@@ -544,11 +573,11 @@ const AppContent = () => {
         )}
 
         {/* Authenticated routes */}
-        {availability && token && !sessionSynced && (
+        {((availability || isDesktop) && token && !sessionSynced) && (
           <Route path="*" element={null} /> // Render nothing while waiting for initial ping to sync
         )}
 
-        {availability && token && sessionSynced && (
+        {((availability || isDesktop) && token && sessionSynced) && (
           <>
             <Route path="/dashboard" element={<DashboardErrorBoundary><Dashboard /></DashboardErrorBoundary>}>
               <Route index element={<WelcomeScreen />} />
@@ -608,7 +637,15 @@ const AppContent = () => {
               <Route path="sync" element={<SyncPage />} />
               <Route path="scanner" element={<ScannerEnterResult />} />
               <Route path="inward-reports" element={<InwardReports />} />
+
+              {/* ─── Task Management (NEW) ───────────────────────────────── */}
+              <Route path="tasks" element={<TaskList />} />
+              <Route path="tasks/create" element={<CreateTask />} />
+              <Route path="tasks/:task_id" element={<TaskDetail />} />
             </Route>
+
+            <Route path="/offline" element={<OfflinePage />} />
+            <Route path="/unavailable" element={<UnavailablePage />} />
 
             <Route path="/exceltable" element={<PageErrorBoundary ><ExcelTable /></PageErrorBoundary>} />
             <Route

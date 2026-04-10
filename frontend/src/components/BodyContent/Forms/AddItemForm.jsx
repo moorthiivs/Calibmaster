@@ -170,6 +170,60 @@ const AddItemForm = ({
             .finally(() => setInstrumentLoading(false));
     }, [form.getFieldValue("labType"), form.getFieldValue("Category")]);
 
+    // ✅ NEW: Auto-load parameters when instrumentOptions are loaded (for programmatic initialization)
+    useEffect(() => {
+        if (instrumentOptions.length > 0) {
+            const currentTypeId = form.getFieldValue("instrumentType");
+            if (currentTypeId) {
+                const selectedOption = instrumentOptions.find(opt => opt.id === currentTypeId);
+                if (selectedOption && (!form.getFieldValue("parameters") || form.getFieldValue("parameters").length === 0)) {
+                    // Populate Instrument Name & Description
+                    setInstrument_name(selectedOption.inst_name);
+                    setDescription(selectedOption.name);
+
+                    // Populate Accept Ranges
+                    if (Array.isArray(selectedOption.AcceptRanges)) {
+                        const map = {};
+                        selectedOption.AcceptRanges.forEach((r) => {
+                            if (!map[r.labtype]) map[r.labtype] = [];
+                            map[r.labtype].push({
+                                min: r.min,
+                                max: r.max,
+                                unit: r.unit,
+                                unitsymbol: r.unitsymbol || r.unit,
+                                decimalPlace: r.decimalPlace,
+                                isEnable: r.isEnable !== undefined ? r.isEnable : true,
+                            });
+                        });
+                        setAcceptRanges(map);
+                    }
+
+                    // Populate Parameters
+                    if (selectedOption.Ranges) {
+                        const preparedParams = selectedOption.Ranges.map(rangeItem => {
+                            const keys = Object.keys(rangeItem).filter(k =>
+                                k !== "InstrumentUOMID" &&
+                                k !== "InstrumentparameterUOM" &&
+                                k !== "Symbols" &&
+                                k !== "SymbolPos"
+                            );
+                            return keys.map(k => ({
+                                parameterName: k,
+                                value: rangeItem[k],
+                                uom_id: rangeItem.InstrumentUOMID,
+                                Symbols: rangeItem.Symbols || "",
+                                SymbolPos: rangeItem.SymbolPos || ""
+                            }));
+                        }).flat();
+
+                        setParameters(preparedParams);
+                        form.setFieldsValue({ parameters: preparedParams });
+                    }
+                }
+            }
+        }
+    }, [instrumentOptions]);
+
     useEffect(() => {
         if (mode === 'edit') {
             const currentValues = form.getFieldsValue();

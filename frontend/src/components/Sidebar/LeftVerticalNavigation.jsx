@@ -24,7 +24,8 @@ import {
   faFile,
   faFileInvoice,
   faFileAlt,
-  faTools
+  faTools,
+  faTasks
 } from "@fortawesome/free-solid-svg-icons";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -133,6 +134,12 @@ const LeftVerticalNavigation = () => {
     // Reports
     group("Report", "Reports", faFileAlt, [
       item("/dashboard/inward-reports", "Inward Report", faFileAlt),
+    ]),
+
+    //Task
+    group("Task", "Task", faTasks, [
+      item("/dashboard/tasks/create", "Create", faSquarePlus),
+      item("/dashboard/tasks", "List", faClipboardList),
     ]),
 
     // Calibration Due Date

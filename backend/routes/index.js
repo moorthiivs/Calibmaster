@@ -3,6 +3,10 @@ const path = require("path");
 
 const router = express.Router();
 
+// Task Management + Sync (NEW — additive only, no existing routes modified)
+const taskRoutes = require("./task-routes");
+const syncRoutes = require("./sync-routes");
+
 const usersRoutes = require("./users-routes");
 const heartbeatRoute = require("./heartbeat-route");
 const companyRoutes = require("./company-routes");
@@ -181,6 +185,10 @@ router.use('/api/makemodel/', Authorization, MakeModel)
 router.use('/api/data-storage/', Authorization, DataStorage)
 
 router.use('/api/employee-track', EmployeeTrack)
+
+// ─── Task Management & Sync (NEW) ────────────────────────────────────────────
+router.use("/api/tasks", taskRoutes);
+router.use("/api/sync",  syncRoutes);
 
 router.get("/*", (req, res) => {
     const frontendPath = path.join(__dirname + "../../public/index.html");
