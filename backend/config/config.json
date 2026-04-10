@@ -1,9 +1,9 @@
 {
     "development": {
-        "username": "postgres",
-        "password": "root",
-        "database": "Sansera",
-        "host": "127.0.0.1",
+        "username": "ticorporation",
+        "password": "k79KQ0Jyd31zmRvtimc2",
+        "database": "testing",
+        "host": "ticorporation-calibmaster-customerportal.postgres.database.azure.com",
         "dialect": "postgres",
         "logging": false
     },
