@@ -35,8 +35,10 @@ const TaskCalibrationDrawer = ({ visible, onClose, item, onSaveSuccess }) => {
     }, [visible, item]);
 
     const fetchInitialData = async () => {
+        const categories = ['makes', 'models', 'categories', 'uoms'];
+        
         try {
-            // Fetch Makes/Models
+            // 1. Try Online First
             const [makesRes, modelsRes, categoriesRes, uomRes] = await Promise.all([
                 fetch(`${config.Calibmaster.URL}/api/makemodel/make`, { headers: { Authorization: `Bearer ${auth.token}` } }),
                 fetch(`${config.Calibmaster.URL}/api/makemodel/model`, { headers: { Authorization: `Bearer ${auth.token}` } }),
@@ -61,7 +63,31 @@ const TaskCalibrationDrawer = ({ visible, onClose, item, onSaveSuccess }) => {
             const populatedUOM = await populateUomWithsysmbol(uomData.data || []);
             setUOM(populatedUOM);
         } catch (err) {
-            console.error("Failed to fetch initial data", err);
+            console.warn("Network fetch for master data failed, trying local storage...", err);
+            
+            // 2. Fallback to Local SQLite
+            if (window.electron?.db) {
+                try {
+                    const localMakes = await window.electron.db.getMasterData('makes');
+                    const localModels = await window.electron.db.getMasterData('models');
+                    const localCats = await window.electron.db.getMasterData('categories');
+                    const localUoms = await window.electron.db.getMasterData('uoms');
+
+                    if (localMakes) setMakes(localMakes);
+                    if (localModels) setModels(localModels);
+                    if (localCats) setInstrumentCategories(localCats);
+                    if (localUoms) {
+                        const populatedUOM = await populateUomWithsysmbol(localUoms);
+                        setUOM(populatedUOM);
+                    }
+                    
+                    if (localMakes || localModels || localCats || localUoms) {
+                        message.info("Loaded calibration lookup data from local storage.");
+                    }
+                } catch (dbErr) {
+                    console.error("Local database fetch failed", dbErr);
+                }
+            }
         }
     };
 

@@ -7,11 +7,14 @@ contextBridge.exposeInMainWorld('electron', {
     versions: process.versions,
     db: {
         saveTask: (task) => ipcRenderer.invoke('db:save-task', task),
+        getAllTask: () => ipcRenderer.invoke('db:get-all-task'),
         getTask: (taskId) => ipcRenderer.invoke('db:get-task', taskId),
         getAllLocalTasks: () => ipcRenderer.invoke('db:get-all-local-tasks'),
         saveMeasurement: (data) => ipcRenderer.invoke('db:save-measurement', data),
         getPendingMeasurements: (taskId) => ipcRenderer.invoke('db:get-pending-measurements', taskId),
         markAsSynced: (ids) => ipcRenderer.invoke('db:mark-synced', ids),
-        deleteTask: (taskId) => ipcRenderer.invoke('db:delete-task', taskId)
+        deleteTask: (taskId) => ipcRenderer.invoke('db:delete-task', taskId),
+        saveMasterData: (category, data) => ipcRenderer.invoke('db:save-master-data', { category, data }),
+        getMasterData: (category) => ipcRenderer.invoke('db:get-master-data', category)
     }
 });

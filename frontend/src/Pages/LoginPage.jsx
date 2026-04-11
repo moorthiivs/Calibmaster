@@ -17,7 +17,7 @@ const LoginPage = (props) => {
   };
 
   if (redirect) {
-    return navigate("/dashboard");
+    return <Navigate to="/dashboard" />;
   } else {
     return (
       <div

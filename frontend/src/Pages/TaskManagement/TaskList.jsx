@@ -2,15 +2,17 @@ import React, { useContext, useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Table, Tag, Button, Input, Select, Space, Tooltip, Badge,
-  Statistic, Row, Col, Card, message, Popconfirm, notification
+  Statistic, Row, Col, Card, message, Popconfirm, notification,
+  Modal
 } from "antd";
 import {
   PlusOutlined, ReloadOutlined, EyeOutlined, DeleteOutlined,
   SyncOutlined, CheckCircleOutlined, ClockCircleOutlined, PlayCircleOutlined,
-  CloudDownloadOutlined, LaptopOutlined
+  CloudDownloadOutlined, LaptopOutlined, DatabaseOutlined
 } from "@ant-design/icons";
 import { AuthContext } from "../../context/auth-context";
 import config from "../../utils/config.json";
+import OfflineTable from "./OfflineTable";
 
 const { Search } = Input;
 const { Option } = Select;
@@ -48,11 +50,21 @@ export default function TaskList() {
     total: 0, assigned: 0, in_progress: 0, completed: 0, pending_sync: 0,
   });
   const [localTasks, setLocalTasks] = useState([]);
+  const [isOfflineModalVisible, setIsOfflineModalVisible] = useState(false);
+  const [parsedLocalTasks, setParsedLocalTasks] = useState([]);
 
   const checkLocalTasks = useCallback(async () => {
     if (window.electron?.db) {
       const locals = await window.electron.db.getAllLocalTasks();
       setLocalTasks(locals); // now contains task_id and local_count
+      
+      // Also prepare parsed data for the offline modal
+      const parsed = locals.map(l => ({
+        ...JSON.parse(l.data),
+        downloaded_at: l.downloaded_at,
+        local_count: l.local_count
+      }));
+      setParsedLocalTasks(parsed);
     }
   }, []);
 
@@ -90,7 +102,7 @@ export default function TaskList() {
           });
         } else {
           // FALLBACK TO SQLite
-          if (window.Electron?.db) {
+          if (window.electron?.db) {
             const locals = await window.electron.db.getAllLocalTasks();
             if (locals.length > 0) {
               setTasks(locals.map(l => ({ ...JSON.parse(l.data), is_offline: true })));
@@ -166,13 +178,47 @@ export default function TaskList() {
 
     const hide = message.loading(`Downloading task "${record.task_name}"...`, 0);
 
+    const syncMasterDataForOffline = async () => {
+      try {
+        const endpoints = {
+          makes: "/api/makemodel/make",
+          models: "/api/makemodel/model",
+          uoms: "/api/uom/list",
+          categories: "/api/instrument-types/listCategoryofInstruments",
+          instruments: "/api/instruments/list"
+        };
+
+        for (const [key, path] of Object.entries(endpoints)) {
+          const fetchOptions = {
+            headers: { Authorization: "Bearer " + auth.token }
+          };
+          
+          if (key === 'categories') {
+            fetchOptions.method = 'POST';
+            fetchOptions.headers['Content-Type'] = 'application/json';
+            fetchOptions.body = JSON.stringify({ lab_id: auth.labId });
+          }
+
+          const res = await fetch(`${BASE_URL}${path}`, fetchOptions);
+          const data = await res.json();
+          if (res.ok) {
+            await window.electron.db.saveMasterData(key, data.data || data);
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to backup master data:", err);
+      }
+    };
+
     try {
-      // Fetch full task data (including all instruments)
+      // 1. Sync global master data first (makes, models, etc)
+      await syncMasterDataForOffline();
+
+      // 2. Fetch full task data (including all instruments)
       const res = await fetch(`${BASE_URL}/api/tasks/${record.task_id}`, {
         headers: { Authorization: "Bearer " + auth.token },
       });
       const data = await res.json();
-
       if (res.ok && data.data) {
         await window.electron.db.saveTask(data.data);
         hide();
@@ -190,6 +236,7 @@ export default function TaskList() {
         });
       }
     } catch (err) {
+      console.log(err);
       hide();
       notification.error({
         message: "Network Error",
@@ -373,6 +420,14 @@ export default function TaskList() {
               Create Task
             </Button>
           )}
+          {(auth.department?.toLowerCase() !== "admin" && auth.department?.toLowerCase() !== "manager") && window.electron?.db && (
+            <Button
+              icon={<DatabaseOutlined />}
+              onClick={() => setIsOfflineModalVisible(true)}
+            >
+              Offline Data ({localTasks.length})
+            </Button>
+          )}
         </Space>
       </div>
 
@@ -439,7 +494,12 @@ export default function TaskList() {
           rec.sync_status === "pending" ? "task-row-pending" : ""
         }
       />
-
+      <OfflineTable
+        open={isOfflineModalVisible}
+        onCancel={() => setIsOfflineModalVisible(false)}
+        data={parsedLocalTasks}
+        onRefresh={checkLocalTasks}
+      />
       <style>{`
         .task-row-pending { background-color: #fffbe6 !important; }
         .task-row-pending:hover td { background-color: #fff7cc !important; }

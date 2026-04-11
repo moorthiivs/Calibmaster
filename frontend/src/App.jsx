@@ -87,12 +87,23 @@ import PageErrorBoundary from "./components/errors/PageErrorBoundary";
 import WarrringModel from "./components/UI/WarrringModel";
 
 const AppContent = () => {
-  const [token, setToken] = useState(null);
-  const [userId, setUserId] = useState(null);
-  const [tokenExp, setTokenExp] = useState(null);
-  const [name, setName] = useState(null);
-  const [department, setDepartment] = useState(null);
-  const [email, setEmail] = useState(null);
+  // ✅ Synchronously initialize auth state from localStorage to prevent redirect loops on mount
+  const [userData, setUserData] = useState(() => {
+    const stored = localStorage.getItem("calibmaster_userData");
+    if (stored) {
+      const data = JSON.parse(stored);
+      if (new Date(data.expiration) > new Date()) return data;
+    }
+    return null;
+  });
+
+  const [token, setToken] = useState(userData?.token || null);
+  const [userId, setUserId] = useState(userData?.userId || null);
+  const [tokenExp, setTokenExp] = useState(userData ? new Date(userData.expiration) : null);
+  const [name, setName] = useState(userData?.name || null);
+  const [department, setDepartment] = useState(userData?.department || null);
+  const [email, setEmail] = useState(userData?.email || null);
+  const [labId, setLabId] = useState(userData?.labId || null);
   // ✅ Check if running in Electron
   const isDesktop = !!window.electron;
 
@@ -103,7 +114,6 @@ const AppContent = () => {
   const [version, setVersion] = useState(() => {
     return localStorage.getItem("calibmaster_version") || "1.0.0";
   });
-  const [labId, setLabId] = useState(null);
   const [networkOnline, setNetworkOnline] = useState(true);
   const [idleTimeoutMinutes, setIdleTimeoutMinutes] = useState(20);
   const [sessionSynced, setSessionSynced] = useState(false);
@@ -234,20 +244,23 @@ const AppContent = () => {
     localStorage.removeItem("logo");
   }, [userId, token, dispatch]);
 
+  // (Redundant but safe: logic moved to sync initializer)
   useEffect(() => {
-    const storedData = JSON.parse(localStorage.getItem("calibmaster_userData"));
-    if (storedData?.token && new Date(storedData.expiration) > new Date()) {
-      login(
-        storedData.userId,
-        storedData.token,
-        storedData.name,
-        storedData.email,
-        storedData.department,
-        storedData.labId,
-        new Date(storedData.expiration)
-      );
+    if (!token) {
+      const storedData = JSON.parse(localStorage.getItem("calibmaster_userData"));
+      if (storedData?.token && new Date(storedData.expiration) > new Date()) {
+        login(
+          storedData.userId,
+          storedData.token,
+          storedData.name,
+          storedData.email,
+          storedData.department,
+          storedData.labId,
+          new Date(storedData.expiration)
+        );
+      }
     }
-  }, [login]);
+  }, [login, token]);
 
   // Auto Logout (Token Expiration)
   useEffect(() => {
@@ -357,8 +370,8 @@ const AppContent = () => {
     // causing false idle timeouts. These pages don't need idle logout.
     const isExcludedFromIdle =
 
-      //location.pathname.includes("/exceltable") ||
-      //location.pathname.includes("/enter-result") ||
+      location.pathname.includes("/exceltable") ||
+      location.pathname.includes("/enter-result") ||
       location.pathname.includes("/employee-track");
 
     let checkInterval;
@@ -666,10 +679,16 @@ const AppContent = () => {
   );
 };
 
-const App = () => (
-  <Router basename={import.meta.env.BASE_URL}>
-    <AppContent />
-  </Router>
-);
+const App = () => {
+  // ✅ Sanitize basename: React Router needs an absolute path (e.g. "/" or "/subdir")
+  // If BASE_URL is "./" (common for Electron), we use "/" as the routing base.
+  const basename = import.meta.env.BASE_URL.replace(/^\./, "") || "/";
+
+  return (
+    <Router basename={basename}>
+      <AppContent />
+    </Router>
+  );
+};
 
 export default App;

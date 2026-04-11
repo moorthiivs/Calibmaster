@@ -6,7 +6,7 @@ let db = null;
 
 function initDB() {
     if (db) return db;
-    
+
     const dbPath = path.join(app.getPath('userData'), 'calibmaster_local.sqlite');
     db = new sqlite3.Database(dbPath);
 
@@ -29,8 +29,15 @@ function initDB() {
             captured_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             sync_status TEXT DEFAULT 'pending' -- 'pending', 'synced'
         )`);
+
+        // Stores master data lists (Makes, Models, UOMs, Categories)
+        db.run(`CREATE TABLE IF NOT EXISTS offline_master_data (
+            category TEXT PRIMARY KEY,
+            data TEXT,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`);
     });
-    
+
     return db;
 }
 
@@ -39,10 +46,24 @@ module.exports = {
     saveTask: (task) => {
         return new Promise((resolve, reject) => {
             const stmt = db.prepare("INSERT OR REPLACE INTO offline_tasks (task_id, task_name, data) VALUES (?, ?, ?)");
-            stmt.run(task.task_id, task.task_name, JSON.stringify(task), function(err) {
+            stmt.run(task.task_id, task.task_name, JSON.stringify(task), function (err) {
                 if (err) reject(err);
                 else resolve(this.lastID);
             });
+        });
+    },
+
+    getAllTask: () => {
+        return new Promise((resolve, reject) => {
+            try {
+                db.all("SELECT * FROM offline_tasks", [], (err, rows) => {
+                    if (err) reject(err);
+                    else resolve(rows.map(r => JSON.parse(r.data)));
+                });
+            } catch (error) {
+                console.log(error, "error");
+                reject(error);
+            }
         });
     },
 
@@ -74,7 +95,7 @@ module.exports = {
     saveMeasurement: (taskId, taskItemId, payload) => {
         return new Promise((resolve, reject) => {
             const stmt = db.prepare("INSERT INTO offline_measurements (task_id, task_item_id, payload) VALUES (?, ?, ?)");
-            stmt.run(taskId, taskItemId, JSON.stringify(payload), function(err) {
+            stmt.run(taskId, taskItemId, JSON.stringify(payload), function (err) {
                 if (err) reject(err);
                 else resolve(this.lastID);
             });
@@ -83,11 +104,11 @@ module.exports = {
 
     getPendingMeasurements: (taskId) => {
         return new Promise((resolve, reject) => {
-            const query = taskId 
+            const query = taskId
                 ? "SELECT * FROM offline_measurements WHERE task_id = ? AND sync_status = 'pending'"
                 : "SELECT * FROM offline_measurements WHERE sync_status = 'pending'";
             const params = taskId ? [taskId] : [];
-            
+
             db.all(query, params, (err, rows) => {
                 if (err) reject(err);
                 else resolve(rows.map(r => ({ ...r, payload: JSON.parse(r.payload) })));
@@ -107,11 +128,30 @@ module.exports = {
     },
 
     deleteTask: (taskId) => {
-      return new Promise((resolve, reject) => {
-          db.run("DELETE FROM offline_tasks WHERE task_id = ?", [taskId], (err) => {
-              if (err) reject(err);
-              else resolve();
-          });
-      });
-  }
+        return new Promise((resolve, reject) => {
+            db.run("DELETE FROM offline_tasks WHERE task_id = ?", [taskId], (err) => {
+                if (err) reject(err);
+                else resolve();
+            });
+        });
+    },
+
+    saveMasterData: (category, data) => {
+        return new Promise((resolve, reject) => {
+            const stmt = db.prepare("INSERT OR REPLACE INTO offline_master_data (category, data, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)");
+            stmt.run(category, JSON.stringify(data), function (err) {
+                if (err) reject(err);
+                else resolve(this.lastID);
+            });
+        });
+    },
+
+    getMasterData: (category) => {
+        return new Promise((resolve, reject) => {
+            db.get("SELECT * FROM offline_master_data WHERE category = ?", [category], (err, row) => {
+                if (err) reject(err);
+                else resolve(row ? JSON.parse(row.data) : null);
+            });
+        });
+    }
 };
