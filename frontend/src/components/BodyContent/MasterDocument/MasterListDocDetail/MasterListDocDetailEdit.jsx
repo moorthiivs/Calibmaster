@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react';
 import '../styles/style.css';
 import { AuthContext } from '../../../../context/auth-context';
-import config from "../../../../utils/config.json";
+import config from "../../../../utils/config.js";
 import MasterListDocDetailForm from '../../Forms/MasterListDocDetailForm';
 import { Form } from 'antd';
 import dayjs from 'dayjs';

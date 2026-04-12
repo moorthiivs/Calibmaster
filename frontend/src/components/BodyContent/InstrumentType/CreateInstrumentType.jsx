@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react';
 import "./style.css";
 import { useDispatch, useSelector } from 'react-redux';
-import config from "../../../utils/config.json";
+import config from "../../../utils/config.js";
 import { notificationActions } from "../../../store/nofitication";
 import { AuthContext } from '../../../context/auth-context';
 import { useNavigate } from "react-router-dom";

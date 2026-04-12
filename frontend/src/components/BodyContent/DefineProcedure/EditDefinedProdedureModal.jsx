@@ -3,7 +3,7 @@ import { Button, Card, Input, Select, ButtonIcon } from 'react-rainbow-component
 import { notificationActions } from '../../../store/nofitication';
 import { AuthContext } from '../../../context/auth-context';
 import { useDispatch, useSelector } from 'react-redux';
-import config from "../../../utils/config.json";
+import config from "../../../utils/config.js";
 import AddMasterEquipments from './MasterEquipments/AddMasterEquipments';
 import ListMasterEquipments from './MasterEquipments/ListMasterEquipments';
 

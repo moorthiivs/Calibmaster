@@ -3,7 +3,7 @@ import { Card, Input, Button, Tooltip, Dropdown, message } from "antd";
 import { SearchOutlined, EditOutlined, DeleteFilled, MoreOutlined, EditFilled } from "@ant-design/icons";
 import { useDispatch } from "react-redux";
 import { AuthContext } from "../../../context/auth-context";
-import config from "../../../utils/config.json";
+import config from "../../../utils/config.js";
 import { notificationActions } from "../../../store/nofitication";
 import { useNavigate } from "react-router-dom";
 import { instrumentIdActions } from "../../../store/instrumentId";

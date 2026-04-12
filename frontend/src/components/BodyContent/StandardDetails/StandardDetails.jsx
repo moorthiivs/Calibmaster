@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import { Card, Input, Select, DatePicker, Button, Spinner, Textarea, FileSelector, CheckboxGroup, MultiSelect } from 'react-rainbow-components';
 import { notificationActions } from "../../../store/nofitication";
 import { useDispatch } from 'react-redux';
-import config from "../../../utils/config.json";
+import config from "../../../utils/config.js";
 import { AuthContext } from '../../../context/auth-context';
 import { useNavigate } from "react-router-dom";
 import { getBase64, populateDisciplineData, populateGroupData } from './HelperFunction';

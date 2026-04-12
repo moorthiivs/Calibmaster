@@ -8,7 +8,7 @@ import { AuthContext } from "../../../context/auth-context";
 import { srfitemsActions } from "../../../store/srfitems";
 import CustomInput from "../../Inputs/CustomInput";
 import StatusBadge from "../../UI/StatusBadge";
-import config from "../../../utils/config.json";
+import config from "../../../utils/config.js";
 import { getBase64 } from "../../../utils/utilfuns";
 import { childSrfItemsActions } from "../../../store/childSrfItems";
 import { selecteditemsActions } from "../../../store/selecteditems";
@@ -322,12 +322,12 @@ const UpdateInvoice = (props) => {
 
               <div className="srf__items__container">
 
-                <Card className="items__table__card" style={{ marginBottom: "1rem" }}>
+                <Card className="items__table__card my-5">
                   <SRFItemsListView srfItems={selecteditems} />
                 </Card>
 
-                <Card className="items__table__card mtop1">
-                  <div className="dc__info__container flex gap-5 my-5" >
+                <Card className="items__table__card my-5">
+                  <div className="dc__info__container flex gap-5 my-5 mx-10 justify-center" >
                     <div >
                       <CustomInput
                         label="Invoice No."

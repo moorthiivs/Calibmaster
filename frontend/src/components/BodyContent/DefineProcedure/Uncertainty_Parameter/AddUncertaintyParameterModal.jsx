@@ -1,6 +1,6 @@
 import { useContext, useEffect, useState } from "react";
 import { Modal, Button, Input, Select } from 'react-rainbow-components';
-import config from "../../../../utils/config.json";
+import config from "../../../../utils/config.js";
 import axios from 'axios';
 import { useDispatch, useSelector } from "react-redux";
 import { AuthContext } from "../../../../context/auth-context";

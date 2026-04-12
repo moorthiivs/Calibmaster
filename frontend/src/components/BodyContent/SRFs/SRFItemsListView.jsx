@@ -13,7 +13,7 @@ import CustomSelect from "../../Inputs/CustomSelect";
 
 import StatusBadge from "../../UI/StatusBadge";
 import { updatedcSchema } from "../../../Schemas/updatedc";
-import config from "../../../utils/config.json";
+import config from "../../../utils/config.js";
 import { AuthContext } from "../../../context/auth-context";
 import { notificationActions } from "../../../store/nofitication";
 import { srfitemsActions } from "../../../store/srfitems";

@@ -10,7 +10,7 @@ import {
   ExclamationCircleOutlined
 } from "@ant-design/icons";
 import { AuthContext } from "../../context/auth-context";
-import config from "../../utils/config.json";
+import config from "../../utils/config.js";
 import TaskCalibrationDrawer from "./TaskCalibrationDrawer";
 
 const { Option } = Select;

@@ -18,7 +18,10 @@ const loginTrack = async (req, res, next) => {
             defaults: { idleTimeoutMinutes: 20, preventConcurrentLogins: false }
         });
 
-        if (config.preventConcurrentLogins) {
+        // userId 0 is SuperAdmin (root@iviewsense.com)
+        const isSuperAdmin = userId === 0 || userId === '0';
+
+        if (config.preventConcurrentLogins && !isSuperAdmin) {
             const lastSessionRecord = await EmployeeTracking.findOne({
                 where: { userId },
                 order: [["empTrackingId", "DESC"]]
@@ -118,7 +121,7 @@ const verifySession = async (req, res, next) => {
     const userIdStr = String(req.body.userId);
     const { userId } = req.body;
     try {
-        if (!userId) return res.status(400).json({ status: "ERROR" });
+        if (userId === null || userId === undefined) return res.status(400).json({ status: "ERROR" });
 
         // If they just refreshed, cancel the 7-second browser close timer!
         if (pendingLogouts.has(userIdStr)) {
@@ -150,7 +153,7 @@ const intentToLogout = async (req, res) => {
     // Called strictly via sendBeacon on browser close or refresh
     const userIdStr = String(req.body.userId);
     const { userId } = req.body;
-    if (!userId) return res.status(400).json({ status: "ERROR" });
+    if (userId === null || userId === undefined) return res.status(400).json({ status: "ERROR" });
 
     if (pendingLogouts.has(userIdStr)) clearTimeout(pendingLogouts.get(userIdStr));
 
@@ -666,7 +669,7 @@ const heartbeatPing = async (req, res, next) => {
     const { userId } = req.body;
     try {
         
-        if (!userId) return res.status(400).json({ status: "ERROR" });
+        if (userId === null || userId === undefined) return res.status(400).json({ status: "ERROR" });
 
         // Find the latest open LOGIN session and touch its updatedAt.
         // The heartbeatLogout cron uses updatedAt to detect sessions that went silent.

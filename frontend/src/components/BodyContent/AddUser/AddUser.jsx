@@ -9,7 +9,7 @@ import "./AddUser.css";
 import { userSchema } from "../../../Schemas/user";
 import { useDispatch, useSelector } from "react-redux";
 import { notificationActions } from "../../../store/nofitication";
-import config from "../../../utils/config.json";
+import config from "../../../utils/config.js";
 import { AuthContext } from "../../../context/auth-context";
 import { useNavigate } from "react-router-dom";
 import { companiesActions } from "../../../store/companies";

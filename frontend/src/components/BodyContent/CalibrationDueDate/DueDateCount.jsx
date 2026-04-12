@@ -3,7 +3,7 @@ import { useState, useEffect, useContext, Fragment, useMemo } from "react";
 import { AuthContext } from "../../../context/auth-context";
 import { useDispatch } from "react-redux";
 import { notificationActions } from "../../../store/nofitication";
-import config from "../../../utils/config.json";
+import config from "../../../utils/config.js";
 import DueDateItemList from "./DueDateItemList";
 import YearDropdown from "./YearDropdown";
 import Loader from "../../UI/Loader";

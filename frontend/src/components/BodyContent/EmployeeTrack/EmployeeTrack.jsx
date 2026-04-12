@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext, useCallback } from "react";
 import { AuthContext } from "../../../context/auth-context";
 import { apipostHandler } from "../../../utils/api";
-import config from "../../../utils/config.json";
+import config from "../../../utils/config.js";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 

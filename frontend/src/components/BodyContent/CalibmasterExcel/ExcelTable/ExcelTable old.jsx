@@ -14,7 +14,7 @@ import 'handsontable/styles/handsontable.css';
 import 'handsontable/styles/ht-theme-main.css'
 
 import { HyperFormula, FunctionPlugin } from "hyperformula";
-import config from "../../../../utils/config.json";
+import config from "../../../../utils/config.js";
 import { AuthContext } from "../../../../context/auth-context";
 import "./excel.css";
 import { textRenderer } from "handsontable/renderers";

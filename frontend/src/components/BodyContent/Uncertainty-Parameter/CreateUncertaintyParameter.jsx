@@ -1,6 +1,6 @@
 import { useContext, useEffect, useState } from "react";
 import { Card, Spinner, Input, Select, Button } from "react-rainbow-components";
-import config from "../../../utils/config.json";
+import config from "../../../utils/config.js";
 import axios from 'axios';
 import { useDispatch } from "react-redux";
 import { AuthContext } from "../../../context/auth-context";

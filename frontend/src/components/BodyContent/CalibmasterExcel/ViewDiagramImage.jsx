@@ -16,7 +16,7 @@ import {
   InboxOutlined,
   SaveOutlined,
 } from "@ant-design/icons";
-import config from "../../../utils/config.json";
+import config from "../../../utils/config.js";
 
 const { Dragger } = Upload;
 

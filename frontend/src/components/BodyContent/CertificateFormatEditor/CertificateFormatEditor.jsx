@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useContext } from "react";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
-import config from "../../../utils/config.json";
+import config from "../../../utils/config.js";
 import { AuthContext } from "../../../context/auth-context";
 import Swal from "sweetalert2";
 import { Card, Space, Button, Tooltip, Row, Typography, Col, Input, Select, Spin, message, Tabs, Form } from "antd";

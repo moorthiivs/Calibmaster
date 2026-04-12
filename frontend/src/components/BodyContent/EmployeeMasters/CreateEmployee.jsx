@@ -3,7 +3,7 @@ import { Card, Input, Button, Select, FileSelector } from 'react-rainbow-compone
 import { notificationActions } from '../../../store/nofitication';
 import { AuthContext } from '../../../context/auth-context';
 import { useDispatch } from 'react-redux';
-import config from "../../../utils/config.json";
+import config from "../../../utils/config.js";
 import { useNavigate } from "react-router-dom";
 import "./employee.css";
 import EmployeeForm from '../Forms/EmployeeForm';

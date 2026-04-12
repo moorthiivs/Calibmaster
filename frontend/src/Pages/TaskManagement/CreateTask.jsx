@@ -9,7 +9,7 @@ import {
   FileSearchOutlined, TeamOutlined, CheckSquareOutlined, SearchOutlined, FilterOutlined
 } from "@ant-design/icons";
 import { AuthContext } from "../../context/auth-context";
-import config from "../../utils/config.json";
+import config from "../../utils/config.js";
 import dayjs from "dayjs";
 
 const { Option } = Select;

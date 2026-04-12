@@ -4,7 +4,7 @@ import { Button, FileSelector, Card, GoogleAddressLookup } from "react-rainbow-c
 //import { Modal} from "react-rainbow-components";
 import StatusBadge from "../../UI/StatusBadge";
 import CustomProgress from "../../UI/CustomProgress";
-import config from "../../../utils/config.json";
+import config from "../../../utils/config.js";
 import { AuthContext } from "../../../context/auth-context";
 import { notificationActions } from "../../../store/nofitication";
 import DownloadCertificate from "./DownloadCertificate";

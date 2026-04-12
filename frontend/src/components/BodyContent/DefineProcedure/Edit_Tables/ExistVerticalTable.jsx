@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { Button, FileSelector, Select } from 'react-rainbow-components';
 import alphabet from '../procedureHelpers/alphabet';
-import config from "../../../../utils/config.json";
+import config from "../../../../utils/config.js";
 import { useDispatch } from 'react-redux';
 import { notificationActions } from '../../../../store/nofitication';
 

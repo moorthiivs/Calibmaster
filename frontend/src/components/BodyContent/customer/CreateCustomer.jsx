@@ -2,7 +2,7 @@ import { Card, Spinner, Input, Select, Button } from "react-rainbow-components";
 import { useContext, useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import { AuthContext } from "../../../context/auth-context";
-import config from "../../../utils/config.json";
+import config from "../../../utils/config.js";
 import { notificationActions } from "../../../store/nofitication";
 import { useNavigate } from 'react-router-dom';
 import "./addCustomer.css";

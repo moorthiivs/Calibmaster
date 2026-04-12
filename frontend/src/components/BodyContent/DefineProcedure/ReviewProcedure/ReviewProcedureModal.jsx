@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import { Modal, Button, ButtonIcon } from 'react-rainbow-components';
 import { useDispatch } from 'react-redux';
 import { AuthContext } from '../../../../context/auth-context';
-import config from "../../../../utils/config.json";
+import config from "../../../../utils/config.js";
 import ReviewProcedureTable from './ReviewProcedureTable';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faClose } from '@fortawesome/free-solid-svg-icons';

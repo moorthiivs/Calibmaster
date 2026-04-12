@@ -1,5 +1,5 @@
 
-import config from "./config.json";
+import config from "./config.js";
 
 
 export const apiloginHandler = async (url, requestBody) => {

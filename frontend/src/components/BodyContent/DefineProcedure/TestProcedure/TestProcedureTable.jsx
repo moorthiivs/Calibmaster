@@ -5,7 +5,7 @@ import { evaluate } from 'mathjs';
 import { useDispatch, useSelector } from 'react-redux';
 import alphabet from '../procedureHelpers/alphabet';
 import { updateKeyValProcedures } from '../../../../store/procedureSlice';
-import config from "../../../../utils/config.json";
+import config from "../../../../utils/config.js";
 
 const TestProcedureTable = ({ fromId, eachItem, eachBodyArray, unique_id, calculateTrigger, setCalTrigger, setCalculated, tableImages }) => {
 

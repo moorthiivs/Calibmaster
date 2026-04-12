@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { Button, ButtonIcon, Card, Column, Modal, TableWithBrowserPagination } from 'react-rainbow-components';
 import { AuthContext } from '../../../../context/auth-context';
-import config from "../../../../utils/config.json";
+import config from "../../../../utils/config.js";
 import { differenceInYears, format, parseISO } from 'date-fns';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTimes } from '@fortawesome/free-solid-svg-icons';

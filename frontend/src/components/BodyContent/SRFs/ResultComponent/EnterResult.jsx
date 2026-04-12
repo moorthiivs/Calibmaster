@@ -7,7 +7,7 @@ import {
   Column,
   Select
 } from 'react-rainbow-components'
-import config from '../../../../utils/config.json'
+import config from '../../../../utils/config.js'
 import { AuthContext } from '../../../../context/auth-context'
 import { useDispatch } from 'react-redux'
 import { notificationActions } from '../../../../store/nofitication'

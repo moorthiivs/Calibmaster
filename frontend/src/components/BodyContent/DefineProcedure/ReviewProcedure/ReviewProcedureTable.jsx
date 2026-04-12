@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { Button, Modal, Card, Input, Select } from 'react-rainbow-components';
 import alphabet from '../procedureHelpers/alphabet';
 import "./reviewTableStyle.css";
-import config from "../../../../utils/config.json";
+import config from "../../../../utils/config.js";
 
 const ReviewProcedureTable = ({ fromId, eachItem, eachBodyArray, unique_id, tableImages }) => {
 

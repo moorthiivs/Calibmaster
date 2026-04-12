@@ -2,7 +2,7 @@ import React, { useContext, useState } from 'react';
 //import { Button, Card, FileSelector, Input, Modal, Select } from 'react-rainbow-components';
 import { useDispatch } from 'react-redux';
 import { AuthContext } from '../../../context/auth-context';
-import config from "../../../utils/config.json";
+import config from "../../../utils/config.js";
 import { notificationActions } from '../../../store/nofitication';
 import "./employee.css";
 import Loader from '../../UI/Loader';

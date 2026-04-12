@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Select, Input, Spin, Row, Col, Button, Form, Card, message, Tooltip } from "antd";
-import config from "../../../utils/config.json";
+import config from "../../../utils/config.js";
 import { PlusOutlined } from "@ant-design/icons";
 import CreateInstrumentVariants from "../InstrumentType/InstrumentVariantsType/CreateInstrumentVariants";
 

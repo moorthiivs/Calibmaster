@@ -1,6 +1,6 @@
 import { useContext, useEffect, useState } from "react";
 import { Button, Card, Spinner, TableWithBrowserPagination, Column } from "react-rainbow-components";
-import config from "../../../utils/config.json";
+import config from "../../../utils/config.js";
 import axios from "axios";
 import { notificationActions } from "../../../store/nofitication";
 import { AuthContext } from '../../../context/auth-context';

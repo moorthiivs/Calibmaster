@@ -6,7 +6,7 @@ import CustomSelect from "../../Inputs/CustomSelect";
 import { notificationActions } from "../../../store/nofitication";
 import { useDispatch } from "react-redux";
 import { AuthContext } from "../../../context/auth-context";
-import config from "../../../utils/config.json";
+import config from "../../../utils/config.js";
 import { userSchema } from "../../../Schemas/user";
 import { userwopassSchema } from "../../../Schemas/userwopass";
 import { usersActions } from "../../../store/users";

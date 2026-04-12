@@ -5,7 +5,7 @@ import { useContext, useEffect, useState } from "react";
 import { notificationActions } from "../../../store/nofitication";
 import { useDispatch, useSelector } from "react-redux";
 import { AuthContext } from "../../../context/auth-context";
-import config from "../../../utils/config.json";
+import config from "../../../utils/config.js";
 import SRFItemsList from "./SRFItemsList";
 import { srfitemsActions } from "../../../store/srfitems";
 import UpdateDCModal from "./UpdateDCModal";

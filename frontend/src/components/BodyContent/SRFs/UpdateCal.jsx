@@ -3,7 +3,7 @@ import { Spinner } from "react-rainbow-components";
 //import { Modal ,Card,Button} from "react-rainbow-components";
 import StatusBadge from "../../UI/StatusBadge";
 import CustomProgress from "../../UI/CustomProgress";
-import config from "../../../utils/config.json";
+import config from "../../../utils/config.js";
 import { useState, useContext } from "react";
 import { useDispatch } from "react-redux";
 import { notificationActions } from "../../../store/nofitication";

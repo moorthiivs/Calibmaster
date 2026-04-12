@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { HyperFormula } from "hyperformula";
 import { convertFixedToRound, schemavalidation } from "../utils/excelDataUtils";
-import config from "../../../../../utils/config.json";
+import config from "../../../../../utils/config.js";
 
 export function useExcelData(excelState, hotRef, auth, props) {
   const {

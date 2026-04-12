@@ -6,7 +6,7 @@ import { useContext, useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import { notificationActions } from "../../../store/nofitication";
 import { companySchema } from "../../../Schemas/company";
-import config from "../../../utils/config.json";
+import config from "../../../utils/config.js";
 import { AuthContext } from "../../../context/auth-context";
 import { companiesActions } from "../../../store/companies";
 import Loader from "../../UI/Loader";

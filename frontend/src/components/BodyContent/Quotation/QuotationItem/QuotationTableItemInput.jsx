@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import { Button, Input, Select, Spinner } from 'react-rainbow-components';
 import "./QuotationTable.css"
 import CustomButton from "../../../Inputs/CustomButton";
-import config from "../../../../utils/config.json";
+import config from "../../../../utils/config.js";
 import QuotationItemList from './QuotationItemList';
 import { populateInstrumentData } from '../../InstrumentType/HelperFunction';
 import { useDispatch } from 'react-redux';

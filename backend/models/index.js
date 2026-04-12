@@ -9,7 +9,7 @@ const basename = path.basename(__filename);
 const env = process.env.NODE_ENV || 'development';
 console.log(env);
 
-const config = require(__dirname + '/../config/config.json')[env];
+const config = require(__dirname + '/../config/config.js')[env];
 const { NODE_ENV } = require('../utils/config');
 const db = {};
 

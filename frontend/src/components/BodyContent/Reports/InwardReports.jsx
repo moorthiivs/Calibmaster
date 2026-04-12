@@ -20,7 +20,7 @@ import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { createStyles } from 'antd-style';
 import { AuthContext } from '../../../context/auth-context';
-import config from '../../../utils/config.json'
+import config from '../../../utils/config.js'
 
 import moment from 'moment';
 

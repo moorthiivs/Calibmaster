@@ -2,7 +2,7 @@ import React, { useContext, useState, useEffect } from 'react';
 import { Card, Button, Input, TableWithBrowserPagination, Column, Spinner } from "react-rainbow-components";
 import { AuthContext } from '../../../context/auth-context';
 import { notificationActions } from "../../../store/nofitication";
-import config from "../../../utils/config.json";
+import config from "../../../utils/config.js";
 import { useDispatch } from 'react-redux';
 import EditBankConfig from './EditBankDetails';
 import Loader from '../../UI/Loader';

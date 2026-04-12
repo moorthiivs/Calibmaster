@@ -5,7 +5,7 @@ import CustomButton from "../../Inputs/CustomButton";
 import { AuthContext } from "../../../context/auth-context";
 import { useDispatch, useSelector } from "react-redux";
 import { notificationActions } from "../../../store/nofitication";
-import config from "../../../utils/config.json";
+import config from "../../../utils/config.js";
 import CustomFilePicker from "../../Inputs/CustomFilePicker";
 import { labSchema } from "../../../Schemas/editLab";
 import { getBase64 } from "../../../utils/utilfuns";

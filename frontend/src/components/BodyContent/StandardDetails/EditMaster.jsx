@@ -3,7 +3,7 @@ import { Spinner, Button, Card, Input, DatePicker, Select, Textarea, FileSelecto
 import { notificationActions } from "../../../store/nofitication";
 import { useDispatch, useSelector } from "react-redux";
 import { AuthContext } from "../../../context/auth-context";
-import config from "../../../utils/config.json";
+import config from "../../../utils/config.js";
 import { getBase64, populateDisciplineData, populateGroupData } from './HelperFunction';
 import "./StandardDetails.css";
 import { formattedDate } from '../../helpers/Helper';

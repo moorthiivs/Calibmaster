@@ -1,5 +1,5 @@
 import "./CompanyLogo.css";
-import config from "../../utils/config.json";
+import config from "../../utils/config.js";
 import packageconfig from "../../../package.json";
 import companylogo from "../../images/CalibMaster_Logo2.png";
 import { AuthContext } from "../../context/auth-context";

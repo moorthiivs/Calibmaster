@@ -11,7 +11,7 @@ import {
   CloudDownloadOutlined, LaptopOutlined, DatabaseOutlined
 } from "@ant-design/icons";
 import { AuthContext } from "../../context/auth-context";
-import config from "../../utils/config.json";
+import config from "../../utils/config.js";
 import OfflineTable from "./OfflineTable";
 
 const { Search } = Input;

@@ -1,7 +1,7 @@
 import React, { useCallback, useContext } from 'react';
 import { AuthContext } from '../../../context/auth-context';
 import { useDispatch } from 'react-redux';
-import config from "../../../utils/config.json";
+import config from "../../../utils/config.js";
 import { notificationActions } from "../../../store/nofitication";
 import { Button } from 'antd';
 import { EyeOutlined, FileSearchOutlined } from '@ant-design/icons';

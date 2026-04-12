@@ -2,7 +2,7 @@ import { useContext, useEffect, useState } from "react";
 import accreditationDetailValidation from "./accreditationDetailValidation";
 import { Modal, Input, Spinner, Button, Select, DatePicker } from "react-rainbow-components";
 import { AuthContext } from "../../../context/auth-context";
-import config from "../../../utils/config.json";
+import config from "../../../utils/config.js";
 import axios from "axios";
 import { useDispatch } from "react-redux";
 import { notificationActions } from "../../../store/nofitication";

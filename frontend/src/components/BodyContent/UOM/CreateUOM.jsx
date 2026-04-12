@@ -3,7 +3,7 @@ import { Card, Input } from 'react-rainbow-components';
 import CustomInput from '../../Inputs/CustomInput';
 import CustomButton from '../../Inputs/CustomButton';
 import { useDispatch } from 'react-redux';
-import config from "../../../utils/config.json";
+import config from "../../../utils/config.js";
 import { notificationActions } from "../../../store/nofitication";
 import { AuthContext } from '../../../context/auth-context';
 import { sidebarActions } from '../../../store/sidebar';

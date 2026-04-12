@@ -3,7 +3,7 @@ import { Row, Col, Card, Spin, Tooltip, Typography, Button, message, Modal, } fr
 import { FileDoneOutlined, FileTextOutlined, ArrowRightOutlined, } from "@ant-design/icons";
 import DiskUsageVisualizer from "./DiskUsageVisualizer";
 import DeleteItems from "./DeleteIteams";
-import config from '../../../utils/config.json'
+import config from '../../../utils/config.js'
 import { AuthContext } from "../../../context/auth-context";
 
 const { Title, Text, Paragraph } = Typography;

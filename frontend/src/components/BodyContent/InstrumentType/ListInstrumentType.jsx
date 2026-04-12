@@ -8,7 +8,7 @@ import {
 } from "@ant-design/icons";
 import { useDispatch } from "react-redux";
 import { AuthContext } from "../../../context/auth-context";
-import config from "../../../utils/config.json";
+import config from "../../../utils/config.js";
 import { notificationActions } from "../../../store/nofitication";
 import { labIdActions } from "../../../store/labId";
 import { useNavigate } from "react-router-dom";

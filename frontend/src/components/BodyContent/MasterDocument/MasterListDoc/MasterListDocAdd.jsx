@@ -1,7 +1,7 @@
 import React, { useContext, useState } from 'react';
 import '../styles/style.css'
 import { AuthContext } from '../../../../context/auth-context';
-import config from "../../../../utils/config.json";
+import config from "../../../../utils/config.js";
 import Loader from '../../../UI/Loader';
 import MasterListDocumentForm from '../../Forms/MasterListDocumentForm';
 import { Form } from 'antd';

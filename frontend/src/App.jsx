@@ -12,7 +12,7 @@ import Dashboard from "./Pages/Dashboard";
 import LoginPage from "./Pages/LoginPage";
 import UnavailablePage from "./Pages/UnavailablePage";
 import OfflinePage from "./Pages/OfflinePage";
-import config from "./utils/config.json";
+import config from "./utils/config.js";
 import ExcelTable from "./components/BodyContent/CalibmasterExcel/ExcelTable/ExcelTable";
 import EnterResult from "./components/BodyContent/SRFs/ResultComponent/EnterResult";
 import { apipostHandler } from "./utils/api";
@@ -227,7 +227,7 @@ const AppContent = () => {
       channelRef.current.postMessage({ type: "LOGOUT" });
     }
     // Track Logout - Avoid hitting the API if it's a stale or synchronized broadcast logout
-    if (userId && token && type !== "STALE_SESSION" && type !== "SYNC_LOGOUT") {
+    if (userId !== null && userId !== undefined && token && type !== "STALE_SESSION" && type !== "SYNC_LOGOUT") {
       apipostHandler("/api/employee-track/logout", { userId, logoutType: type }, token);
     }
     setShowIdleModal(false);

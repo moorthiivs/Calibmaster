@@ -10,7 +10,7 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faClone } from '@fortawesome/free-solid-svg-icons'
 import { AuthContext } from '../../../context/auth-context'
-import config from '../../../utils/config.json'
+import config from '../../../utils/config.js'
 import { notificationActions } from '../../../store/nofitication'
 import { useDispatch } from 'react-redux'
 

@@ -4,7 +4,7 @@ import CustomInput from '../../Inputs/CustomInput';
 import CustomButton from '../../Inputs/CustomButton';
 import { useDispatch, useSelector } from "react-redux";
 import { notificationActions } from "../../../store/nofitication";
-import config from "../../../utils/config.json";
+import config from "../../../utils/config.js";
 import { AuthContext } from "../../../context/auth-context";
 import { sidebarActions } from "../../../store/sidebar";
 import "./UOM.css";

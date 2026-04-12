@@ -1556,7 +1556,7 @@ const verify_certificate = async (req, res, next) => {
         const isExpired = expiredMasters.length > 0;
         const isBlockedBeforeDue = blockedMasters.length > 0;
 
-        const masterdeviceexpire = blockCalibrationSetting.is_enable ? {
+        const masterdeviceexpire = blockCalibrationSetting?.is_enable ? {
             isExpired,
             isBlockedBeforeDue,
             blockDays,

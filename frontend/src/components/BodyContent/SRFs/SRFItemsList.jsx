@@ -14,7 +14,7 @@ import StatusBadge from "../../UI/StatusBadge";
 import UpdateCal from "./UpdateCal";
 import { notificationActions } from "../../../store/nofitication";
 import { AuthContext } from "../../../context/auth-context";
-import config from "../../../utils/config.json";
+import config from "../../../utils/config.js";
 import { childSrfItemsActions } from "../../../store/childSrfItems";
 import EnterResult from "./ResultComponent/EnterResult";
 import QRCode from "react-qr-code";

@@ -3,7 +3,7 @@
 // import "../InstrumentType/style.css";
 // import CustomButton from "../../Inputs/CustomButton";
 // import { useDispatch, useSelector } from "react-redux";
-// import config from "../../../utils/config.json";
+// import config from "../../../utils/config.js";
 // import { notificationActions } from "../../../store/nofitication";
 // import { AuthContext } from "../../../context/auth-context";
 // import { useNavigate } from "react-router-dom";
@@ -333,7 +333,7 @@ import { Card, Spinner, Input, Select } from "react-rainbow-components";
 import "../InstrumentType/style.css";
 import CustomButton from "../../Inputs/CustomButton";
 import { useDispatch, useSelector } from "react-redux";
-import config from "../../../utils/config.json";
+import config from "../../../utils/config.js";
 import { notificationActions } from "../../../store/nofitication";
 import { AuthContext } from "../../../context/auth-context";
 import { useNavigate } from "react-router-dom";

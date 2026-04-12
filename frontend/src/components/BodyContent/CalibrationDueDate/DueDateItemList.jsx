@@ -10,7 +10,7 @@ import { notificationActions } from "../../../store/nofitication";
 import CustomSelect from "../../Inputs/CustomSelect";
 import { masterlistActions } from "../../../store/masterlist";
 import { AuthContext } from "../../../context/auth-context";
-import config from "../../../utils/config.json";
+import config from "../../../utils/config.js";
 import CustomLookup1 from "../../Inputs/CustomLookup1";
 import { convertDateFormat } from "../../../utils/filters";
 import Loader from "../../UI/Loader";

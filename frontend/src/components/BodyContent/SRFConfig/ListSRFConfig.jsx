@@ -9,7 +9,7 @@ import {
 } from "react-rainbow-components";
 import { AuthContext } from '../../../context/auth-context';
 import { notificationActions } from "../../../store/nofitication";
-import config from "../../../utils/config.json";
+import config from "../../../utils/config.js";
 import { useDispatch } from 'react-redux';
 import { formattedDate } from '../../helpers/Helper';
 import Loader from '../../UI/Loader';

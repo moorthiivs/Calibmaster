@@ -5,7 +5,7 @@ import { updateKeyValProcedures } from '../../../../../store/procedureSlice';
 import { parseFormula } from '../../../../helpers/formula_parser';
 import { evaluate } from 'mathjs';
 import "./tableInputCellStyle.css";
-import config from "../../../../../utils/config.json";
+import config from "../../../../../utils/config.js";
 
 const ExistResultTableWithoutFormula = ({ fromId, item, divTwoRef, calculateTrigger, setCalTrigger, setCalculated }) => {
 

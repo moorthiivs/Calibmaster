@@ -2,7 +2,7 @@ import { useContext, useEffect, useState } from "react";
 import { Card, Spinner, Input, DatePicker, Button } from "react-rainbow-components";
 import { useDispatch, useSelector } from "react-redux";
 import { notificationActions } from "../../../store/nofitication";
-import config from "../../../utils/config.json";
+import config from "../../../utils/config.js";
 import { AuthContext } from "../../../context/auth-context";
 import { useNavigate } from "react-router-dom";
 import ListSRFConfig from "./ListSRFConfig";

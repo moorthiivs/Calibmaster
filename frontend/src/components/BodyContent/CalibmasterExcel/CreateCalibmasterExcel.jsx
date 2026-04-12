@@ -6,7 +6,7 @@ import Loader from '../../UI/Loader'
 import { useDispatch } from 'react-redux'
 import { AuthContext } from '../../../context/auth-context'
 import { notificationActions } from '../../../store/nofitication'
-import config from '../../../utils/config.json'
+import config from '../../../utils/config.js'
 import { useNavigate } from "react-router-dom";
 import CalibmasterExcelForm from '../Forms/CalibmasterExcelForm'
 import { message, notification } from 'antd'

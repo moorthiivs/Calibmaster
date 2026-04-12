@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Card, Input, Button, Upload, message, Form, Row, Col, Select } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
-import config from "../../../utils/config.json";
+import config from "../../../utils/config.js";
 
 
 const EmployeeForm = ({ mode = "create", employeeData = null, onSubmit, setFiles }) => {

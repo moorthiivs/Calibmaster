@@ -7,7 +7,7 @@
 
 // import { AuthContext } from "../../../../../context/auth-context";
 // import { notificationActions } from '../../../../../store/nofitication';
-// import config from "../../../../../utils/config.json";
+// import config from "../../../../../utils/config.js";
 // import QRScanner from '../../../QRReader/QRReader';
 // import Loader from '../../../../UI/Loader';
 // import EditDefinedProdedureModal from './EditDefinedProdedureModal';
@@ -246,7 +246,7 @@ import { useNavigate } from "react-router-dom";
 
 import { AuthContext } from "../../../../../context/auth-context";
 import { notificationActions } from "../../../../../store/nofitication";
-import config from "../../../../../utils/config.json";
+import config from "../../../../../utils/config.js";
 import QRScanner from "../../../QRReader/QRReader";
 import EditDefinedProdedureModal from "./EditDefinedProdedureModal";
 

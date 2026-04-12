@@ -3,7 +3,7 @@ import { Drawer, Form, message } from 'antd';
 import AddItemForm from '../../components/BodyContent/Forms/AddItemForm';
 import OfflineAddItemForm from '../../components/BodyContent/Forms/OfflineAddItemForm';
 import { AuthContext } from '../../context/auth-context';
-import config from '../../utils/config.json';
+import config from '../../utils/config.js';
 import { populateUomWithsysmbol } from "../../components/BodyContent/Instrument/HelperFunction";
 
 const TaskCalibrationDrawer = ({ visible, onClose, item, onSaveSuccess }) => {

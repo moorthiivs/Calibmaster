@@ -4,7 +4,7 @@ import dayjs from "dayjs";
 import "./WelcomeScreen.css";
 import "./HexagonMenu.css";
 import TrendPieChart from "./Dashboard/TrendPieChart";
-import config from '../../utils/config.json'
+import config from '../../utils/config.js'
 import { AuthContext } from "../../context/auth-context";
 import { FileSearchOutlined, ClockCircleOutlined, CheckCircleOutlined, CalendarOutlined } from "@ant-design/icons";
 import DashboardCards from "./Dashboard/DashboardCards";

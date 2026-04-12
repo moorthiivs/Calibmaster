@@ -2,7 +2,7 @@ import { Modal, Input, Button, Table, Popconfirm, Spin, notification } from "ant
 import { CloseOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import { useContext, useEffect, useState } from "react";
 import { AuthContext } from "../../../../context/auth-context";
-import config from "../../../../utils/config.json";
+import config from "../../../../utils/config.js";
 import "./styles.css";
 
 export default function CreateInstrumentVariants({ isOpen, onClose, fetchData }) {

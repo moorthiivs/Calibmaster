@@ -8,7 +8,7 @@ import { AuthContext } from "../../../context/auth-context";
 import { srfitemsActions } from "../../../store/srfitems";
 import CustomInput from "../../Inputs/CustomInput";
 import StatusBadge from "../../UI/StatusBadge";
-import config from "../../../utils/config.json";
+import config from "../../../utils/config.js";
 import { getBase64 } from "../../../utils/utilfuns";
 import { childSrfItemsActions } from "../../../store/childSrfItems";
 import { selecteditemsActions } from "../../../store/selecteditems";
@@ -319,13 +319,13 @@ const UpdateDCModal = (props) => {
 
               <div className="srf__items__container">
 
-                <Card className="items__table__card" style={{ marginBottom: "1rem" }}>
+                <Card className="items__table__card mt-10" style={{ marginBottom: "1rem" }}>
                   <SRFItemsListView srfItems={selecteditems} />
                 </Card>
 
                 <Card className="items__table__card mtop1">
-                  <div className="dc__info__container flex justify-center my-3">
-                    <div className="add__srf__item__container w-full" >
+                  <div className="dc__info__container flex justify-center my-3 mx-5 gap-3">
+                    <div className="add__srf__item__container w-full my-10" >
                       <DatePicker
                         formatStyle="medium"
                         label="Report Generated Date"
@@ -338,7 +338,7 @@ const UpdateDCModal = (props) => {
                       />
                     </div>
 
-                    <div className="add__srf__item__container w-full" >
+                    <div className="add__srf__item__container w-full my-10" >
                       <Input
                         label="Dispatch DC No"
                         placeholder="Dispatch DC No"
@@ -348,7 +348,7 @@ const UpdateDCModal = (props) => {
                         value={dispatchDcNo}
                       />
                     </div>
-                    <div className="add__srf__item__container w-full" >
+                    <div className="add__srf__item__container w-full my-10" >
                       <DateTimePicker
                         label="Dispatch DC Date"
                         value={dispatchDcDate}
@@ -360,7 +360,7 @@ const UpdateDCModal = (props) => {
                         cancelLabel={"Cancel"}
                       />
                     </div>
-                    <div className="add__srf__item__container w-full" >
+                    <div className="add__srf__item__container w-full my-10" >
                       <Select
                         label="Dispatch Mode"
                         options={[

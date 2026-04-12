@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from "react";
 import { Card, Avatar, Button, Spinner, Modal } from "react-rainbow-components";
 import { AuthContext } from "../../../context/auth-context";
-import config from "../../../utils/config.json";
+import config from "../../../utils/config.js";
 import { useDispatch } from "react-redux";
 import { notificationActions } from "../../../store/nofitication";
 import "./modal.css";

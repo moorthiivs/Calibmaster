@@ -6,7 +6,7 @@ import { itemsActions } from '../../../store/items';
 import { notificationActions } from '../../../store/nofitication';
 import { srfitemsActions } from '../../../store/srfitems';
 import { AuthContext } from "../../../context/auth-context";
-import config from "../../../utils/config.json";
+import config from "../../../utils/config.js";
 import * as excelJs from 'exceljs';
 
 const AddBulkItems = (props) => {

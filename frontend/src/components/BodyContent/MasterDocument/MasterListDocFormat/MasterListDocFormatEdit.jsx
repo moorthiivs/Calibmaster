@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { Form } from 'antd';
 import MasterListDocFormatForm from '../../Forms/MasterListDocFormatForm';
-import config from '../../../../utils/config.json';
+import config from '../../../../utils/config.js';
 import { AuthContext } from '../../../../context/auth-context';
 import { useDispatch } from 'react-redux';
 import { notificationActions } from '../../../../store/nofitication';

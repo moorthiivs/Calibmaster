@@ -6,7 +6,7 @@
 // import { useContext, useEffect, useState } from "react";
 // import { AuthContext } from "../../../../context/auth-context";
 // import { useDispatch } from "react-redux";
-// import config from "../../../../utils/config.json";
+// import config from "../../../../utils/config.js";
 // import { notificationActions } from "../../../../store/nofitication";
 // import Loader from "../../../UI/Loader";
 // import { populateUomWithsysmbol } from "../HelperFunction";
@@ -254,7 +254,7 @@ import { Button, Input, Select, Spin, Row, Col, Typography, Space } from "antd";
 import { SaveOutlined, DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import { AuthContext } from "../../../../context/auth-context";
 import { useDispatch } from "react-redux";
-import config from "../../../../utils/config.json";
+import config from "../../../../utils/config.js";
 import { notificationActions } from "../../../../store/nofitication";
 import { populateUomWithsysmbol } from "../HelperFunction";
 import { populateInstrumentData } from "../../InstrumentType/HelperFunction";

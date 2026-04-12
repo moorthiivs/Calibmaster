@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import '../styles/style.css';
 import { useDispatch } from 'react-redux';
 import { AuthContext } from '../../../../context/auth-context';
-import config from '../../../../utils/config.json';
+import config from '../../../../utils/config.js';
 import MasterListDocumentForm from '../../Forms/MasterListDocumentForm';
 import { Form } from 'antd';
 import dayjs from 'dayjs';

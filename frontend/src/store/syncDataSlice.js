@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit"
 import axios from "axios"
-import config from "../utils/config.json"
+import config from "../utils/config.js"
 
 const initialState = {
   labs: { data: null, status: "idle", error: null },

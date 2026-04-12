@@ -6,7 +6,7 @@
 // import { AuthContext } from "../../../context/auth-context";
 // import { useDispatch } from "react-redux";
 // import { notificationActions } from "../../../store/nofitication";
-// import config from "../../../utils/config.json";
+// import config from "../../../utils/config.js";
 // import { emailconfigSchema } from "../../../Schemas/emailconfig";
 // import Loader from "../../UI/Loader";
 
@@ -335,7 +335,7 @@ import { Form, Input, Button, Card, Switch, notification, Spin, Row, Col, Divide
 import { AuthContext } from "../../../context/auth-context";
 import { useDispatch } from "react-redux";
 import { notificationActions } from "../../../store/nofitication";
-import config from "../../../utils/config.json";
+import config from "../../../utils/config.js";
 import { emailconfigSchema } from "../../../Schemas/emailconfig";
 
 const Email = () => {

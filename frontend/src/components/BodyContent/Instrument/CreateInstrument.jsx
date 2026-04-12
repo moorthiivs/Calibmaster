@@ -3,7 +3,7 @@ import { Card, Spinner, Select, Input, Button } from 'react-rainbow-components';
 import CustomInput from '../../Inputs/CustomInput';
 import CustomButton from '../../Inputs/CustomButton';
 import { useDispatch } from 'react-redux';
-import config from "../../../utils/config.json";
+import config from "../../../utils/config.js";
 import { notificationActions } from "../../../store/nofitication";
 import { AuthContext } from '../../../context/auth-context';
 import { useNavigate } from "react-router-dom";

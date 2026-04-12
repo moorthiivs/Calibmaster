@@ -5,7 +5,7 @@ import {
 } from 'antd';
 import { DeleteOutlined, EditOutlined, PlusCircleOutlined, SearchOutlined } from '@ant-design/icons';
 import { AuthContext } from '../../../context/auth-context';
-import config from '../../../utils/config.json'
+import config from '../../../utils/config.js'
 import dayjs from 'dayjs';
 
 const { TabPane } = Tabs;

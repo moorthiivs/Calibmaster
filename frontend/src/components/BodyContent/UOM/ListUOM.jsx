@@ -3,7 +3,7 @@
 // import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 // import { faSearch } from "@fortawesome/free-solid-svg-icons";
 // import { AuthContext } from '../../../context/auth-context';
-// import config from "../../../utils/config.json";
+// import config from "../../../utils/config.js";
 // import { notificationActions } from "../../../store/nofitication";
 // import { useDispatch } from 'react-redux';
 // import DataTable from 'react-data-table-component';
@@ -207,7 +207,7 @@ import { Card, Input, Button, Tooltip, Space } from "antd";
 import { SearchOutlined, EditOutlined } from "@ant-design/icons";
 import { useDispatch } from "react-redux";
 import { AuthContext } from "../../../context/auth-context";
-import config from "../../../utils/config.json";
+import config from "../../../utils/config.js";
 import { notificationActions } from "../../../store/nofitication";
 import { labIdActions } from "../../../store/labId";
 import { useNavigate } from "react-router-dom";

@@ -6,7 +6,7 @@
 // import { useContext, useEffect, useState } from "react";
 // import { AuthContext } from "../../../../context/auth-context";
 // import { useDispatch } from "react-redux";
-// import config from "../../../../utils/config.json";
+// import config from "../../../../utils/config.js";
 // import { notificationActions } from "../../../../store/nofitication";
 // import Loader from "../../../UI/Loader";
 // import showConfirmationDialog from "../../../../utils/showConfirmationToast";
@@ -165,7 +165,7 @@ import { Button, Input, Select, Spin, Row, Col, Typography, Space } from "antd";
 import { PlusOutlined, SaveOutlined, DeleteOutlined } from "@ant-design/icons";
 import { AuthContext } from "../../../../context/auth-context";
 import { useDispatch } from "react-redux";
-import config from "../../../../utils/config.json";
+import config from "../../../../utils/config.js";
 import { notificationActions } from "../../../../store/nofitication";
 import { populateDisciplineData, populateUomWithsysmbol } from "../HelperFunction";
 

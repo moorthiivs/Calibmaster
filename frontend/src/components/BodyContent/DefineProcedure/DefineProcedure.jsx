@@ -3,7 +3,7 @@ import { Input, Card, Button, Select, TableWithBrowserPagination, Column, } from
 import { notificationActions } from '../../../store/nofitication';
 import { AuthContext } from '../../../context/auth-context';
 import { useDispatch, useSelector } from 'react-redux';
-import config from "../../../utils/config.json";
+import config from "../../../utils/config.js";
 import { useNavigate } from "react-router-dom";
 import AddMasterEquipments from './MasterEquipments/AddMasterEquipments';
 import ListMasterEquipments from './MasterEquipments/ListMasterEquipments';
