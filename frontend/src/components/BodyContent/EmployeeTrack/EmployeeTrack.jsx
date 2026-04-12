@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 import dayjs from "dayjs";
 import { useNavigate } from "react-router-dom";
-import { Tooltip, Modal, Spin, Switch, InputNumber, Button, Form, message, notification, DatePicker, Select, Segmented, Checkbox } from "antd";
+import { Tooltip, Modal, Spin, Switch, InputNumber, Button, Form, message, notification, DatePicker, Select, Segmented, Checkbox, Popconfirm, Input } from "antd";
 
 const { RangePicker } = DatePicker;
 const { Option } = Select;
@@ -251,6 +251,69 @@ const EmployeeTrack = () => {
     }
   };
 
+  const handleAdminLogout = async (emp) => {
+    let resetPassword = "";
+    
+    Modal.confirm({
+      title: (
+        <div className="flex items-center gap-2 text-rose-600">
+          <LogOut className="w-5 h-5" />
+          Force Logout: {emp.User.name}
+        </div>
+      ),
+      icon: null,
+      content: (
+        <div className="mt-4">
+          <p className="text-sm text-slate-500 mb-4">
+            To terminate this session, please enter the configurable <strong>System Reset Password</strong>.
+          </p>
+          <Input.Password 
+            placeholder="Enter reset password" 
+            onChange={(e) => { resetPassword = e.target.value; }}
+            className="h-10 rounded-lg"
+            autoFocus
+          />
+        </div>
+      ),
+      okText: "Terminate Session",
+      okButtonProps: { danger: true, className: "bg-rose-600" },
+      cancelText: "Cancel",
+      onOk: async () => {
+        if (!resetPassword) {
+          message.error("Password is required");
+          return Promise.reject();
+        }
+
+        try {
+          const { data } = await apipostHandler("/api/employee-track/admin-manual-logout", {
+            userId: emp.userId,
+            password: resetPassword,
+            logoutType: "ADMIN_RESET"
+          }, null); 
+
+          if (data?.status === "SUCCESS") {
+            notification.success({
+              message: "Session Reset",
+              description: `Successfully logged out ${emp.User.name}.`,
+              placement: "topRight"
+            });
+            fetchActiveEmployees(selectedLab.lab_id, selectedDate, null, true);
+            if (selectedUser?.userId === emp.userId) {
+              fetchUserDetailStats(emp.userId, selectedLab.lab_id, selectedDate);
+            }
+          } else {
+            message.error(data?.message || "Invalid password");
+            return Promise.reject();
+          }
+        } catch (err) {
+          console.error(err);
+          message.error("Incorrect password or system error.");
+          return Promise.reject();
+        }
+      }
+    });
+  };
+
   const handleExportCSV = () => {
     if (!logs || logs.length === 0) return;
 
@@ -405,6 +468,7 @@ const EmployeeTrack = () => {
         form.setFieldsValue({
           idleTimeoutMinutes: data.data.idleTimeoutMinutes,
           preventConcurrentLogins: data.data.preventConcurrentLogins,
+          resetPassword: data.data.resetPassword
         });
       }
     } catch (err) {
@@ -623,6 +687,23 @@ const EmployeeTrack = () => {
                   </div>
                   <ChevronRight className={`w-4 h-4 transition-transform ${selectedUser?.userId === emp.userId ? "translate-x-1" : "opacity-0 group-hover:opacity-100"}`} />
                 </button>
+
+                {/* Admin Force Logout Button */}
+                {emp.status === "LOGIN" && (
+                  <div className="absolute right-12 top-1/2 -translate-y-1/2 z-10">
+                    <Tooltip title="Force Logout / Reset">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAdminLogout(emp);
+                        }}
+                        className="p-2 hover:bg-rose-50 text-slate-300 hover:text-rose-500 transition-colors rounded-lg"
+                      >
+                        <LogOut className="w-4 h-4" />
+                      </button>
+                    </Tooltip>
+                  </div>
+                )}
 
                 {/* Bulk Select Checkbox overlay */}
                 <div className="absolute right-3 top-1/2 -translate-y-1/2 z-10">
@@ -1185,6 +1266,18 @@ const EmployeeTrack = () => {
                 <Switch />
               </Form.Item>
             </div>
+
+            <div className="h-px bg-slate-100 my-6" />
+
+            <Form.Item
+              name="resetPassword"
+              label={<span className="font-semibold text-slate-700">System Reset Password</span>}
+              rules={[{ required: true, message: 'Please set a reset password' }]}
+              className="mb-0"
+            >
+              <Input.Password placeholder="Enter admin reset password" selector="reset-password-input" className="h-10 rounded-lg" />
+            </Form.Item>
+            <p className="text-[10px] text-slate-400 mt-2 uppercase font-black tracking-widest">Required for manual session overrides</p>
           </Form>
         </Spin>
       </Modal>

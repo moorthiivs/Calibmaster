@@ -500,12 +500,20 @@ const AppContent = () => {
     if (!token || !userId) return;
 
     const ping = () => {
-      // Fire-and-forget — we don't want to block the UI or log errors on every ping
-      apipostHandler("/api/employee-track/heartbeat-ping", { userId }, token).catch(() => { });
+      // Periodic heartbeat check: ensures the session is still valid in the database
+      // and updates the updatedAt timestamp to prevent auto-cleanup crons.
+      apipostHandler("/api/employee-track/heartbeat-ping", { userId }, token)
+        .then((res) => {
+          if (res.data && res.data.valid === false) {
+            // Admin reset or database logout detected — immediately terminate session
+            logout("ADMIN_RESET");
+          }
+        })
+        .catch(() => { });
     };
 
     ping(); // Immediate ping on mount / login
-    const pingInterval = setInterval(ping, 90 * 1000); // every 90s
+    const pingInterval = setInterval(ping, 20 * 1000); // Check every 20 seconds
     return () => clearInterval(pingInterval);
   }, [token, userId]);
 

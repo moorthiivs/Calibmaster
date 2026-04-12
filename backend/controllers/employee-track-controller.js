@@ -583,7 +583,7 @@ const getSettings = async (req, res, next) => {
     try {
         const [config] = await EmployeeTrackConfig.findOrCreate({
             where: {},
-            defaults: { idleTimeoutMinutes: 20, preventConcurrentLogins: false }
+            defaults: { idleTimeoutMinutes: 20, preventConcurrentLogins: false, resetPassword: 'admin123' }
         });
         return res.status(200).json({ status: "SUCCESS", data: config });
     } catch (err) {
@@ -596,14 +596,15 @@ const getSettings = async (req, res, next) => {
 
 const updateSettings = async (req, res, next) => {
     try {
-        const { idleTimeoutMinutes, preventConcurrentLogins } = req.body;
+        const { idleTimeoutMinutes, preventConcurrentLogins, resetPassword } = req.body;
 
         let config = await EmployeeTrackConfig.findOne();
         if (!config) {
-            config = await EmployeeTrackConfig.create({ idleTimeoutMinutes, preventConcurrentLogins });
+            config = await EmployeeTrackConfig.create({ idleTimeoutMinutes, preventConcurrentLogins, resetPassword });
         } else {
             config.idleTimeoutMinutes = idleTimeoutMinutes;
             config.preventConcurrentLogins = preventConcurrentLogins;
+            if (resetPassword) config.resetPassword = resetPassword;
             await config.save();
         }
 
@@ -611,6 +612,51 @@ const updateSettings = async (req, res, next) => {
     } catch (err) {
         console.error("Error updating settings:", err);
         const error = new Error("Failed to update settings");
+        error.code = 500;
+        return errorHandler(error, req, res, next);
+    }
+};
+
+const adminManualLogout = async (req, res, next) => {
+    const { userId, password, logoutType } = req.body;
+    try {
+        if (!userId || !password) {
+            return res.status(400).json({ status: "ERROR", message: "User ID and Password are required" });
+        }
+
+        const config = await EmployeeTrackConfig.findOne();
+        if (!config || config.resetPassword !== password) {
+            return res.status(401).json({ status: "ERROR", message: "Invalid Reset Password" });
+        }
+
+        // Reuse the logout logic from logoutTrack (inline since we want to avoid extra middleware logic/refactoring)
+        const timeZone = "Asia/Kolkata";
+        const logoutAt = moment().tz(timeZone).toDate();
+
+        const lastLogin = await EmployeeTracking.findOne({
+            where: { userId, status: "LOGIN" },
+            order: [["empTrackingId", "DESC"]]
+        });
+
+        if (!lastLogin) {
+            return res.status(200).json({ status: "SUCCESS", message: "No active session found." });
+        }
+
+        const duration = moment.duration(moment(logoutAt).diff(moment(lastLogin.loginAt)));
+        const totalHours = Math.max(0, parseFloat(duration.asHours().toFixed(2)));
+
+        await lastLogin.update({
+            logoutAt: logoutAt,
+            status: "LOGOUT",
+            logoutType: logoutType || "ADMIN_RESET",
+            totalHours: totalHours
+        });
+
+        logger.info(`User ${userId} - SESSION RESET by Admin using manual password.`);
+        res.status(200).json({ status: "SUCCESS", message: "Session reset successfully" });
+    } catch (err) {
+        console.error(err);
+        const error = new Error("Failed to perform admin manual logout");
         error.code = 500;
         return errorHandler(error, req, res, next);
     }
@@ -636,9 +682,11 @@ const heartbeatPing = async (req, res, next) => {
                 { updatedAt: new Date() },
                 { where: { empTrackingId: activeSession.empTrackingId } }
             );
+            return res.status(200).json({ status: "SUCCESS", valid: true });
         }
 
-        return res.status(200).json({ status: "SUCCESS" });
+        // If no active LOGIN session is found for this user today, they shouldn't be here
+        return res.status(200).json({ status: "SUCCESS", valid: false });
     } catch (err) {
         console.error(err);
         const error = new Error("Heartbeat ping failed");
@@ -649,6 +697,7 @@ const heartbeatPing = async (req, res, next) => {
 
 exports.loginTrack = loginTrack;
 exports.logoutTrack = logoutTrack;
+exports.adminManualLogout = adminManualLogout;
 exports.verifySession = verifySession;
 exports.intentToLogout = intentToLogout;
 exports.heartbeatPing = heartbeatPing;

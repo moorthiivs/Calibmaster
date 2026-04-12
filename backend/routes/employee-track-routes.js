@@ -18,5 +18,6 @@ router.post("/active-employees", employeeTrackController.getActiveEmployees);
 router.post("/user-stats", employeeTrackController.getUserStats);
 router.post("/get-settings", employeeTrackController.getSettings);
 router.post("/update-settings", employeeTrackController.updateSettings);
+router.post("/admin-manual-logout", employeeTrackController.adminManualLogout);
 
 module.exports = router;

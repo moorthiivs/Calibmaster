@@ -24,6 +24,11 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.BOOLEAN,
       allowNull: false,
       defaultValue: false
+    },
+    resetPassword: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: 'admin123'
     }
   }, {
     sequelize,

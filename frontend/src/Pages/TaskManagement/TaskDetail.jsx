@@ -44,6 +44,7 @@ export default function TaskDetail() {
   const [statusUpdating, setStatusUpdating] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [localCounts, setLocalCounts] = useState(0);
+  const [localActions, setLocalActions] = useState([]);
 
   // Calibration Drawer State
   const [drawerVisible, setDrawerVisible] = useState(false);
@@ -56,9 +57,17 @@ export default function TaskDetail() {
     }
   }, [task_id]);
 
+  const fetchLocalActions = useCallback(async () => {
+    if (window.electron?.db) {
+      const actions = await window.electron.db.getPendingActions(task_id);
+      setLocalActions(actions);
+    }
+  }, [task_id]);
+
   useEffect(() => {
     fetchLocalMeasurements();
-  }, [fetchLocalMeasurements]);
+    fetchLocalActions();
+  }, [fetchLocalMeasurements, fetchLocalActions]);
 
   // ─── Load task ─────────────────────────────────────────────────────────────
   const loadTask = useCallback(async () => {
@@ -113,6 +122,7 @@ export default function TaskDetail() {
       onOk: async () => {
         setStatusUpdating(true);
         try {
+          // 1. Try Online Sync First
           const res = await fetch(`${BASE_URL}/api/tasks/${task_id}/status`, {
             method: "PATCH",
             headers: {
@@ -128,8 +138,40 @@ export default function TaskDetail() {
           } else {
             message.error(data.message || "Status update failed");
           }
-        } catch {
-          message.error("Network error");
+        } catch (err) {
+          // 2. Offline Fallback
+          if (window.electron?.db) {
+            try {
+              // Queue for future server sync
+              await window.electron.db.queueAction({
+                type: "status_update",
+                task_id: parseInt(task_id),
+                payload: { task_id: parseInt(task_id), status: newStatus, version: task.version }
+              });
+
+              // Update the local task cache so the UI reflects the change immediately
+              await window.electron.db.updateLocalTaskData({
+                taskId: parseInt(task_id),
+                status: newStatus
+              });
+
+              // Update React State
+              setTask(prev => ({ 
+                ...prev, 
+                status: newStatus, 
+                sync_status: 'pending',
+                version: prev.version // We don't increment version locally to avoid conflicts
+              }));
+
+              message.warning(`Working Offline: Status changed to ${newStatus.replace("_", " ")}. Will sync when network is back.`);
+              fetchLocalActions(); // refresh local action counts
+            } catch (dbErr) {
+              console.error("Failed to save status offline:", dbErr);
+              message.error("Could not save status update locally.");
+            }
+          } else {
+            message.error("Network error. Could not update status.");
+          }
         } finally {
           setStatusUpdating(false);
         }
@@ -140,27 +182,48 @@ export default function TaskDetail() {
   // ─── Sync ──────────────────────────────────────────────────────────────────
   async function handleSync() {
     if (!window.electron?.db) {
-        message.error("Desktop app required for SQLite sync");
-        return;
+      message.error("Desktop app required for SQLite sync");
+      return;
     }
-    
+
     setSyncing(true);
     try {
-      const pending = await window.electron.db.getPendingMeasurements(task_id);
-      
-      if (pending.length === 0) {
-        message.info("No local measurements to sync");
+      // 1. Fetch all local changes
+      const pendingMeasurements = await window.electron.db.getPendingMeasurements(task_id);
+      const pendingActions = await window.electron.db.getPendingActions(task_id);
+
+      if (pendingMeasurements.length === 0 && pendingActions.length === 0) {
+        message.info("No local changes to sync");
+        setSyncing(false);
         return;
       }
 
+      // 2. Map to server expectations
+      const measurementChanges = pendingMeasurements.map(p => ({
+        type: "calibration_data",
+        client_id: `m_${p.id}`,
+        payload: {
+          task_item_id: p.task_item_id,
+          ...p.payload.item
+        }
+      }));
+
+      const actionChanges = pendingActions.map(a => ({
+        type: a.type,
+        client_id: `a_${a.id}`,
+        payload: {
+          ...a.payload,
+          task_id: parseInt(task_id)
+        }
+      }));
+
       const payload = {
         user_id: auth.userId,
-        changes: pending.map(p => ({
-            task_item_id: p.task_item_id,
-            calibration_data: p.payload
-        }))
+        changes: [...measurementChanges, ...actionChanges],
+        client_timestamp: new Date().toISOString()
       };
 
+      // 3. Push to server
       const res = await fetch(`${BASE_URL}/api/sync/push`, {
         method: "POST",
         headers: {
@@ -170,16 +233,23 @@ export default function TaskDetail() {
         body: JSON.stringify(payload),
       });
 
+      const result = await res.json();
+
       if (res.ok) {
-        const ids = pending.map(p => p.id);
-        await window.electron.db.markAsSynced(ids);
+        // 4. Local Clean up
+        const mIds = pendingMeasurements.map(p => p.id);
+        if (mIds.length > 0) await window.electron.db.markAsSynced(mIds);
+
+        const aIds = pendingActions.map(a => a.id);
+        if (aIds.length > 0) await window.electron.db.deleteActions(aIds);
+
+        message.success(`Successfully synced ${result.data?.summary?.successful || 0} changes to server`);
         
-        message.success(`Successfully synced ${pending.length} records to server`);
-        loadTask();
+        loadTask(); // Refetch from server to get updated sync status and version
         fetchLocalMeasurements();
+        fetchLocalActions();
       } else {
-        const errorData = await res.json();
-        message.error(errorData.message || "Sync failed");
+        message.error(result.message || "Sync failed");
       }
     } catch (err) {
       console.error("Sync error:", err);
@@ -297,37 +367,52 @@ export default function TaskDetail() {
 
         <Space>
           {/* Status Transition Buttons */}
-          {allowedNextStatuses.map((s) => (
-            <Button
-              key={s}
-              type="primary"
-              icon={s === "completed" ? <CheckCircleOutlined /> : <PlayCircleOutlined />}
-              loading={statusUpdating}
-              onClick={() => handleStatusUpdate(s)}
-              style={{
-                backgroundColor: s === "completed" ? "#52c41a" : "#fa8c16",
-                borderColor: s === "completed" ? "#52c41a" : "#fa8c16",
-              }}
-            >
-              Mark {s.replace("_", " ")}
-            </Button>
-          ))}
+          {allowedNextStatuses.map((s) => {
+            const isCompletedAction = s === "completed";
+            const canComplete = !isCompletedAction || (completedItems >= totalItems && totalItems > 0);
+            const tooltipTitle = isCompletedAction && !canComplete 
+              ? `Calibrate all ${totalItems} items first` 
+              : `Move to ${s.replace("_", " ")}`;
+
+            return (
+              <Tooltip key={s} title={tooltipTitle}>
+                <Button
+                  type="primary"
+                  icon={isCompletedAction ? <CheckCircleOutlined /> : <PlayCircleOutlined />}
+                  loading={statusUpdating}
+                  disabled={!canComplete}
+                  onClick={() => handleStatusUpdate(s)}
+                  style={{
+                    backgroundColor: !canComplete ? "#d9d9d9" : (isCompletedAction ? "#52c41a" : "#fa8c16"),
+                    borderColor: !canComplete ? "#d9d9d9" : (isCompletedAction ? "#52c41a" : "#fa8c16"),
+                  }}
+                >
+                  Mark {s.replace("_", " ")}
+                </Button>
+              </Tooltip>
+            );
+          })}
 
           {/* Sync Button */}
-          <Button
-            type="primary"
-            icon={<SyncOutlined spin={syncing} />}
-            onClick={handleSync}
-            loading={syncing}
-            disabled={task.sync_status === "synced" && localCounts === 0}
-            style={
-              localCounts > 0
-                ? { borderColor: "#faad14", color: "#faad14" }
-                : {}
-            }
-          >
-            {localCounts > 0 ? `Sync Now (${localCounts})` : "Synced"}
-          </Button>
+          {(() => {
+            const totalPending = localCounts + localActions.length;
+            return (
+              <Button
+                type="primary"
+                icon={<SyncOutlined spin={syncing} />}
+                onClick={handleSync}
+                loading={syncing}
+                disabled={task.sync_status === "synced" && totalPending === 0}
+                style={
+                  totalPending > 0
+                    ? { borderColor: "#faad14", color: "#faad14" }
+                    : {}
+                }
+              >
+                {totalPending > 0 ? `Sync Now (${totalPending})` : "Synced"}
+              </Button>
+            );
+          })()}
         </Space>
       </div>
 
