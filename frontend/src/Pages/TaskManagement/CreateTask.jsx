@@ -2,11 +2,11 @@ import React, { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Form, Input, Select, DatePicker, Button, Card, Table, Checkbox,
-  message, Spin, Tag, Steps, Divider, Badge, Alert
+  message, Spin, Tag, Steps, Divider, Badge, Alert, Space
 } from "antd";
 import {
   ArrowLeftOutlined, ArrowRightOutlined, SaveOutlined,
-  FileSearchOutlined, TeamOutlined, CheckSquareOutlined
+  FileSearchOutlined, TeamOutlined, CheckSquareOutlined, SearchOutlined, FilterOutlined
 } from "@ant-design/icons";
 import { AuthContext } from "../../context/auth-context";
 import config from "../../utils/config.json";
@@ -53,6 +53,10 @@ export default function CreateTask() {
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
   const [itemNotes, setItemNotes]       = useState({});       // { srf_item_id: note }
   const [itemCalibRequired, setItemCalibRequired] = useState({}); // { srf_item_id: bool }
+  // Step 3 filter state (frontend-only filtering)
+  const [instrumentSearch, setInstrumentSearch] = useState("");
+  const [labtypeFilter, setLabtypeFilter]       = useState(null);
+  const [specFilter, setSpecFilter]             = useState(null);
 
   // ─── Load users (Step 1) ───────────────────────────────────────────────────
   useEffect(() => {
@@ -107,7 +111,6 @@ export default function CreateTask() {
       .then(d => {
         if (d?.data) {
           setInstrumentTypes(d.data);
-          // Default: all calibration_required = true
           const defaultCalib = {};
           d.data.forEach(i => { defaultCalib[i.instrument_type_id] = true; });
           setItemCalibRequired(defaultCalib);
@@ -142,8 +145,11 @@ export default function CreateTask() {
 
   // ─── Submit ───────────────────────────────────────────────────────────────
   async function handleSubmit() {
+    if (loading) return; // Guard against double-click
+    setLoading(true);
     if (selectedRowKeys.length === 0) {
       message.error("Please select at least one instrument from the Master List");
+      setLoading(false);
       return;
     }
     try {
@@ -237,6 +243,16 @@ export default function CreateTask() {
       )
     }
   ];
+
+  // ─── Derived: filtered instrument types (frontend-only, no backend call) ──
+  const filteredInstrumentTypes = instrumentTypes.filter(ins => {
+    const nameMatch = !instrumentSearch ||
+      ins.instrument_full_name?.toLowerCase().includes(instrumentSearch.toLowerCase()) ||
+      ins.instrument_name?.toLowerCase().includes(instrumentSearch.toLowerCase());
+    const labtypeMatch = !labtypeFilter || ins.labtype === labtypeFilter;
+    const specMatch    = !specFilter    || ins.instrument_type_spec === specFilter;
+    return nameMatch && labtypeMatch && specMatch;
+  });
 
   const rowSelection = {
     selectedRowKeys,
@@ -427,8 +443,47 @@ export default function CreateTask() {
               style={{ marginBottom: 16 }}
             />
 
+            {/* ─── Filter Toolbar ─────────────────────────────────────────── */}
+            <Space wrap style={{ marginBottom: 12, display: "flex" }}>
+              <Input
+                prefix={<SearchOutlined style={{ color: "#bbb" }} />}
+                placeholder="Search instrument name..."
+                value={instrumentSearch}
+                onChange={e => setInstrumentSearch(e.target.value)}
+                allowClear
+                style={{ width: 280 }}
+              />
+              <Select
+                placeholder="Lab Type"
+                value={labtypeFilter}
+                onChange={v => setLabtypeFilter(v || null)}
+                allowClear
+                style={{ width: 160 }}
+              >
+                <Option value="NABL">NABL</Option>
+                <Option value="NON-NABL">NON-NABL</Option>
+              </Select>
+              <Select
+                placeholder="Spec Type"
+                value={specFilter}
+                onChange={v => setSpecFilter(v || null)}
+                allowClear
+                style={{ width: 160 }}
+              >
+                <Option value="Variable">Variable</Option>
+                <Option value="Attribute">Attribute</Option>
+              </Select>
+              {(instrumentSearch || labtypeFilter || specFilter) && (
+                <Tag color="blue" style={{ height: 32, lineHeight: '30px', cursor: 'pointer' }}
+                  onClick={() => { setInstrumentSearch(""); setLabtypeFilter(null); setSpecFilter(null); }}
+                >
+                  Clear Filters ({filteredInstrumentTypes.length} / {instrumentTypes.length})
+                </Tag>
+              )}
+            </Space>
+
             <Table
-              dataSource={instrumentTypes}
+              dataSource={filteredInstrumentTypes}
               columns={insTypeColumns}
               rowKey="instrument_type_id"
               rowSelection={rowSelection}

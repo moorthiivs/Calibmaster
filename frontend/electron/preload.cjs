@@ -15,6 +15,12 @@ contextBridge.exposeInMainWorld('electron', {
         markAsSynced: (ids) => ipcRenderer.invoke('db:mark-synced', ids),
         deleteTask: (taskId) => ipcRenderer.invoke('db:delete-task', taskId),
         saveMasterData: (category, data) => ipcRenderer.invoke('db:save-master-data', { category, data }),
-        getMasterData: (category) => ipcRenderer.invoke('db:get-master-data', category)
+        getMasterData: (category) => ipcRenderer.invoke('db:get-master-data', category),
+        queueAction: (data) => ipcRenderer.invoke('db:queue-action', data),
+        getPendingActions: (taskId) => ipcRenderer.invoke('db:get-pending-actions', taskId),
+        deleteActions: (ids) => ipcRenderer.invoke('db:delete-actions', ids),
+        updateLocalTaskData: (data) => ipcRenderer.invoke('db:update-local-task-data', data),
+        updateLocalTaskItemStatus: (data) => ipcRenderer.invoke('db:update-local-task-item-status', data),
+        updateLocalTaskVersion: (data) => ipcRenderer.invoke('db:update-local-task-version', data)
     }
 });

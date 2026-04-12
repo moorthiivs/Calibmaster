@@ -52,6 +52,9 @@ export default function TaskList() {
   const [localTasks, setLocalTasks] = useState([]);
   const [isOfflineModalVisible, setIsOfflineModalVisible] = useState(false);
   const [parsedLocalTasks, setParsedLocalTasks] = useState([]);
+  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   const checkLocalTasks = useCallback(async () => {
     if (window.electron?.db) {
@@ -72,6 +75,37 @@ export default function TaskList() {
     checkLocalTasks();
   }, [checkLocalTasks]);
 
+  // ─── Online/Offline Detection via Heartbeat ──────────────────────────────
+  useEffect(() => {
+    const checkOnline = async () => {
+      try {
+        const res = await fetch(`${BASE_URL}/api/heartbeat/check`, {
+          headers: { Authorization: "Bearer " + auth.token },
+          signal: AbortSignal.timeout(4000) // 4 second timeout
+        });
+        setIsOnline(res.ok);
+      } catch {
+        setIsOnline(false);
+      }
+    };
+
+    // Instant react to browser network events
+    const goOnline  = () => checkOnline();
+    const goOffline = () => setIsOnline(false);
+    window.addEventListener("online",  goOnline);
+    window.addEventListener("offline", goOffline);
+
+    // Poll every 10 seconds
+    checkOnline();
+    const interval = setInterval(checkOnline, 10000);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("online",  goOnline);
+      window.removeEventListener("offline", goOffline);
+    };
+  }, [auth.token]);
+
   const fetchTasks = useCallback(
     async (page = 1, pageSize = 10, status = "", search = "") => {
       setLoading(true);
@@ -90,15 +124,13 @@ export default function TaskList() {
           setTasks(rows);
           setPagination((p) => ({ ...p, current: page, pageSize, total: data.pagination?.total || rows.length }));
 
-          // Compute stats (include local counts in Pending Sync)
-          const totalLocalResults = localTasks.reduce((acc, curr) => acc + (curr.local_count || 0), 0);
-
           setStats({
             total: data.pagination?.total || rows.length,
             assigned: rows.filter((t) => t.status === "assigned").length,
             in_progress: rows.filter((t) => t.status === "in_progress").length,
             completed: rows.filter((t) => t.status === "completed").length,
-            pending_sync: totalLocalResults || rows.filter((t) => t.sync_status === "pending").length,
+            // Count TASKS with pending changes (not individual records)
+            pending_sync: localTasks.filter(t => (t.local_count || 0) > 0).length,
           });
         } else {
           // FALLBACK TO SQLite
@@ -131,8 +163,15 @@ export default function TaskList() {
         setLoading(false);
       }
     },
-    [auth.token]
+    [auth.token, localTasks]  // include localTasks so stats are always fresh
   );
+
+  // Reactive: recompute pending_sync whenever localTasks refreshes (e.g. after offline calibration)
+  useEffect(() => {
+    // Show count of TASKS needing sync, not total number of records
+    const tasksPending = localTasks.filter(t => (t.local_count || 0) > 0).length;
+    setStats(prev => ({ ...prev, pending_sync: tasksPending }));
+  }, [localTasks]);
 
   useEffect(() => {
     fetchTasks(1, 10, filters.status, filters.search);
@@ -185,24 +224,44 @@ export default function TaskList() {
           models: "/api/makemodel/model",
           uoms: "/api/uom/list",
           categories: "/api/instrument-types/listCategoryofInstruments",
-          instruments: "/api/instruments/list"
+          instrumenttypes: "/api/instrument-types/list",
+          allInstrument: "/api/instrument-types/filter",
+          variantTypes: `/api/instrumentvariantstype/fetch?labid=${auth.labId}`,
+          assets: "/api/srf/getSrfItems"
         };
 
         for (const [key, path] of Object.entries(endpoints)) {
+          console.log(`Syncing ${key}...`);
           const fetchOptions = {
             headers: { Authorization: "Bearer " + auth.token }
           };
+
+          // Define which keys require POST method
+          const postKeys = ["categories", "instrumenttypes", "allInstrument", "assets"];
           
-          if (key === 'categories') {
-            fetchOptions.method = 'POST';
-            fetchOptions.headers['Content-Type'] = 'application/json';
-            fetchOptions.body = JSON.stringify({ lab_id: auth.labId });
+          if (postKeys.includes(key)) {
+            fetchOptions.method = "POST";
+            fetchOptions.headers["Content-Type"] = "application/json";
+            
+            // Build body: categories/instrument-types use lab_id, assets uses labId
+            const body = {};
+            if (key === "categories" || key === "instrumenttypes" || key === "allInstrument") {
+              body.lab_id = auth.labId;
+            }
+            if (key === "assets") {
+              body.labId = auth.labId;
+            }
+            fetchOptions.body = JSON.stringify(body);
           }
 
           const res = await fetch(`${BASE_URL}${path}`, fetchOptions);
           const data = await res.json();
+          console.log(`${key} response:`, data);
+
           if (res.ok) {
-            await window.electron.db.saveMasterData(key, data.data || data);
+            // Some APIs return inside .data, some return directly
+            const resultData = data.data || data;
+            await window.electron.db.saveMasterData(key, resultData);
           }
         }
       } catch (err) {
@@ -242,6 +301,78 @@ export default function TaskList() {
         message: "Network Error",
         description: "Failed to connect to server for download.",
       });
+    }
+  }
+
+  async function handleSyncTasks(taskIds) {
+    if (!window.electron?.db) return;
+    setIsSyncing(true);
+    const hide = message.loading(`Syncing ${taskIds.length} tasks...`, 0);
+    
+    try {
+        let totalSynced = 0;
+        for (const tid of taskIds) {
+            const measurements = await window.electron.db.getPendingMeasurements(tid);
+            const actions = await window.electron.db.getPendingActions(tid);
+            
+            if (measurements.length === 0 && actions.length === 0) continue;
+
+            const payload = {
+                user_id: auth.userId,
+                changes: [
+                    ...measurements.map(p => ({
+                        type: "calibration_data",
+                        client_id: `m_${p.id}`,
+                        payload: { task_item_id: p.task_item_id, ...p.payload }
+                    })),
+                    ...actions.map(a => ({
+                        type: a.type,
+                        client_id: `a_${a.id}`,
+                        payload: { ...a.payload, task_id: tid }
+                    }))
+                ],
+                client_timestamp: new Date().toISOString()
+            };
+
+            const res = await fetch(`${BASE_URL}/api/sync/push`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", Authorization: "Bearer " + auth.token },
+                body: JSON.stringify(payload),
+            });
+
+            if (res.ok) {
+                const result = await res.json();
+                await window.electron.db.markAsSynced(measurements.map(m => m.id));
+                await window.electron.db.deleteActions(actions.map(a => a.id));
+                
+                // Update local task version to prevent mismatch on next sync
+                if (result.tasks && Array.isArray(result.tasks)) {
+                    for (const t of result.tasks) {
+                        await window.electron.db.updateLocalTaskVersion({
+                            taskId: t.task_id,
+                            status: t.status,
+                            version: t.version
+                        });
+                    }
+                }
+                totalSynced++;
+            }
+        }
+        
+        if (totalSynced > 0) {
+            message.success(`Successfully synced ${totalSynced} tasks.`);
+            fetchTasks(pagination.current, pagination.pageSize, filters.status, filters.search);
+            checkLocalTasks();
+            setSelectedRowKeys([]);
+        } else {
+            message.info("No pending changes to sync for selection.");
+        }
+    } catch (err) {
+        console.error("Sync error:", err);
+        message.error("Network error during sync.");
+    } finally {
+        hide();
+        setIsSyncing(false);
     }
   }
 
@@ -301,8 +432,17 @@ export default function TaskList() {
       width: 140,
       render: (sync, rec) => {
         const local = localTasks.find(lt => lt.task_id === rec.task_id);
+        // Show pending only if we have ACTUAL offline changes stored locally
         if (local && local.local_count > 0) {
-          return <Badge status="warning" text={`Pending Sync (${local.local_count})`} />;
+          return (
+            <Tooltip title={`${local.local_count} offline record(s) waiting to be pushed to server (calibrations + status changes)`}>
+              <Badge status="warning" text={`Pending Sync`} />
+            </Tooltip>
+          );
+        }
+        // If downloaded locally but no pending changes, or completed online: show Synced
+        if (!local || local.local_count === 0) {
+          return <Badge status="success" text="Synced" />;
         }
         const cfg = SYNC_CONFIG[sync] || {};
         return <Badge status={cfg.color} text={cfg.text || sync} />;
@@ -364,19 +504,40 @@ export default function TaskList() {
             />
           </Tooltip>
 
-          {localTasks.find(lt => lt.task_id === rec.task_id) ? (
-            <Tooltip title="Stored on Laptop">
-              <Button type="link" icon={<LaptopOutlined />} style={{ color: "#1890ff" }} onClick={() => handleDownload(rec)} />
-            </Tooltip>
-          ) : (
-            <Tooltip title="Download for Offline">
-              <Button
-                type="link"
-                icon={<CloudDownloadOutlined />}
-                onClick={() => handleDownload(rec)}
-              />
-            </Tooltip>
-          )}
+          {(() => {
+            const localInfo = localTasks.find(lt => lt.task_id === rec.task_id);
+            const hasLocalChanges = localInfo && localInfo.local_count > 0;
+            
+            return (
+              <Space>
+                {localInfo ? (
+                  <Tooltip title={
+                    !isOnline
+                      ? "No internet connection. Connect to network to sync."
+                      : hasLocalChanges
+                        ? `Click to push ${localInfo.local_count} offline record(s) to server`
+                        : "Stored locally"
+                  }>
+                    <Button 
+                      type="link" 
+                      icon={hasLocalChanges ? <SyncOutlined spin={isSyncing} /> : <LaptopOutlined />} 
+                      style={{ color: hasLocalChanges ? (isOnline ? "#fa8c16" : "#aaa") : "#52c41a" }} 
+                      disabled={!isOnline && hasLocalChanges}
+                      onClick={hasLocalChanges && isOnline ? () => handleSyncTasks([rec.task_id]) : undefined}
+                    />
+                  </Tooltip>
+                ) : (
+                  <Tooltip title="Download for Offline">
+                    <Button
+                      type="link"
+                      icon={<CloudDownloadOutlined />}
+                      onClick={() => handleDownload(rec)}
+                    />
+                  </Tooltip>
+                )}
+              </Space>
+            );
+          })()}
 
           {auth.department?.toLowerCase() === "admin" && (
             <Tooltip title="Delete">
@@ -404,6 +565,22 @@ export default function TaskList() {
           Task Management
         </h2>
         <Space>
+          {selectedRowKeys.length > 0 && (
+            <Tooltip
+              title={!isOnline ? "No internet connection. Please connect to the network before syncing." : ""}
+            >
+              <Button
+                type="primary"
+                icon={<SyncOutlined spin={isSyncing} />}
+                onClick={() => handleSyncTasks(selectedRowKeys)}
+                loading={isSyncing}
+                disabled={!isOnline}
+                style={{ backgroundColor: isOnline ? "#fa8c16" : undefined, borderColor: isOnline ? "#fa8c16" : undefined }}
+              >
+                Sync Selected ({selectedRowKeys.length})
+              </Button>
+            </Tooltip>
+          )}
           <Button
             icon={<ReloadOutlined />}
             onClick={() => fetchTasks(pagination.current, pagination.pageSize, filters.status, filters.search)}
@@ -441,7 +618,7 @@ export default function TaskList() {
           { label: "Pending Sync", value: stats.pending_sync, color: "#faad14", prefix: <SyncOutlined spin={stats.pending_sync > 0} /> },
         ].map((s) => (
           <Col xs={24} sm={12} md={8} lg={4} key={s.label}>
-            <Card size="small" bodyStyle={{ padding: "12px 16px" }}>
+            <Card size="small" styles={{ body: { padding: "12px 16px" } }}>
               <Statistic
                 title={<span style={{ fontSize: 12 }}>{s.label}</span>}
                 value={s.value}
@@ -478,6 +655,10 @@ export default function TaskList() {
 
       {/* Table */}
       <Table
+        rowSelection={{
+          selectedRowKeys,
+          onChange: (keys) => setSelectedRowKeys(keys),
+        }}
         columns={columns}
         dataSource={tasks}
         rowKey="task_id"

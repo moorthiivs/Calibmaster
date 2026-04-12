@@ -288,14 +288,13 @@ exports.deleteTask = async (req, res, next) => {
     const task = await Task.findByPk(task_id, { transaction });
     if (!task) { const error = new Error("Task not found"); error.code = 404; throw error; }
 
-    const calibCount = await CalibrationData.count({ where: { task_id }, transaction });
-    if (calibCount > 0) {
-      const error = new Error("Cannot delete task with existing calibration data"); error.code = 400; throw error;
-    }
+    // Cascade delete associated calibration data and task items
+    await CalibrationData.destroy({ where: { task_id }, transaction });
     await TaskItem.destroy({ where: { task_id }, transaction });
     await task.destroy({ transaction });
+
     await transaction.commit();
-    return res.status(200).json({ status: 200, message: "Task deleted successfully" });
+    return res.status(200).json({ status: 200, message: "Task and associated data deleted successfully" });
   } catch (err) {
     await transaction.rollback();
     const error = new Error(err.message || "Error deleting task");

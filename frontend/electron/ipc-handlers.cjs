@@ -44,6 +44,30 @@ function registerIpcHandlers() {
     ipcMain.handle('db:get-master-data', async (event, category) => {
         return await db.getMasterData(category);
     });
+
+    ipcMain.handle('db:queue-action', async (event, { type, task_id, payload }) => {
+        return await db.queueAction(type, task_id, payload);
+    });
+
+    ipcMain.handle('db:get-pending-actions', async (event, taskId) => {
+        return await db.getPendingActions(taskId);
+    });
+
+    ipcMain.handle('db:delete-actions', async (event, ids) => {
+        return await db.deleteActions(ids);
+    });
+
+    ipcMain.handle('db:update-local-task-data', async (event, { taskId, status }) => {
+        return await db.updateLocalTaskData(taskId, status);
+    });
+
+    ipcMain.handle('db:update-local-task-item-status', async (event, { taskId, taskItemId, status }) => {
+        return await db.updateLocalTaskItemStatus(taskId, taskItemId, status);
+    });
+
+    ipcMain.handle('db:update-local-task-version', async (event, { taskId, status, version }) => {
+        return await db.updateLocalTaskVersion(taskId, status, version);
+    });
 }
 
 module.exports = { registerIpcHandlers };

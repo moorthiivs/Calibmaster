@@ -7,8 +7,12 @@ const TaskItem = models.TaskItem;
 const CalibrationData = models.CalibrationData;
 const User     = models.User;
 const SrfItem  = models.srfitem;
+const SRF      = models.srf_list;
 const SyncLog  = models.SyncLog;
 const sequelize = models.sequelize;
+
+const { generateSingleInwardNumber } = require("../utils/generateInwardNumber");
+const generateAndAssignCertificateNo = require("../utils/generateAndAssignCertificateNo");
 
 // ─── PUSH SYNC (Electron → Server) ───────────────────────────────────────────
 exports.pushSync = async (req, res, next) => {
@@ -27,154 +31,215 @@ exports.pushSync = async (req, res, next) => {
     }
 
     const synced = [];
-    const failed = [];
-    let successCount = 0, failedCount = 0;
+    const affectedTaskIds = new Set();
 
     for (const change of changes) {
-      try {
-        const { type, client_id, payload } = change;
+      const { type, client_id, payload } = change;
 
-        if (type === "calibration_data") {
-          const { 
-            task_item_id, srf_item_id, reading_value, 
-            standard_instrument_used, environmental_conditions, remarks 
-          } = payload;
+      if (type === "calibration_data") {
+        const { task_item_id, item, labId } = payload;
+        if (!task_item_id || !item) {
+          throw new Error(`Sync Error: Missing ${!task_item_id ? 'task_item_id' : ''} ${!item ? 'item' : ''} in payload`);
+        }
 
-          const taskItem = await TaskItem.findByPk(task_item_id, {
-            include: [{ model: Task, as: "task" }],
-            transaction
+        // 1. Fetch TaskItem & SRF info
+        const taskItem = await TaskItem.findByPk(task_item_id, {
+          include: [{ model: Task, as: "task" }],
+          transaction
+        });
+        if (!taskItem) throw new Error(`Task item ${task_item_id} not found`);
+        affectedTaskIds.add(taskItem.task_id);
+
+        const srf = await SRF.findByPk(taskItem.task.srf_id, { transaction });
+        if (!srf) throw new Error("Associated SRF not found");
+
+        // 2. Create or Update SRF Item (Rich Metadata)
+        let srfItem;
+        if (taskItem.srf_item_id) {
+          srfItem = await SrfItem.findByPk(taskItem.srf_item_id, { transaction });
+        }
+
+        const srfItemData = {
+          srf_id: taskItem.task.srf_id,
+          intrument_type_id: item.intrument_type_id,
+          instrument_name: item.name,
+          instrument_description: item.description,
+          make: item.make,
+          model: item.model,
+          serial_no: item.serial_no,
+          identification_details: item.identification_details,
+          remarks: item.remarks || "Okay",
+          url_number: item.url_number,
+          reminder_frequency: item.reminder_frequency,
+          frequency_days: item.frequency_days,
+          calibrationAt: item.calibrationAt,
+          labtype: item.labtype,
+          ranges: item.ranges,
+          instrument_type_at_calibration: item.instrument_type_at_calibration,
+          updated_timestamp: new Date(),
+          updated_by_login_name: user.name,
+          updated_by_user_id: user.id,
+          lab_id: labId || user.labId || srf.lab_id
+        };
+
+        if (srfItem) {
+          await srfItem.update(srfItemData, { transaction });
+        } else {
+          // New Ad-hoc item logic
+          const maxItemNo = await SrfItem.max('srf_item_no', { 
+            where: { srf_id: taskItem.task.srf_id },
+            transaction 
+          }) || 0;
+          
+          const inwardNumber = await generateSingleInwardNumber({
+            inwardDate: srf.srf_date,
+            itemName: item.name,
+            model: SrfItem,
+            labId: labId || user.labId || srf.lab_id,
           });
-          if (!taskItem) throw new Error(`Task item ${task_item_id} not found`);
 
-          let effective_srf_item_id = srf_item_id;
+          srfItemData.srf_item_no = maxItemNo + 1;
+          srfItemData.inward_no = inwardNumber;
+          srfItemData.status = "Not Calibrated";
+          srfItemData.rstatus = 1;
+          srfItemData.created_timestamp = new Date();
+          srfItemData.created_by_login_name = user.name;
+          srfItemData.created_by_user_id = user.id;
 
-          // DYNAMIC CREATION: If this was an ad-hoc item with no srf_item_id yet
-          if (!taskItem.srf_item_id && taskItem.instrument_type_id) {
-            const insType = await models.instrument_type.findByPk(taskItem.instrument_type_id, { transaction });
-            if (!insType) throw new Error("Instrument template not found");
+          srfItem = await SrfItem.create(srfItemData, { transaction });
+          await taskItem.update({ srf_item_id: srfItem.srf_item_id }, { transaction });
+        }
 
-            // Calculate next srf_item_no
-            const lastItem = await SrfItem.findOne({
-              where: { srf_id: taskItem.task.srf_id },
-              order: [["srf_item_no", "DESC"]],
-              transaction
-            });
-            const nextNo = lastItem ? lastItem.srf_item_no + 1 : 1;
+        // 3. Assign Certificate No
+        await generateAndAssignCertificateNo({
+          item: srfItem,
+          srf,
+          itemCount: null,
+          Item: SrfItem,
+          labId: labId || user.labId || srf.lab_id
+        });
 
-            const newSrfItem = await SrfItem.create({
-              srf_id: taskItem.task.srf_id,
-              srf_item_no: nextNo,
-              make: "", // Placeholder
-              model: "",
-              serial_no: "",
-              identification_details: insType.instrument_full_name,
-              remarks: "Added from Template during calibration",
-              status: "received",
-              rstatus: 1,
-              created_timestamp: new Date(),
-              created_by_login_name: user.name,
-              created_by_user_id: user.id,
-              updated_timestamp: new Date(),
-              lab_id: user.labId,
-              intrument_type_id: insType.instrument_type_id
-            }, { transaction });
+        // 4. Update Calibration Data
+        const existingCalib = await CalibrationData.findOne({
+          where: { task_item_id },
+          transaction
+        });
 
-            await taskItem.update({ srf_item_id: newSrfItem.srf_item_id }, { transaction });
-            effective_srf_item_id = newSrfItem.srf_item_id;
+        const calibPayload = {
+          task_id: taskItem.task_id,
+          task_item_id,
+          srf_item_id: srfItem.srf_item_id,
+          user_id,
+          reading_value: item.ranges, 
+          remarks: item.remarks,
+          calibration_date: new Date(),
+          is_synced: true,
+          updated_at: new Date(),
+          client_created_at: client_timestamp ? new Date(client_timestamp) : null
+        };
+
+        if (existingCalib) {
+          await existingCalib.update(calibPayload, { transaction });
+        } else {
+          await CalibrationData.create(calibPayload, { transaction });
+        }
+
+        // 5. Update TaskItem status
+        await TaskItem.update(
+          { calibration_status: "completed" },
+          { where: { task_item_id }, transaction }
+        );
+
+        synced.push({ client_id, type: "calibration_data", task_item_id });
+
+      } else if (type === "status_update") {
+        const { task_id, status, version } = payload;
+        if (!task_id || !status) throw new Error("Missing task_id or status");
+
+        const task = await Task.findByPk(task_id, { transaction });
+        if (!task) throw new Error("Task not found");
+        affectedTaskIds.add(task_id);
+
+        const validTransitions = {
+          assigned: ["in_progress", "completed"], 
+          in_progress: ["completed"], 
+          completed: []
+        };
+
+        if (task.version !== version) {
+          // Idempotency: server already in target state – accept silently
+          if (task.status === status) {
+            synced.push({ client_id, task_id, type: "status_update" });
+            continue;
           }
-
-          if (!effective_srf_item_id) throw new Error("Could not determine srf_item_id");
-
-          const existing = await CalibrationData.findOne({
-            where: { task_item_id, srf_item_id: effective_srf_item_id },
-            transaction
-          });
-
-          let calibData;
-          if (existing) {
-            calibData = await existing.update({
-              reading_value: reading_value || null,
-              standard_instrument_used: standard_instrument_used || null,
-              environmental_conditions: environmental_conditions || null,
-              remarks: remarks || null,
-              is_synced: true,
-              updated_at: new Date()
-            }, { transaction });
+          // Auto-repair: client is behind but the transition is still valid from the server's current state
+          if ((validTransitions[task.status] || []).includes(status)) {
+            // Allow it – the intent is correct even though the version is stale
           } else {
-            calibData = await CalibrationData.create({
-              task_id: taskItem.task_id,
-              task_item_id,
-              srf_item_id: effective_srf_item_id,
-              user_id,
-              reading_value: reading_value || null,
-              standard_instrument_used: standard_instrument_used || null,
-              environmental_conditions: environmental_conditions || null,
-              remarks: remarks || null,
-              is_synced: true,
-              client_created_at: client_timestamp ? new Date(client_timestamp) : null
-            }, { transaction });
+            throw new Error(`Version mismatch for task ${task_id}: Sync your list. (Client v${version}, Server v${task.version})`);
           }
-
-          await TaskItem.update(
-            { calibration_status: "completed" },
-            { where: { id: task_item_id }, transaction }
-          );
-
-          synced.push({ client_id, server_id: calibData.id, type: "calibration_data" });
-          successCount++;
-
-        } else if (type === "status_update") {
-          const { task_id, status, version } = payload;
-          if (!task_id || !status) throw new Error("Missing task_id or status");
-
-          const task = await Task.findByPk(task_id, { transaction });
-          if (!task) throw new Error("Task not found");
-          if (task.version !== version) throw new Error("Version mismatch");
-
-          const validTransitions = {
-            assigned: ["in_progress"], in_progress: ["completed"], completed: []
-          };
+        } else {
           if (!(validTransitions[task.status] || []).includes(status)) {
             throw new Error(`Cannot transition from ${task.status} to ${status}`);
           }
-
-          task.status = status;
-          task.version = version + 1;
-          task.sync_status = "pending";
-          task.updated_at = new Date();
-          await task.save({ transaction });
-
-          synced.push({ client_id, task_id, type: "status_update" });
-          successCount++;
-        } else {
-          throw new Error(`Unknown change type: ${type}`);
         }
-      } catch (changeErr) {
-        failed.push({ client_id: change.client_id, error: changeErr.message });
-        failedCount++;
+
+        task.status = status;
+        task.version = task.version + 1;
+        task.sync_status = "pending";
+        task.updated_at = new Date();
+        await task.save({ transaction });
+        synced.push({ client_id, task_id, type: "status_update" });
+      } else {
+        throw new Error(`Unknown change type: ${type}`);
       }
     }
 
-    const logStatus = failedCount === 0 ? "success" : failedCount === changes.length ? "failed" : "partial";
+    // ─── FINAL PASS: TASK AUTO-COMPLETION ────────────────────────────────────
+    const updatedTasks = [];
+    for (const tid of affectedTaskIds) {
+      const task = await Task.findByPk(tid, { transaction });
+      if (!task) continue;
+
+      const remainingItems = await TaskItem.count({
+        where: { 
+          task_id: tid, 
+          calibration_status: { [Op.ne]: "completed" } 
+        },
+        transaction
+      });
+
+      if (remainingItems === 0 && task.status !== "completed") {
+        task.status = "completed";
+      }
+      
+      task.sync_status = "synced";
+      task.updated_at = new Date();
+      await task.save({ transaction });
+
+      updatedTasks.push({
+        task_id: task.task_id,
+        status: task.status,
+        version: task.version
+      });
+    }
+
     await SyncLog.create({
       user_id, sync_type: "push",
-      records_count: successCount,
-      status: logStatus,
-      error_message: failedCount > 0 ? `${failedCount} records failed` : null,
+      records_count: changes.length,
+      status: "success",
+      error_message: null,
       client_timestamp: client_timestamp ? new Date(client_timestamp) : null,
-      details: { total_changes: changes.length, successful: successCount, failed: failedCount }
+      details: { total_changes: changes.length, successful: changes.length, failed: 0 }
     }, { transaction });
 
     await transaction.commit();
 
     return res.status(200).json({
       status: 200,
-      message: "Sync push completed",
-      data: {
-        synced, failed,
-        server_timestamp: new Date(),
-        summary: { total: changes.length, successful: successCount, failed: failedCount }
-      }
+      message: "Sync push successful",
+      synced,
+      tasks: updatedTasks
     });
   } catch (err) {
     await transaction.rollback();

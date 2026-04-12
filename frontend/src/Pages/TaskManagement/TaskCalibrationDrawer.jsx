@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Drawer, Form, message } from 'antd';
 import AddItemForm from '../../components/BodyContent/Forms/AddItemForm';
+import OfflineAddItemForm from '../../components/BodyContent/Forms/OfflineAddItemForm';
 import { AuthContext } from '../../context/auth-context';
 import config from '../../utils/config.json';
 import { populateUomWithsysmbol } from "../../components/BodyContent/Instrument/HelperFunction";
@@ -169,10 +170,18 @@ const TaskCalibrationDrawer = ({ visible, onClose, item, onSaveSuccess }) => {
             } catch (err) {
                 // 2. Fallback to Local SQLite
                 if (window.electron?.db) {
+                    // 1. Save measurement data
                     await window.electron.db.saveMeasurement({
                         taskId: item.task_id,
                         taskItemId: item.task_item_id,
                         payload: payload
+                    });
+
+                    // 2. Mark item as completed in the local task cache so UI updates immediately
+                    await window.electron.db.updateLocalTaskItemStatus({
+                        taskId: item.task_id,
+                        taskItemId: item.task_item_id,
+                        status: 'completed'
                     });
                     
                     message.warning("Saved Locally: Network unavailable. Data stored in SQLite.");
@@ -199,20 +208,37 @@ const TaskCalibrationDrawer = ({ visible, onClose, item, onSaveSuccess }) => {
             open={visible}
             maskClosable={false}
         >
-            <AddItemForm
-                mode={item?.srf_item_id ? "edit" : "create"}
-                loading={loading}
-                options={options}
-                auth={auth}
-                makes={makes}
-                models={models}
-                onSubmit={handleSave}
-                setInstrument_name={setInstrument_name}
-                setDescription={setDescription}
-                form={form}
-                instrumentCategories={instrumentCategories}
-                UOM={UOM}
-            />
+            {(window.electron?.db && (item?.is_offline || !navigator.onLine)) ? (
+                <OfflineAddItemForm
+                    mode={item?.srf_item_id ? "edit" : "create"}
+                    loading={loading}
+                    options={options}
+                    auth={auth}
+                    makes={makes}
+                    models={models}
+                    onSubmit={handleSave}
+                    setInstrument_name={setInstrument_name}
+                    setDescription={setDescription}
+                    form={form}
+                    instrumentCategories={instrumentCategories}
+                    UOM={UOM}
+                />
+            ) : (
+                <AddItemForm
+                    mode={item?.srf_item_id ? "edit" : "create"}
+                    loading={loading}
+                    options={options}
+                    auth={auth}
+                    makes={makes}
+                    models={models}
+                    onSubmit={handleSave}
+                    setInstrument_name={setInstrument_name}
+                    setDescription={setDescription}
+                    form={form}
+                    instrumentCategories={instrumentCategories}
+                    UOM={UOM}
+                />
+            )}
         </Drawer>
     );
 };
