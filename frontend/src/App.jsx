@@ -1,7 +1,7 @@
 //App.jsx
 import "./App.css";
 import { useEffect, useState, useCallback, useRef } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
+import { BrowserRouter, HashRouter, Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { AuthContext } from "./context/auth-context";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -688,12 +688,10 @@ const AppContent = () => {
 };
 
 const App = () => {
-  // ✅ Sanitize basename: React Router needs an absolute path (e.g. "/" or "/subdir")
-  // If BASE_URL is "./" (common for Electron), we use "/" as the routing base.
-  const basename = import.meta.env.BASE_URL.replace(/^\./, "") || "/";
+  const Router = import.meta.env.VITE_ELECTRON === 'true' ? HashRouter : BrowserRouter;
 
   return (
-    <Router basename={basename}>
+    <Router>
       <AppContent />
     </Router>
   );

@@ -1,6 +1,6 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
-const isDev = require('electron-is-dev');
+const isDev = !app.isPackaged;
 
 // Initialize main logic
 function createWindow() {
@@ -20,14 +20,11 @@ function createWindow() {
     win.setMenu(null);
   }
 
-  const startUrl = isDev 
-    ? 'http://localhost:5173' 
-    : `file://${path.join(__dirname, '../dist/index.html')}`;
-
-  win.loadURL(startUrl);
-
   if (isDev) {
+    win.loadURL('http://localhost:5173');
     win.webContents.openDevTools();
+  } else {
+    win.loadFile(path.join(__dirname, '../dist/index.html'));
   }
 }
 
