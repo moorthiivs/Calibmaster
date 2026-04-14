@@ -393,8 +393,8 @@ export default function TaskDetail() {
             );
           })}
 
-          {/* Sync Button */}
-          {(() => {
+          {/* Sync Button (Desktop Only) */}
+          {window.electron && (() => {
             const totalPending = localCounts + localActions.length;
             return (
               <Button
