@@ -75,10 +75,7 @@ jobs:
             fs.writeFileSync('config/config.json', JSON.stringify(conf, null, 2));
           "
 
-      - name: Install backend dependencies (for App Service)
-        run: |
-          cd backend
-          npm install
+      # Removed local backend npm install. Azure will handle this via SCM_DO_BUILD_DURING_DEPLOYMENT = true
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
