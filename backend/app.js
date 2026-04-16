@@ -48,23 +48,6 @@ cron.schedule('*/2 * * * *', async function () {
   timezone: "Asia/Kolkata"
 });
 
-const whitelist = ["http://localhost:5173"];
-
-const corsOptions = {
-  origin: function (origin, callback) {
-    if (!origin) {
-      //for bypassing postman req with  no origin... Remove this if check when going to prodcution
-      return callback(null, true);
-    }
-    if (whitelist.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      //console.log("Not allowed by cors");
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
-};
-
 app.use(cors());
 app.use(express.static("public"));
 app.use(express.json({ limit: "20mb", extended: true }));
