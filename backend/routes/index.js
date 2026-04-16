@@ -187,6 +187,16 @@ router.use('/api/data-storage/', Authorization, DataStorage)
 router.use('/api/employee-track', EmployeeTrack)
 
 // ─── Task Management & Sync (NEW) ────────────────────────────────────────────
+router.get('/env-config.js', (req, res) => {
+    res.set('Content-Type', 'application/javascript');
+    res.send(`
+        window.ENV_CONFIG = {
+            VITE_CALIBMASTER_URL: "${process.env.VITE_CALIBMASTER_URL || ''}",
+            VITE_CUSTOMERPORTAL_URL: "${process.env.VITE_CUSTOMERPORTAL_URL || ''}"
+        };
+    `);
+});
+
 router.use("/api/tasks", taskRoutes);
 router.use("/api/sync",  syncRoutes);
 

@@ -10,11 +10,11 @@ const config = {
   ...configData,
   Calibmaster: {
     ...configData.Calibmaster,
-    URL: import.meta.env.VITE_CALIBMASTER_URL || configData.Calibmaster.URL
+    URL: window.ENV_CONFIG?.VITE_CALIBMASTER_URL || import.meta.env.VITE_CALIBMASTER_URL || configData.Calibmaster.URL
   },
   CustomerPortal: {
     ...configData.CustomerPortal,
-    URL: import.meta.env.VITE_CUSTOMERPORTAL_URL || configData.CustomerPortal.URL
+    URL: window.ENV_CONFIG?.VITE_CUSTOMERPORTAL_URL || import.meta.env.VITE_CUSTOMERPORTAL_URL || configData.CustomerPortal.URL
   }
 };
 
