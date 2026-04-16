@@ -6,7 +6,7 @@ name: Build and deploy Node.js app to Azure Web App - good-luck-calibmaster
 on:
   push:
     branches:
-      - good-luck-calibmaster
+      - GoodLuck-Engineering
   workflow_dispatch:
 
 jobs:
