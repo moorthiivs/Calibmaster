@@ -104,16 +104,3 @@ jobs:
           slot-name: 'Production'
           package: .
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_55A6993F985F4B1085AC639DC3E355D4 }}
-          app-settings-json: |
-            [
-                {
-                    "name": "SCM_DO_BUILD_DURING_DEPLOYMENT",
-                    "value": "false",
-                    "slotSetting": false
-                },
-                {
-                    "name": "WEBSITE_NODE_DEFAULT_VERSION",
-                    "value": "~24",
-                    "slotSetting": false
-                }
-            ]
