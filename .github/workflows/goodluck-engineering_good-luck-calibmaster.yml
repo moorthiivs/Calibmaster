@@ -9,6 +9,10 @@ on:
       - GoodLuck-Engineering
   workflow_dispatch:
 
+concurrency:
+  group: azure-deployment
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -24,23 +28,6 @@ jobs:
         with:
           node-version: '24.x'
 
-      - name: Configure Frontend
-        run: |
-          cd frontend
-          echo '{
-            "Calibmaster": { "URL": "${{ secrets.TICORP_CALIBMASTER_URL }}" },
-            "CustomerPortal": { "URL": "${{ secrets.TICORP_CUSTOMER_PORTAL_URL }}" },
-            "SRF_ITEM_STATUS_LIST": [
-              "Not Calibrated",
-              "Calibrated",
-              "Report Generated",
-              "Dispatched",
-              "Report Dispatched",
-              "Invoice Generated",
-              "Payment Done"
-            ]
-          }' > src/utils/config.json
-
       - name: Build Frontend
         run: |
           cd frontend
@@ -51,35 +38,15 @@ jobs:
         run: |
           cp -r frontend/dist/* backend/public/
 
-      - name: Configure Backend
-        run: |
-          cd backend
-          # Update config/config.json with secrets
-          node -e "
-            const fs = require('fs');
-            const conf = JSON.parse(fs.readFileSync('config/config.json', 'utf8'));
-            
-            const host = '${{ secrets.TICORP_DB_HOST }}';
-            const database = '${{ secrets.TICORP_DB_NAME }}';
-            const username = '${{ secrets.TICORP_DB_USER }}';
-            const password = '${{ secrets.TICORP_DB_PASS }}';
-            
-            ['development', 'test', 'production'].forEach(env => {
-              if (!conf[env]) conf[env] = {};
-              conf[env].host = host;
-              conf[env].database = database;
-              conf[env].username = username;
-              conf[env].password = password;
-            });
-            
-            fs.writeFileSync('config/config.json', JSON.stringify(conf, null, 2));
-          "
 
       - name: Install backend dependencies (Production Build on GitHub)
         run: |
           cd backend
-          npm install --production
+          npm install
 
+      - name: Remove log files before packaging
+        run: rm -rf backend/logs/
+        
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
