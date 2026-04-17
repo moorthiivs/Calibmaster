@@ -13,7 +13,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read #This is required for actions/checkout
+      contents: read
 
     steps:
       - name: Checkout Code
@@ -75,18 +75,16 @@ jobs:
             fs.writeFileSync('config/config.json', JSON.stringify(conf, null, 2));
           "
 
-      - name: Install backend dependencies (for App Service)
+      - name: Install backend dependencies (Production Build on GitHub)
         run: |
           cd backend
-          npm install
+          npm install --production
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: node-app
-          path: |
-            backend/
-            !backend/node_modules/
+          path: backend/ # Uploading everything including node_modules
 
   deploy:
     runs-on: ubuntu-latest
@@ -106,3 +104,16 @@ jobs:
           slot-name: 'Production'
           package: .
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_55A6993F985F4B1085AC639DC3E355D4 }}
+          app-settings-json: |
+            [
+                {
+                    "name": "SCM_DO_BUILD_DURING_DEPLOYMENT",
+                    "value": "false",
+                    "slotSetting": false
+                },
+                {
+                    "name": "WEBSITE_NODE_DEFAULT_VERSION",
+                    "value": "~24",
+                    "slotSetting": false
+                }
+            ]
