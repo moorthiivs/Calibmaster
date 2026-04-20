@@ -14,6 +14,13 @@ export const convertFixedToRound = (data) => {
           }
         } else if (cellValue.error) {
           cellValue = cellValue.error;
+        } else if (cellValue.sharedFormula) {
+          // HyperFormula cannot parse {sharedFormula: "..."} objects directly.
+          // We clear it to prevent the "Unable to parse value" error.
+          cellValue = "";
+        } else {
+          // Fallback for any other unexpected objects
+          cellValue = "";
         }
       }
 
