@@ -191,8 +191,8 @@ router.get('/env-config.js', (req, res) => {
     res.set('Content-Type', 'application/javascript');
     res.send(`
         window.ENV_CONFIG = {
-            VITE_CALIBMASTER_URL: "${process.env.VITE_CALIBMASTER_URL || ''}",
-            VITE_CUSTOMERPORTAL_URL: "${process.env.VITE_CUSTOMERPORTAL_URL || ''}"
+            CALIBMASTER_URL: "${process.env.CALIBMASTER_URL || ''}",
+            CUSTOMERPORTAL_URL: "${process.env.CUSTOMERPORTAL_URL || ''}"
         };
     `);
 });
