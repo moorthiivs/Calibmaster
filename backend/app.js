@@ -1,9 +1,22 @@
+const dotenv = require('dotenv');
+const result = dotenv.config();
+
 const express = require("express");
 const bodyParser = require("body-parser");
 const path = require("path");
 const cors = require("cors");
 const logger = require("./utils/logger");
-const dotenv = require('dotenv');
+
+if (result.error) {
+  if (result.error.code === 'ENOENT') {
+    console.info(".env file not found; using system environment variables (Production/Azure mode)");
+  } else {
+    console.error("Failed to load environment variables:", result.error);
+  }
+} else {
+  console.info("Environment variables loaded successfully from .env file (Local mode)");
+}
+
 const routers = require('./routes/');
 const srfItemsCronservices = require('./cron-service/srf-items-cron');
 const masterEquipmentsCronservices = require('./cron-service/master-equipments-cron');
@@ -70,17 +83,6 @@ app.use(express.static("public"));
 app.use(express.json({ limit: "20mb", extended: true }));
 app.use(express.urlencoded({ limit: "20mb", extended: true, parameterLimit: 50000 }));
 
-const result = dotenv.config();
-
-if (result.error) {
-  if (result.error.code === 'ENOENT') {
-    logger.info(".env file not found; using system environment variables (Production/Azure mode)");
-  } else {
-    logger.error("Failed to load environment variables:", result.error);
-  }
-} else {
-  logger.info("Environment variables loaded successfully from .env file (Local mode)");
-}
 
 logger.info(`App Environment: ${process.env.NODE_ENV || 'development'}`);
 logger.info(`Database User Loaded: ${process.env.DB_USERNAME ? 'Yes' : 'No'}`);
