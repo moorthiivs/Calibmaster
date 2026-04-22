@@ -1,9 +1,7 @@
 import React, { useContext } from "react";
 import { Layout } from "antd";
 import { AuthContext } from "../../context/auth-context";
-import RootLevelSidebar from "./RootLevelSidebar";
-import DepartmentLevelSidebar from "./DepartmentLevelSidebar";
-import LeftVerticalNavigation from "./LeftVerticalNavigation";
+import DynamicSidebar from "./DynamicSidebar";
 import "./SideBar.css";
 import CompanyLogo from "../Header/CompanyLogo";
 
@@ -35,11 +33,7 @@ const SideBar = ({ collapsed, onCollapse }) => {
         <CompanyLogo />
       </div>
 
-      {auth.department === "root" && <RootLevelSidebar />}
-      {(auth.department === "admin" || auth.department === "Manager") && <LeftVerticalNavigation />}
-      {(auth.department !== "root" && auth.department !== "admin" && auth.department !== "Manager") && (
-        <DepartmentLevelSidebar />
-      )}
+      <DynamicSidebar />
     </Sider>
   );
 };

@@ -5,6 +5,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const path = require("path");
 const cors = require("cors");
+const rateLimit = require("express-rate-limit");
 const logger = require("./utils/logger");
 
 if (result.error) {
@@ -20,7 +21,7 @@ if (result.error) {
 const routers = require('./routes/');
 const srfItemsCronservices = require('./cron-service/srf-items-cron');
 const masterEquipmentsCronservices = require('./cron-service/master-equipments-cron');
-const employeeTrackCron = require('./cron-service/employee-track-cron');
+const userTrackCron = require('./cron-service/user-track-cron');
 const cron = require('node-cron');
 const { generateSrfNumber } = require("./utils/srfService");
 
@@ -39,7 +40,7 @@ cron.schedule('0 0 * * *', async function () { // run every day at 12:00 AM
     await srfItemsCronservices.sendNotificationMail_2();
     await masterEquipmentsCronservices.emailRemainder_1();
     await masterEquipmentsCronservices.emailRemainder_2();
-    await employeeTrackCron.autoLogout();
+    await userTrackCron.autoLogout();
   } catch (err) {
     console.error('Error with cron job setup:', err);
   }
@@ -52,7 +53,7 @@ cron.schedule('0 0 * * *', async function () { // run every day at 12:00 AM
 // This fires every 2 minutes and is the primary safety net for browser closes / sleep mode.
 cron.schedule('*/2 * * * *', async function () {
   try {
-    await employeeTrackCron.heartbeatLogout();
+    await userTrackCron.heartbeatLogout();
   } catch (err) {
     console.error('Error with heartbeat logout cron:', err);
   }
@@ -61,37 +62,50 @@ cron.schedule('*/2 * * * *', async function () {
   timezone: "Asia/Kolkata"
 });
 
-// const whitelist = ["http://localhost:5173"];
+const whitelist = ["http://localhost:5173"];
 
-// const corsOptions = {
-//   origin: function (origin, callback) {
-//     if (!origin) {
-//       //for bypassing postman req with  no origin... Remove this if check when going to prodcution
-//       return callback(null, true);
-//     }
-//     if (whitelist.indexOf(origin) !== -1) {
-//       callback(null, true);
-//     } else {
-//       //console.log("Not allowed by cors");
-//       callback(new Error("Not allowed by CORS"));
-//     }
-//   },
-// };
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin) {
+      //for bypassing postman req with  no origin... Remove this if check when going to prodcution
+      return callback(null, true);
+    }
+    if (whitelist.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      //console.log("Not allowed by cors");
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+};
 
 app.use(cors());
 app.use(express.static("public"));
 app.use(express.json({ limit: "20mb", extended: true }));
 app.use(express.urlencoded({ limit: "20mb", extended: true, parameterLimit: 50000 }));
 
-
-logger.info(`App Environment: ${process.env.NODE_ENV || 'development'}`);
-logger.info(`Database User Loaded: ${process.env.DB_USERNAME ? 'Yes' : 'No'}`);
+dotenv.config();
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.set('view engine', 'ejs');
 app.set('views', './views');
+
+// ── Login Rate Limiter: max 10 attempts per 15 minutes per IP ──
+const loginRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    status: "FAILURE",
+    code: 429,
+    message: "Too many login attempts from this IP. Please try again after 15 minutes."
+  },
+  skip: (req) => req.department === "root", // Never rate-limit root
+});
+app.use("/api/users/login", loginRateLimiter);
 
 app.use('/', routers);
 
@@ -100,16 +114,22 @@ app.use((error, req, res, next) => {
   const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
   const userId = req.userId;
   const sessionId = req.sessionId;
-  const code = error.code;
+  const code = error.code || 500;
   const path = error.path;
   const action = error.message;
   let message = `${ip} ${userId} ${sessionId} ${code} ${path} - ${action}`;
   logger.error(message);
 
-  return res.status(error.code).json({
+  // Ensure status code is numeric and within valid HTTP range
+  let statusCode = parseInt(code);
+  if (isNaN(statusCode) || statusCode < 100 || statusCode > 599) {
+    statusCode = 500;
+  }
+
+  return res.status(statusCode).json({
     status: "FAILURE",
     message: error.message,
-    code: error.code,
+    code: code, // Keep original code in the body
   });
 });
 

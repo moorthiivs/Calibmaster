@@ -5,7 +5,7 @@ export const convertFixedToRound = (data) => {
     return row.map((cell) => {
       let cellValue = cell;
 
-      // Handle formula or error objects: {"formula": "..."} or {"error": "..."}
+      // Handle formula, error, or sharedFormula objects: {"formula": "..."}, {"error": "..."}, {"sharedFormula": "..."}
       if (cellValue && typeof cellValue === "object") {
         if (cellValue.formula) {
           cellValue = cellValue.formula;

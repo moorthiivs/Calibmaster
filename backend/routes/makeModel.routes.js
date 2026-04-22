@@ -1,6 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const controller = require('../controllers/makeModel.controller');
+const Authorization = require("../middleware/check-auth");
+const checkPermission = require("../middleware/check-permission");
+
+// All routes in this router require ACCESS_MAKE_MODEL permission
+router.use(Authorization);
+router.use(checkPermission("ACCESS_MAKE_MODEL"));
 
 // Make routes
 router.post('/make', controller.createMake);

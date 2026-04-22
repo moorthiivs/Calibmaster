@@ -1,14 +1,13 @@
 const express = require("express");
-const multer = require("multer");
 const controller = require("../controllers/instrument-variant-type-controller");
-
+const Authorization = require("../middleware/check-auth");
+const checkPermission = require("../middleware/check-permission");
 
 const router = express.Router();
 
-router.post('/create',controller.Create)
-router.get('/fetch',controller.Fetch)
-router.put('/update/:id',controller.Update)
-router.delete('/delete/:id',controller.Delete)
+router.post('/create', Authorization, checkPermission("CREATE_INSTRUMENT_VARIANT"), controller.Create);
+router.get('/fetch', Authorization, checkPermission(["LIST_INSTRUMENT_VARIANT", "CREATE_INSTRUMENT_VARIANT"]), controller.Fetch);
+router.put('/update/:id', Authorization, checkPermission("CREATE_INSTRUMENT_VARIANT"), controller.Update);
+router.delete('/delete/:id', Authorization, checkPermission("CREATE_INSTRUMENT_VARIANT"), controller.Delete);
 
-
-module.exports = router
+module.exports = router;

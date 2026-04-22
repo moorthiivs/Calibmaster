@@ -14,8 +14,9 @@ import StatusBadge from "../../UI/StatusBadge";
 import UpdateCal from "./UpdateCal";
 import { notificationActions } from "../../../store/nofitication";
 import { AuthContext } from "../../../context/auth-context";
-import config from "../../../utils/config.js";
+import config from "../../../utils/config.json";
 import { childSrfItemsActions } from "../../../store/childSrfItems";
+import { usePermissions } from "../../../hooks/usePermissions";
 import EnterResult from "./ResultComponent/EnterResult";
 import QRCode from "react-qr-code";
 import html2canvas from "html2canvas";
@@ -41,6 +42,7 @@ const statusfilteroptions = [
 ];
 
 const SRFItemsList = (props) => {
+  const { hasPermission, hasAnyPermission } = usePermissions();
 
   const [modifiedItems, setModifiedItems] = useState([]);
   const [statusfilter, setStatusfilter] = useState(null);
@@ -77,7 +79,6 @@ const SRFItemsList = (props) => {
   //*** Enter Result States ***/
   const [srfItemInfo, setSrfItemInfo] = useState({});
   const [enterResultModal, setEnterResultModal] = useState(false);
-
   const auth = useContext(AuthContext);
   const dispatch = useDispatch();
 
@@ -462,81 +463,69 @@ const SRFItemsList = (props) => {
   const ActionsComponent = ({ row }) => {
 
     return <ButtonMenu menuAlignment="center" menuSize="x-small" title='actions' buttonSize={'small'} icon={<FontAwesomeIcon icon={faEllipsisV} />} >
-      <MenuItem label="View" icon={<FontAwesomeIcon icon={faEye} />} iconPosition="left" onClick={(event) => {
-        setViewItem(row);
-        viewItemModelHandler();
-      }} />
+      {hasPermission("VIEW_SRF_ITEM") && (
+        <MenuItem label="View" icon={<FontAwesomeIcon icon={faEye} />} iconPosition="left" onClick={(event) => {
+          setViewItem(row);
+          viewItemModelHandler();
+        }} />
+      )}
 
-      {
-        auth.department == "admin" || auth.department == "CSD" || auth.department === "Manager" ? (
-          <MenuItem label="Edit" icon={<FontAwesomeIcon icon={faEdit} />} iconPosition="left" onClick={(event) => {
-            setEditItem(row);
-            editItemModelHandler();
-          }} />
-        ) : null
-      }
+      {hasPermission("EDIT_SRF_ITEM") && (
+        <MenuItem label="Edit" icon={<FontAwesomeIcon icon={faEdit} />} iconPosition="left" onClick={(event) => {
+          setEditItem(row);
+          editItemModelHandler();
+        }} />
+      )}
 
-      {
-        auth.department == "admin" || auth.department == "Calibration" || auth.department === "Manager" ? (
-          <MenuItem label="Update" icon={<FontAwesomeIcon icon={faEdit} />} iconPosition="left" onClick={(event) => {
-            setUpdateItem(modifiedItems[row.sno - 1]);
-            updateItemModelHandler();
-          }} />
-        ) : null
-      }
+      {hasPermission("EDIT_SRF_ITEM") && (
+        <MenuItem label="Update" icon={<FontAwesomeIcon icon={faEdit} />} iconPosition="left" onClick={(event) => {
+          setUpdateItem(modifiedItems[row.sno - 1]);
+          updateItemModelHandler();
+        }} />
+      )}
 
-      {
-        auth.department == "admin" || auth.department == "CSD" || auth.department === "Manager" ? (
-          <MenuItem label="Delete" icon={<FontAwesomeIcon icon={faTrash} />} iconPosition="left" onClick={(event) => {
-            deleteItemHandler(row);
-          }} />
-        ) : null
-      }
+      {hasPermission("DELETE_SRF_ITEM") && (
+        <MenuItem label="Delete" icon={<FontAwesomeIcon icon={faTrash} />} iconPosition="left" onClick={(event) => {
+          deleteItemHandler(row);
+        }} />
+      )}
 
-      {
-        auth.department == "admin" || auth.department == "CSD" || auth.department === "Manager" ? (
-          <MenuItem label="Upload" icon={<FontAwesomeIcon icon={faUpload} />} iconPosition="left" onClick={(event) => {
-            uploadModalHandler(modifiedItems[row.sno - 1]);
-          }} />
-        ) : null
-      }
+      {hasPermission("UPLOAD_CERTIFICATE") && (
+        <MenuItem label="Upload" icon={<FontAwesomeIcon icon={faUpload} />} iconPosition="left" onClick={(event) => {
+          uploadModalHandler(modifiedItems[row.sno - 1]);
+        }} />
+      )}
 
-      {
-        auth.department == "admin" || auth.department == "CSD" || auth.department === "Manager" ? (
-          <MenuItem label="Delivery Challan" icon={<FontAwesomeIcon icon={faFileLines} />} iconPosition="left" onClick={(event) => {
-            setsrfItemID(row.srf_item_id);
-            setIsDcModal(true);
-          }} />
-        ) : null
-      }
+      {hasPermission("EDIT_SRF_ITEM") && (
+        <MenuItem label="Delivery Challan" icon={<FontAwesomeIcon icon={faFileLines} />} iconPosition="left" onClick={(event) => {
+          setsrfItemID(row.srf_item_id);
+          setIsDcModal(true);
+        }} />
+      )}
 
-      {
-        (auth.department == "admin" || auth.department == "CSD" || auth.department === "Manager") && row?.calibration_due_date ? (
-          <MenuItem label="Generate Label" icon={<FontAwesomeIcon icon={faPrint} />} iconPosition="left" onClick={(event) => {
-            handleGenerateLabel(event, row)
-          }} />
-        ) : null
-      }
+      {hasPermission("EDIT_SRF_ITEM") && row?.calibration_due_date && (
+        <MenuItem label="Generate Label" icon={<FontAwesomeIcon icon={faPrint} />} iconPosition="left" onClick={(event) => {
+          handleGenerateLabel(event, row)
+        }} />
+      )}
 
-      {
-        auth.department == "admin" || auth.department == "Calibration" || auth.department === "Manager" ? (
-          <MenuItem label="Enter Result" icon={<FontAwesomeIcon icon={faFile} />} iconPosition="left"
-            onClick={() => {
-              let openInNewTab = true;
-              const { srf_item_id, srf_id, intrument_type_id } = row;
-              if (openInNewTab) {
-                window.open(
-                  `/enter-result/${srf_item_id}/${srf_id}/${intrument_type_id}`,
-                  "_blank"
-                );
-              } else {
-                setSrfItemInfo(row);
-                setEnterResultModal(true);
-              }
-            }}
-          />
-        ) : null
-      }
+      {hasPermission("ENTER_RESULT") && (
+        <MenuItem label="Enter Result" icon={<FontAwesomeIcon icon={faFile} />} iconPosition="left"
+          onClick={() => {
+            let openInNewTab = true;
+            const { srf_item_id, srf_id, intrument_type_id } = row;
+            if (openInNewTab) {
+              window.open(
+                `/enter-result/${srf_item_id}/${srf_id}/${intrument_type_id}`,
+                "_blank"
+              );
+            } else {
+              setSrfItemInfo(row);
+              setEnterResultModal(true);
+            }
+          }}
+        />
+      )}
     </ButtonMenu>
   };
 
@@ -672,7 +661,8 @@ const SRFItemsList = (props) => {
           key !== "InstrumentUOMID" &&
           key !== "InstrumentparameterUOM" &&
           key !== "Symbols" &&
-          key !== "SymbolPos"
+          key !== "SymbolPos" &&
+          key !== "isNaN"
         ) {
           parts.push(`${key}: ${item[key]}${uom}`);
         }
@@ -802,9 +792,7 @@ const SRFItemsList = (props) => {
               viewItemModelHandler();
             },
           },
-          ...(auth.department === "admin" ||
-            auth.department === "CSD" ||
-            auth.department === "Manager"
+          ...(hasPermission("EDIT_SRF_ITEM") || hasPermission("ACCESS_SRF")
             ? [
               {
                 key: "edit",
@@ -815,6 +803,9 @@ const SRFItemsList = (props) => {
                   editItemModelHandler();
                 },
               },
+            ] : []),
+          ...(hasPermission("DELETE_SRF_ITEM") || hasPermission("ACCESS_SRF")
+            ? [
               {
                 key: "delete",
                 icon: <FontAwesomeIcon icon={faTrash} />,
@@ -823,6 +814,9 @@ const SRFItemsList = (props) => {
                   deleteItemHandler(row);
                 },
               },
+            ] : []),
+          ...(hasPermission("UPLOAD_CERTIFICATE") || hasPermission("ACCESS_SRF")
+            ? [
               {
                 key: "upload",
                 icon: <FontAwesomeIcon icon={faUpload} />,
@@ -831,6 +825,9 @@ const SRFItemsList = (props) => {
                   uploadModalHandler(modifiedItems[row.sno - 1]);
                 },
               },
+            ] : []),
+          ...(hasPermission("GENERATE_DC") || hasPermission("ACCESS_SRF")
+            ? [
               {
                 key: "deliveryChallan",
                 icon: <FontAwesomeIcon icon={faFileLines} />,
@@ -840,11 +837,8 @@ const SRFItemsList = (props) => {
                   setIsDcModal(true);
                 },
               },
-            ]
-            : []),
-          ...(auth.department === "admin" ||
-            auth.department === "Calibration" ||
-            auth.department === "Manager"
+            ] : []),
+          ...(hasPermission("UPDATE_RESULT")
             ? [
               {
                 key: "update",
@@ -855,6 +849,9 @@ const SRFItemsList = (props) => {
                   updateItemModelHandler();
                 },
               },
+            ] : []),
+          ...(hasPermission("ENTER_RESULT")
+            ? [
               {
                 key: "enterResult",
                 icon: <FontAwesomeIcon icon={faFile} />,
@@ -869,9 +866,7 @@ const SRFItemsList = (props) => {
               },
             ]
             : []),
-          ...(auth.department === "admin" ||
-            auth.department === "CSD" ||
-            auth.department === "Manager"
+          ...(hasPermission("ACCESS_REPORTS")
             ? row?.calibration_due_date
               ? [
                 {
@@ -899,9 +894,8 @@ const SRFItemsList = (props) => {
   return (
 
     <div >
-      <Card>
         <div className="items__label" style={{ marginBottom: "60px" }}>
-          <h2 className='text-lg font-bold my-5'>SRF Items List</h2>
+          <h2 className='text-lg font-bold my-5 text-center'>SRF Items List</h2>
 
 
           {props.checkbox && (
@@ -947,9 +941,7 @@ const SRFItemsList = (props) => {
 
 
         {
-          (auth.department == "admin" ||
-            auth.department == "CSD" ||
-            auth.department === "Manager") &&
+          hasAnyPermission(["CREATE_SRF", "ACCESS_SRF"]) &&
             !statusfilter ? (
             <div style={{ display: "flex", justifyContent: "center", marginBottom: "20px" }}>
               <Button onClick={addItemHandler} variant="filled" type="primary" icon={<PlusOutlined />}>
@@ -961,7 +953,6 @@ const SRFItemsList = (props) => {
 
 
         {(loading || dcModalLoader) ? <Loader /> : ""}
-      </Card>
 
       {/* Add Item Modal */}
       {addItemModel && (

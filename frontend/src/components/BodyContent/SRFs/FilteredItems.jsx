@@ -12,7 +12,7 @@ import StatusBadge from "../../UI/StatusBadge";
 import UpdateCal from "./UpdateCal";
 import { notificationActions } from "../../../store/nofitication";
 import { AuthContext } from "../../../context/auth-context";
-import config from "../../../utils/config.js";
+import config from "../../../utils/config.json";
 import { childSrfItemsActions } from "../../../store/childSrfItems";
 import CertificateGenerate from "./CertificateGenerate";
 import VcCertificateGenerate from "./VcCertificateGenerate";
@@ -22,7 +22,8 @@ import showConfirmationDialog from "../../../utils/showConfirmationToast";
 
 import { Table, Dropdown, Menu, Input, Button, notification } from "antd";
 import { MoreOutlined } from "@ant-design/icons";
-import { format } from 'date-fns'
+import { format } from 'date-fns';
+import { usePermissions } from "../../../hooks/usePermissions";
 const FilteredItems = (props) => {
 
   const [modifiedItems, setModifiedItems] = useState([]);
@@ -42,6 +43,7 @@ const FilteredItems = (props) => {
   const dispatch = useDispatch();
   const auth = useContext(AuthContext);
   const allitems = useSelector((state) => state.childSrfItems.list);
+  const { hasPermission } = usePermissions();
   useEffect(() => {
      //console.log(allitems);
   }, []);
@@ -373,71 +375,71 @@ const FilteredItems = (props) => {
       key: "remarks",
       align: "center",
     },
-    {
+  ];
+
+  // Only add the Action column if the user has at least one item-level permission
+  const canView = hasPermission("VIEW_SRF_ITEM");
+  const canEdit = hasPermission("EDIT_SRF_ITEM");
+  const canDelete = hasPermission("DELETE_SRF_ITEM");
+
+  if (canView || canEdit || canDelete) {
+    columns.push({
       title: "Action",
       key: "action",
       align: "center",
       fixed: 'right',
       render: (_, record) => {
         const menuItems = [
-          {
+          canView && {
             key: "view",
             icon: <FontAwesomeIcon icon={faEye} />,
-            label: "View SRF",
+            label: "View Item",
             onClick: () => {
-              setsrfid(record?.srf_id)
+              setsrfid(record?.srf_id);
               setViewItem(record);
               viewItemModelHandler();
             },
           },
-          ...(auth.department === "admin" ||
-            auth.department === "CSD" ||
-            auth.department === "Manager"
-            ? [
-              {
-                key: "edit",
-                icon: <FontAwesomeIcon icon={faEdit} />,
-                label: "Edit",
-                onClick: () => {
-                  setsrfid(record?.srf_id)
-                  setEditItem(record);
-                  editItemModelHandler();
-                },
-              },
-              {
-                key: "update",
-                icon: <FontAwesomeIcon icon={faEdit} />,
-                label: "Update",
-                onClick: () => {
-                  setsrfid(record?.srf_id)
-                  setUpdateItem(record);
-                  updateItemModelHandler();
-                },
-              },
-              {
-                key: "delete",
-                icon: <FontAwesomeIcon icon={faTrash} />,
-                label: "Delete",
-                onClick: () => {
-                  setsrfid(record?.srf_id)
-                  deleteItemHandler(record);
-                },
-              },
-            ]
-            : []),
-        ];
+          canEdit && {
+            key: "edit",
+            icon: <FontAwesomeIcon icon={faEdit} />,
+            label: "Edit Item",
+            onClick: () => {
+              setsrfid(record?.srf_id);
+              setEditItem(record);
+              editItemModelHandler();
+            },
+          },
+          canEdit && {
+            key: "update",
+            icon: <FontAwesomeIcon icon={faEdit} />,
+            label: "Update",
+            onClick: () => {
+              setsrfid(record?.srf_id);
+              setUpdateItem(record);
+              updateItemModelHandler();
+            },
+          },
+          canDelete && {
+            key: "delete",
+            icon: <FontAwesomeIcon icon={faTrash} />,
+            label: "Delete Item",
+            danger: true,
+            onClick: () => {
+              setsrfid(record?.srf_id);
+              deleteItemHandler(record);
+            },
+          },
+        ].filter(Boolean);
 
         return (
-          <Dropdown
-            menu={{ items: menuItems }}
-            trigger={["click"]}
-          >
+          <Dropdown menu={{ items: menuItems }} trigger={["click"]}>
             <MoreOutlined style={{ cursor: "pointer", fontSize: 18 }} />
           </Dropdown>
         );
       },
-    },
-  ];
+    });
+  }
   return (
     <div>
       <Card >

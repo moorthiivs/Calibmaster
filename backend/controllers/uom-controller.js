@@ -6,6 +6,7 @@ const { sequelize } = require("../models");
 
 const createUom = async (req, res, next) => {
 
+
     const {
         uom_name,
         uom_kindofquantity,
@@ -145,6 +146,7 @@ const findUom = async (req, res, next) => {
 
 const editUom = async (req, res, next) => {
 
+
     const {
         uom_id,
         uom_name,
@@ -225,6 +227,7 @@ const editUom = async (req, res, next) => {
 }
 
 const listUom = async (req, res, next) => {
+
 
     try {
         let uomList = await uomModel.findAll({
@@ -326,9 +329,64 @@ const searchByKindOfQuantity = async (req, res, next) => {
     }
 }
 
+const deleteUom = async (req, res, next) => {
+    const uom_id = req.params.id;
+
+    if (!uom_id) {
+        const error = new Error("UOM id is required");
+        error.code = 400;
+        error.path = "/api/uom/delete";
+        return errorHandler(error, req, res, next);
+    }
+
+    try {
+        const uom = await uomModel.findOne({ where: { uom_id } });
+
+        if (!uom) {
+            const error = new Error("UOM not found");
+            error.code = 404;
+            error.path = "/api/uom/delete";
+            return errorHandler(error, req, res, next);
+        }
+
+        await uomModel.destroy({ where: { uom_id } });
+
+        return res.status(200).json({
+            msg: true,
+            response: "UOM deleted successfully!"
+        });
+    } catch (err) {
+        // DB-agnostic foreign key constraint detection:
+        // - Sequelize wraps FK errors as ForeignKeyConstraintError
+        // - PostgreSQL native code: 23503
+        // - MySQL native code: 1451
+        // - SQLite native code: SQLITE_CONSTRAINT (with 'FOREIGN KEY' in message)
+        const isForeignKeyError =
+            err.name === 'SequelizeForeignKeyConstraintError' ||
+            err.original?.code === '23503' ||   // PostgreSQL
+            err.original?.code === 1451 ||       // MySQL
+            (err.original?.code === 'SQLITE_CONSTRAINT' && err.original?.message?.toLowerCase().includes('foreign key'));
+
+        if (isForeignKeyError) {
+            return res.status(409).json({
+                msg: false,
+                code: 409,
+                response: `Cannot delete this UOM — it is still assigned to one or more instruments. Please reassign or remove those instruments first.`
+            });
+        }
+
+        console.log(err);
+        const error = new Error("Something went wrong, please try again");
+        error.code = 500;
+        error.path = "/api/uom/delete";
+        return errorHandler(error, req, res, next);
+    }
+};
+
 exports.createUom = createUom;
 exports.editUom = editUom;
 exports.listUom = listUom;
 exports.findUom = findUom;
+exports.deleteUom = deleteUom;
 exports.searchByName = searchByName;
 exports.searchByKindOfQuantity = searchByKindOfQuantity;

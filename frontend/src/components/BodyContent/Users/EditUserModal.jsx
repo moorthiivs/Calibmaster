@@ -1,115 +1,23 @@
 import { useContext, useEffect, useState } from "react";
-import "./EditUserModal.css";
-import { Modal, Spinner, Button } from "react-rainbow-components";
-import CustomInput from "../../Inputs/CustomInput";
-import CustomSelect from "../../Inputs/CustomSelect";
-import { notificationActions } from "../../../store/nofitication";
+import { Modal, Spin, Button, Form } from "antd";
 import { useDispatch } from "react-redux";
 import { AuthContext } from "../../../context/auth-context";
-import config from "../../../utils/config.js";
+import config from "../../../utils/config.json";
 import { userSchema } from "../../../Schemas/user";
 import { userwopassSchema } from "../../../Schemas/userwopass";
 import { usersActions } from "../../../store/users";
-import Loader from "../../UI/Loader";
 import UserForm from "../Forms/UserForm";
-import { Form } from "antd";
 import GlobalNotification from "../../../utils/GlobalNotification";
+import "./EditUserModal.css";
 
 const EditUserModal = (props) => {
-
   const [error, setError] = useState();
   const [isLoaded, setIsLoaded] = useState(false);
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [department, setDepartment] = useState("CSD");
+  const [submitting, setSubmitting] = useState(false);
   const dispatch = useDispatch();
   const auth = useContext(AuthContext);
   const [form] = Form.useForm();
-
-  useEffect(() => {
-    setError();
-  }, [name, email, password, department]);
-
-  // const updateUserHandler = async () => {
-  //   const newuser = {
-  //     name,
-  //     email,
-  //     password,
-  //     department,
-  //     labId: auth.labId,
-  //   };
-
-  //   if (password) {
-  //     const isValid = await userSchema.isValid(newuser);
-  //     if (!isValid) {
-  //       setError("Input Validation Failed!!");
-  //       setIsLoaded(true);
-  //       return;
-  //     }
-  //   }
-
-  //   const isValid = await userwopassSchema.isValid(newuser);
-  //   if (!isValid) {
-  //     if (password.length < 8 && name && email)
-  //       setError("Password must be minimum 8 characters and above");
-  //     else setError("Input Validation Failed!!");
-  //     setIsLoaded(true);
-  //     return;
-  //   }
-
-  //   newuser.userId = props.userid;
-
-  //   const requestOptions = {
-  //     method: "POST",
-  //     headers: {
-  //       "Content-Type": "application/json",
-  //       Authorization: "Bearer " + auth.token,
-  //     },
-  //     body: JSON.stringify(newuser),
-  //   };
-
-  //   const errornotification = {
-  //     title: "Error while Updating User!!",
-  //     description: name,
-  //     icon: "error",
-  //     state: true,
-  //     timeout: 15000,
-  //   };
-  //   fetch(config.Calibmaster.URL + "/api/users/updateuser", requestOptions)
-  //     .then(async (response) => {
-  //       const data = await response.json();
-  //       setIsLoaded(true);
-  //       //console.log(data);
-  //       if (data) {
-  //         if (data.code === 200) {
-  //           const newNotification = {
-  //             title: "User Updated Successfully",
-  //             description: name,
-  //             icon: "success",
-  //             state: true,
-  //             timeout: 15000,
-  //           };
-  //           //console.log(data);
-  //           props.fetchUsers();
-  //           props.onclose();
-  //           dispatch(usersActions.changeusers(data.data));
-  //           dispatch(notificationActions.changenotification(newNotification));
-  //         } else {
-  //           dispatch(notificationActions.changenotification(errornotification));
-  //           setError(data.message);
-  //         }
-  //       } else {
-  //         dispatch(notificationActions.changenotification(errornotification));
-  //         setError("Error while Updating User");
-  //       }
-  //     })
-  //     .catch((err) => {
-  //       dispatch(notificationActions.changenotification(errornotification));
-  //       setError("Error while Updating User");
-  //     });
-  // };
-
+  const [initialData, setInitialData] = useState({});
 
   const updateUserHandler = async (value) => {
     const newuser = {
@@ -120,97 +28,75 @@ const EditUserModal = (props) => {
       labId: auth.labId,
     };
 
-    if (password) {
+    if (value.password) {
       const isValid = await userSchema.isValid(newuser);
       if (!isValid) {
         setError("Input Validation Failed!!");
-        setIsLoaded(false);
         return;
       }
     }
 
     const isValid = await userwopassSchema.isValid(newuser);
     if (!isValid) {
-      if (password.length < 8 && name && email)
-        setError("Password must be minimum 8 characters and above");
-      else setError("Input Validation Failed!!");
-      setIsLoaded(false);
+      setError("Input Validation Failed!!");
       return;
     }
-    setIsLoaded(true)
-    newuser.userId = props.userid;
+
+    setSubmitting(true);
+    const formData = new FormData();
+    formData.append("userId", props.userid);
+    formData.append("name", value.name);
+    formData.append("email", value.email);
+    if (value.password) formData.append("password", value.password);
+    formData.append("department", value.department);
+    formData.append("roleId", value.roleId);
+    formData.append("title", value.title);
+    formData.append("labId", auth.labId);
+
+    if (value.signature && value.signature[0] && value.signature[0].originFileObj) {
+      formData.append("employee_signature", value.signature[0].originFileObj);
+    }
 
     const requestOptions = {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
         Authorization: "Bearer " + auth.token,
       },
-      body: JSON.stringify(newuser),
+      body: formData,
     };
 
-    const errornotification = {
-      title: "Error while Updating User!!",
-      description: name,
-      icon: "error",
-      state: true,
-      timeout: 15000,
-    };
-    fetch(config.Calibmaster.URL + "/api/users/updateuser", requestOptions)
-      .then(async (response) => {
-        const data = await response.json();
-        setIsLoaded(false);
-        //console.log(data);
-        if (data) {
-          if (data.code === 200) {
-            const newNotification = {
-              title: "User Updated Successfully",
-              description: name,
-              icon: "success",
-              state: true,
-              timeout: 15000,
-            };
-            //console.log(data);
-            form.resetFields();
-            props.fetchUsers();
-            props.onclose();
-            dispatch(usersActions.changeusers(data.data));
+    try {
+      const response = await fetch(config.Calibmaster.URL + "/api/users/updateuser", requestOptions);
+      const data = await response.json();
+      setSubmitting(false);
 
-            GlobalNotification.success({
-              title: 'User Updated',
-              description: 'The User was Updated successfully.',
-              duration: 2
-            });
-            //dispatch(notificationActions.changenotification(newNotification));
-          } else {
-
-            GlobalNotification.error({
-              title: 'Update Failed',
-              description: data?.message || 'Something went wrong!',
-              duration: 2
-            });
-            //dispatch(notificationActions.changenotification(errornotification));
-            setError(data.message);
-          }
-        } else {
-          GlobalNotification.error({
-            title: 'Update Failed',
-            description: 'Error while Updating User!',
-            duration: 2
-          });
-          //dispatch(notificationActions.changenotification(errornotification));
-          setError("Error while Updating User");
-        }
-      })
-      .catch((err) => {
-        //dispatch(notificationActions.changenotification(errornotification));
-        GlobalNotification.error({
-          title: 'Submission Failed',
-          description: err.message || 'Something went wrong!',
+      if (data && data.code === 200) {
+        GlobalNotification.success({
+          title: 'User Updated',
+          description: 'The User was updated successfully.',
           duration: 2
         });
-        setError("Error while Updating User");
+        form.resetFields();
+        props.fetchUsers();
+        props.onclose();
+        dispatch(usersActions.changeusers(data.data));
+      } else {
+        GlobalNotification.error({
+          title: 'Update Failed',
+          description: data?.message || 'Something went wrong!',
+          duration: 2
+        });
+        setError(data?.message || "Update failed");
+      }
+    } catch (err) {
+      setSubmitting(false);
+      GlobalNotification.error({
+        title: 'Submission Failed',
+        description: err.message || 'Something went wrong!',
+        duration: 2
       });
+      setError("Error while Updating User");
+    }
   };
 
   const departments = [
@@ -221,7 +107,9 @@ const EditUserModal = (props) => {
   ];
 
   useEffect(() => {
-    //console.log(props.userid);
+    if (!props.isopen || !props.userid) return;
+
+    setIsLoaded(true);
     const requestOptions = {
       method: "POST",
       headers: {
@@ -231,125 +119,80 @@ const EditUserModal = (props) => {
       body: JSON.stringify({ userId: props.userid }),
     };
 
-    const errornotification = {
-      title: "Error while Getting User!!",
-      description: "Error while Getting User Details!!",
-      icon: "error",
-      state: true,
-      timeout: 15000,
-    };
-
     fetch(config.Calibmaster.URL + "/api/users/getuserbyid", requestOptions)
       .then(async (response) => {
         const data = await response.json();
         setIsLoaded(false);
 
-        if (data) {
-          if (data.code === 200) {
-            const resdata = data.data;
-            setName(resdata.name);
-            setEmail(resdata.email);
-            setDepartment(resdata.department);
-          } else {
-            dispatch(notificationActions.changenotification(errornotification));
-            setError(data.message);
-          }
+        if (data && data.code === 200) {
+          const resdata = data.data;
+          const signatureUrl = resdata.signature 
+            ? `${config.Calibmaster.URL}/${resdata.signature}` 
+            : null;
+
+          const formattedData = {
+            name: resdata.name,
+            email: resdata.email,
+            department: resdata.department,
+            roleId: resdata.roleId,
+            title: resdata.title,
+            signature: resdata.signature ? [
+              {
+                uid: '-1',
+                name: resdata.signature.split('/').pop(),
+                status: 'done',
+                url: signatureUrl,
+                thumbUrl: signatureUrl,
+              }
+            ] : [],
+          };
+          setInitialData(formattedData);
+          form.setFieldsValue(formattedData);
         } else {
-          dispatch(notificationActions.changenotification(errornotification));
-          setError("Error while Getting User");
+          GlobalNotification.error({
+            title: 'Fetch Failed',
+            description: data?.message || 'Error while getting user details!',
+            duration: 2
+          });
+          setError(data?.message || "Error while getting user details");
         }
       })
       .catch((err) => {
-        dispatch(notificationActions.changenotification(errornotification));
+        setIsLoaded(false);
+        GlobalNotification.error({
+          title: 'Fetch Failed',
+          description: err.message || 'Error while getting user details!',
+          duration: 2
+        });
         setError("Error while Getting User");
       });
-  }, [props.userid]);
-
-  if (isLoaded)
-    return <Loader />;
+  }, [props.userid, props.isopen, auth.token, form]);
 
   return (
-    <div className="edit__user__modal">
-      <Modal
-        id="edit__user"
-        isOpen={props.isopen}
-        onRequestClose={props.onclose}
-      //title="Edit User"
-      // footer={
-      //   <div className="rainbow-flex center">
-      //     <p className="red">{error}</p>
-      //     <Button
-      //       label="Update User"
-      //       variant="brand"
-      //       onClick={updateUserHandler}
-      //     />
-      //   </div>
-      // }
-      >
-
-
-        {/* <div className="add__user__item">
-          <CustomInput
-            label="Name"
-            type="text"
-            value={name}
-            onchange={(v) => setName(v)}
-            disabled={false}
-            required={true}
+    <Modal
+      title={<span style={{ fontSize: '1.25rem', fontWeight: 600 }}>Edit User Details</span>}
+      open={props.isopen}
+      onCancel={props.onclose}
+      footer={null}
+      width={700}
+      centered
+      destroyOnClose
+      maskClosable={false}
+    >
+      <Spin spinning={isLoaded || submitting}>
+        <div style={{ padding: '10px 0' }}>
+          <UserForm
+            form={form}
+            mode="edit"
+            initialData={initialData}
+            onSubmit={updateUserHandler}
+            isLoading={submitting}
+            error={error}
+            departments={departments}
           />
         </div>
-
-        <div className="add__user__item">
-          <CustomInput
-            label="Email"
-            type="text"
-            value={email}
-            onchange={(v) => setEmail(v)}
-            disabled={false}
-            required={true}
-          />
-        </div>
-
-        <div className="add__user__item">
-          <CustomInput
-            label="Password"
-            type="password"
-            value={password}
-            onchange={(v) => setPassword(v)}
-            disabled={false}
-            required={true}
-          />
-        </div>
-
-        <div className="add__user__item">
-          <CustomSelect
-            label="Department"
-            options={departments}
-            required={true}
-            value={department}
-            onselect={(v) => setDepartment(v)}
-          />
-        </div> */}
-        {/* <p className="red center">{error}</p> */}
-
-        <UserForm
-          form={form}
-          mode="edit"
-          onSubmit={updateUserHandler}
-          isLoading={isLoaded}
-          error={error}
-          departments={departments}
-          initialData={{
-            name,
-            email,
-            password,
-            department
-          }}
-        />
-
-
-      </Modal>
-    </div>
+      </Spin>
+    </Modal>
   );
 };
 

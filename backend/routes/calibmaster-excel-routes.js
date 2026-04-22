@@ -1,46 +1,10 @@
-// const express = require("express");
-// const multer = require('multer');
-// const fs = require('fs');
-// const path = require('path');
-
-// const controller = require("../controllers/calibmaster-excel-controller");
-
-// const router = express.Router();
-
-
-// const storage = multer.diskStorage({
-//     destination: function (req, file, cb) {
-//         cb(null, path.join(__dirname, '..excel-procedure'));
-//     },
-//     filename: function (req, file, cb) {
-//         const name = file.originalname;
-//         cb(null, name);
-//     }
-// });
-
-// const upload = multer({ storage: storage });
-
-// router.post("/create-calibmaster-excel",upload.single('excel_file'), controller.CreateCalibmasterExcel);
-
-
-// router.get("/fetch-calibmaster-excel/:lab_id", controller.FetchCalibmasterExcel);
-
-// router.post("/fetchOne-calibmaster-excel", controller.FetchOneCalibmasterExcel);
-
-// router.put("/update-calibmaster-excel",controller.updateCalibmasterExcel)
-
-
-
-
-// module.exports = router;
-
-
-
 const express = require("express");
 const multer = require("multer");
 const fs = require("fs");
 const path = require("path");
 
+const Authorization = require("../middleware/check-auth");
+const checkPermission = require("../middleware/check-permission");
 const controller = require("../controllers/calibmaster-excel-controller");
 
 const router = express.Router();
@@ -66,23 +30,55 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
+// Calibmaster Excel — granular CRUD permissions
 router.post(
   "/create-calibmaster-excel",
+  Authorization,
+  checkPermission("CREATE_EXCEL"),
   upload.single("excel_file"),
   controller.CreateCalibmasterExcel
 );
 
-router.get("/fetch-calibmaster-excel/:lab_id", controller.FetchCalibmasterExcel);
+router.get(
+  "/fetch-calibmaster-excel/:lab_id",
+  Authorization,
+  checkPermission("LIST_EXCEL"),
+  controller.FetchCalibmasterExcel
+);
 
-router.post("/fetchOne-calibmaster-excel", controller.FetchOneCalibmasterExcel);
+router.post(
+  "/fetchOne-calibmaster-excel",
+  Authorization,
+  checkPermission(["LIST_EXCEL", "ENTER_RESULT"]),
+  controller.FetchOneCalibmasterExcel
+);
 
-router.put("/update-calibmaster-excel", controller.updateCalibmasterExcel);
+router.put(
+  "/update-calibmaster-excel",
+  Authorization,
+  checkPermission("EDIT_EXCEL"),
+  controller.updateCalibmasterExcel
+);
 
-router.delete("/delete-calibmaster-excel", controller.DeleteCalibmasterExcel);
+router.delete(
+  "/delete-calibmaster-excel",
+  Authorization,
+  checkPermission("DELETE_EXCEL"),
+  controller.DeleteCalibmasterExcel
+);
 
-router.put("/update-Procedure-Image", controller.updateProcedureImage);
+router.put(
+  "/update-Procedure-Image",
+  Authorization,
+  checkPermission("EDIT_EXCEL"),
+  controller.updateProcedureImage
+);
 
-router.delete("/delete-Procedure-Image", controller.deleteProcedureImage);
-
+router.delete(
+  "/delete-Procedure-Image",
+  Authorization,
+  checkPermission("DELETE_EXCEL"),
+  controller.deleteProcedureImage
+);
 
 module.exports = router;

@@ -8,12 +8,13 @@ import { AuthContext } from "../../../context/auth-context";
 import { srfitemsActions } from "../../../store/srfitems";
 import CustomInput from "../../Inputs/CustomInput";
 import StatusBadge from "../../UI/StatusBadge";
-import config from "../../../utils/config.js";
+import config from "../../../utils/config.json";
 import { getBase64 } from "../../../utils/utilfuns";
 import { childSrfItemsActions } from "../../../store/childSrfItems";
 import { selecteditemsActions } from "../../../store/selecteditems";
 import { convertDateFormat } from "../../../utils/filters";
 import Loader from "../../UI/Loader";
+import { usePermissions } from "../../../hooks/usePermissions";
 
 const UpdatePaymentStatus = (props) => {
 
@@ -29,6 +30,7 @@ const UpdatePaymentStatus = (props) => {
 
     const dispatch = useDispatch();
     const auth = useContext(AuthContext);
+    const { hasPermission } = usePermissions();
     const selecteditems = useSelector((state) => state.selecteditems.list);
 
     const getSRFDetail = async () => {
@@ -215,7 +217,7 @@ const UpdatePaymentStatus = (props) => {
                                 </span>
                             </p>
 
-                            {auth.department != "Calibration" ? (
+                            {hasPermission("EDIT_SRF") ? (
                                 <>
                                     <p className="bold">
                                         Contact Person:{" "}

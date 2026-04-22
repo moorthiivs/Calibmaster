@@ -5,7 +5,7 @@ import { useContext, useEffect, useState } from "react";
 import { notificationActions } from "../../../store/nofitication";
 import { useDispatch, useSelector } from "react-redux";
 import { AuthContext } from "../../../context/auth-context";
-import config from "../../../utils/config.js";
+import config from "../../../utils/config.json";
 import SRFItemsList from "./SRFItemsList";
 import { srfitemsActions } from "../../../store/srfitems";
 import UpdateDCModal from "./UpdateDCModal";
@@ -17,6 +17,7 @@ import UpdateBulkDCStatus from "./UpdateBulkDCStatus";
 import { convertDateFormat } from "../../../utils/filters";
 import Loader from "../../UI/Loader";
 import { Modal } from "antd";
+import { usePermissions } from "../../../hooks/usePermissions";
 
 const ViewSRFModal = (props) => {
   const [error, setError] = useState();
@@ -24,6 +25,7 @@ const ViewSRFModal = (props) => {
   const [srf, setSRF] = useState(null);
   const dispatch = useDispatch();
   const auth = useContext(AuthContext);
+  const { hasPermission } = usePermissions();
   const selecteditems = useSelector((state) => state.selecteditems.list);
   const [updatedispatchModal, setupdatedispatchModal] = useState(false);
   const [updatereportModal, setupdatereportModal] = useState(false);
@@ -172,7 +174,7 @@ const ViewSRFModal = (props) => {
             <p className="red w100">{error}</p>
             {selecteditems && selecteditems.length > 0 ? (
               <>
-                {((auth.department == "admin" || (auth.department == "Calibration" && checkStatusForCalibration()) || auth.department === "Manager") && (updateModals[0] || updateModals[1] || updateModals[2])) ? (
+                {(hasPermission("ENTER_RESULT") && checkStatusForCalibration() && (updateModals[0] || updateModals[1] || updateModals[2])) ? (
                   <Button
                     label="Update"
                     variant="brand"
@@ -181,7 +183,7 @@ const ViewSRFModal = (props) => {
                   />
                 ) : null}
 
-                {(auth.department == "admin" || (auth.department == "CSD" && checkStatusForCSD()) || auth.department === "Manager") && updateModals[2] ? (
+                {(hasPermission("EDIT_SRF") && checkStatusForCSD()) && updateModals[2] ? (
                   <Button
                     label="Update Dispatch Details"
                     variant="brand"
@@ -190,7 +192,7 @@ const ViewSRFModal = (props) => {
                   />
                 ) : null}
 
-                {(auth.department == "admin" || (auth.department == "CSD" && checkStatusForCSDAfterDispatch()) || auth.department === "Manager") && updateModals[3] ? (
+                {(hasPermission("EDIT_SRF") && checkStatusForCSDAfterDispatch()) && updateModals[3] ? (
                   <Button
                     label="Update Report Dispatch Details"
                     variant="success"
@@ -199,7 +201,7 @@ const ViewSRFModal = (props) => {
                   />
                 ) : null}
 
-                {(auth.department == "admin" || (auth.department == "Accounts" && checkStatusForAccount()) || auth.department === "Manager") && updateModals[4] ? (
+                {(hasPermission("EDIT_SRF") && checkStatusForAccount()) && updateModals[4] ? (
                   <Button
                     label="Update Invoice Detail"
                     variant="brand"
@@ -208,7 +210,7 @@ const ViewSRFModal = (props) => {
                   />
                 ) : null}
 
-                {(auth.department == "admin" || (auth.department == "Accounts" && checkStatusForAccountAfterInvoice()) || auth.department === "Manager") && updateModals[5] ? (
+                {(hasPermission("EDIT_SRF") && checkStatusForAccountAfterInvoice()) && updateModals[5] ? (
                   <Button
                     label="Update Payment Status"
                     variant="success"
@@ -217,14 +219,7 @@ const ViewSRFModal = (props) => {
                   />
                 ) : null}
 
-                {/* {auth.department == "admin" || auth.department == "CSD" ? (
-                  <Button
-                    label="Update DC Status"
-                    variant="success"
-                    onClick={updateDCStatusModalHandler}
-                    className="mar051"
-                  />
-                ) : null} */}
+                {/* DC Status button commented out — pending implementation */}
               </>
             ) : null}
           </div>
@@ -256,7 +251,7 @@ const ViewSRFModal = (props) => {
                 </span>
               </p>
 
-              {auth.department != "Calibration" ? (
+              {hasPermission("EDIT_SRF") ? (
                 <>
                   <p className="bold">
                     Contact Person:{" "}

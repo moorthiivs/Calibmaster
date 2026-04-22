@@ -3,7 +3,7 @@ import { Button, Card, Input, Select, ButtonIcon } from 'react-rainbow-component
 import { notificationActions } from '../../../store/nofitication';
 import { AuthContext } from '../../../context/auth-context';
 import { useDispatch, useSelector } from 'react-redux';
-import config from "../../../utils/config.js";
+import config from "../../../utils/config.json";
 import AddMasterEquipments from './MasterEquipments/AddMasterEquipments';
 import ListMasterEquipments from './MasterEquipments/ListMasterEquipments';
 
@@ -827,6 +827,7 @@ const EditDefinedProdedureModal = ({ isOpen, onRequestClose, masterId }) => {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
+                    Authorization: "Bearer " + auth.token,
                 },
                 body: JSON.stringify(bodyData)
             });

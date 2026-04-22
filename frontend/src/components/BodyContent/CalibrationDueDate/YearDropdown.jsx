@@ -1,17 +1,10 @@
-import React, { useMemo } from 'react';
+import React from 'react';
+import { Select } from 'antd';
 
-const YearDropdown = ({ startYear, endYear, onChange }) => {
-  const selectStyle = {
-    width: '100px',
-    padding: '8px 20px',
-    borderRadius: '30px',
-    backgroundColor: '#fff',
-    fontSize: '16px',
-    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-    transition: 'border-color 0.3s ease',
-    margin: '0 10px',
-  };
-  const years = useMemo(() => {
+const { Option } = Select;
+
+const YearDropdown = ({ startYear, endYear, onChange, value }) => {
+  const years = React.useMemo(() => {
     const yearArray = [];
     for (let i = startYear; i <= endYear; i++) {
       yearArray.push(i);
@@ -20,13 +13,18 @@ const YearDropdown = ({ startYear, endYear, onChange }) => {
   }, [startYear, endYear]);
 
   return (
-    <select onChange={onChange} defaultValue={new Date().getFullYear()} style={selectStyle}>
+    <Select
+      value={value}
+      onChange={(val) => onChange({ target: { value: val } })}
+      className="w-32"
+      dropdownClassName="rounded-lg shadow-lg"
+    >
       {years.map(year => (
-        <option key={year} value={year}>
+        <Option key={year} value={year}>
           {year}
-        </option>
+        </Option>
       ))}
-    </select>
+    </Select>
   );
 };
 

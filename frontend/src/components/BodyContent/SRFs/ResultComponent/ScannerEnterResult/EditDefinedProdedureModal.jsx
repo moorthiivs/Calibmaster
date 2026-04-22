@@ -9,7 +9,7 @@ import { notificationActions } from "../../../../../store/nofitication";
 import { AuthContext } from '../../../../../context/auth-context';
 import { useNavigate } from "react-router-dom";
 
-import config from "../../../../../utils/config.js";
+import config from "../../../../../utils/config.json";
 import { addProcedures } from '../../../../../store/procedureSlice';
 import { parseFormula } from '../../../../helpers/formula_parser';
 import EditVerticalTableWithoutFormula from './EditVerticalTableWithoutFormula';
@@ -604,29 +604,31 @@ const EditDefinedProdedureModal = ({ isOpen, onRequestClose, masterId, srf_id, s
         }
     }
 
-    // *** Fetch Employees ***
+    // *** Fetch Users (Unified Identity) ***
     const fetchEmployees = async () => {
         try {
             setloading(true);
 
-            const data = await fetch(config.Calibmaster.URL + "/api/employee-master/list", {
+            const data = await fetch(config.Calibmaster.URL + "/api/users/getall", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: "Bearer " + auth.token,
                 },
-                body: JSON.stringify({ lab_id: auth.labId })
+                body: JSON.stringify({ labId: auth.labId })
             });
 
             let response = await data.json();
             let newArray = [{ value: '', label: 'Select' }];
 
-            await response.data.map((item, index) => {
-                newArray[index + 1] = {
-                    value: item.employee_id,
-                    label: `${item.employee_full_name} (${item.employee_role})`
-                }
-            });
+            if (response.data) {
+                await response.data.map((item, index) => {
+                    newArray[index + 1] = {
+                        value: item.id,
+                        label: `${item.name} (${item.department})`
+                    }
+                });
+            }
             setEmpList(newArray);
 
             setloading(false);

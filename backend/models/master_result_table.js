@@ -98,7 +98,15 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.TEXT,
         allowNull: true,
       },
-      authorizedby_employee_id: {
+      calibrated_user_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false
+      },
+      approved_user_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false
+      },
+      authorizedby_user_id: {
         type: DataTypes.INTEGER,
         allowNull: true
       },
@@ -146,25 +154,25 @@ module.exports = (sequelize, DataTypes) => {
       foreignKey: "srf_item_id"
     });
 
-    master_result_table.belongsTo(models.employee_master, {
-      as: "calibrated_employee_master",
+    master_result_table.belongsTo(models.User, {
+      as: "calibrated_user",
       constrains: true,
       onDelete: "CASCADE",
-      foreignKey: "calibrated_employee_id",
+      foreignKey: "calibrated_user_id",
     });
 
-    master_result_table.belongsTo(models.employee_master, {
-      as: "approved_employee_master",
+    master_result_table.belongsTo(models.User, {
+      as: "approved_user",
       constrains: true,
       onDelete: "CASCADE",
-      foreignKey: "approved_employee_id",
+      foreignKey: "approved_user_id",
     });
 
-    master_result_table.belongsTo(models.employee_master, {
-      as: "authorizedby_employee_master",
+    master_result_table.belongsTo(models.User, {
+      as: "authorizedby_user",
       constrains: true,
       onDelete: "CASCADE",
-      foreignKey: "authorizedby_employee_id",
+      foreignKey: "authorizedby_user_id",
     });
 
   };

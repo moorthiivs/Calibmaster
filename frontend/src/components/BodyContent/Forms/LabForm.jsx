@@ -11,9 +11,10 @@ import {
     Card,
     Modal,
     Image,
+    message,
 } from "antd";
 import { InboxOutlined, EyeOutlined, DeleteOutlined } from "@ant-design/icons";
-import config from "../../../utils/config.js";
+import config from "../../../utils/config.json";
 const { Dragger } = Upload;
 
 const { Title } = Typography;
@@ -87,7 +88,15 @@ const LabForm = ({
     };
 
     const uploadProps = {
-        beforeUpload: () => false, // prevent auto upload
+        beforeUpload: (file) => {
+            const isPNG = file.type === 'image/png';
+            if (!isPNG) {
+                message.error(`"${file.name}" is not a PNG file. Only .png images are allowed.`);
+                return Upload.LIST_IGNORE; // Prevents the file from being added
+            }
+            return false; // Prevent auto upload but allow the file
+        },
+        accept: 'image/png', // restricts the OS file picker to PNG files
         listType: "picture-card",
         maxCount: 1,
         onPreview: handlePreview,
@@ -352,8 +361,8 @@ const LabForm = ({
                             >
                                 <Dragger
                                     {...uploadProps}
-                                    accept="image/*"
                                     onPreview={handlePreview}
+                                    accept="image/png"
                                 >
                                     <p className="ant-upload-drag-icon">
                                         <InboxOutlined />
@@ -375,8 +384,8 @@ const LabForm = ({
                             >
                                 <Dragger
                                     {...uploadProps}
-                                    accept="image/*"
                                     onPreview={handlePreview}
+                                    accept="image/png"
                                 >
                                     <p className="ant-upload-drag-icon">
                                         <InboxOutlined />
@@ -398,8 +407,8 @@ const LabForm = ({
                             >
                                 <Dragger
                                     {...uploadProps}
-                                    accept="image/*"
                                     onPreview={handlePreview}
+                                    accept="image/png"
                                 >
                                     <p className="ant-upload-drag-icon">
                                         <InboxOutlined />
@@ -429,8 +438,8 @@ const LabForm = ({
                             >
                                 <Dragger
                                     {...uploadProps}
-                                    accept="image/*"
                                     onPreview={handlePreview}
+                                    accept="image/png"
                                 >
                                     <p className="ant-upload-drag-icon">
                                         <InboxOutlined />
@@ -453,8 +462,8 @@ const LabForm = ({
                             >
                                 <Dragger
                                     {...uploadProps}
-                                    accept="image/*"
                                     onPreview={handlePreview}
+                                    accept="image/png"
                                 >
                                     <p className="ant-upload-drag-icon">
                                         <InboxOutlined />
@@ -479,8 +488,8 @@ const LabForm = ({
                             >
                                 <Dragger
                                     {...uploadProps}
-                                    accept="image/*"
                                     onPreview={handlePreview}
+                                    accept="image/png"
                                 >
                                     <p className="ant-upload-drag-icon">
                                         <InboxOutlined />
@@ -503,8 +512,8 @@ const LabForm = ({
                             >
                                 <Dragger
                                     {...uploadProps}
-                                    accept="image/*"
                                     onPreview={handlePreview}
+                                    accept="image/png"
                                 >
                                     <p className="ant-upload-drag-icon">
                                         <InboxOutlined />

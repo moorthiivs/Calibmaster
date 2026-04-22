@@ -26,6 +26,7 @@
     "exceljs": "^4.3.0",
     "express": "^4.17.1",
     "express-fileupload": "^1.4.0",
+    "express-rate-limit": "^8.3.2",
     "html-pdf": "^3.0.1",
     "html-to-pdfmake": "^2.5.1",
     "hyperformula": "^3.0.0",

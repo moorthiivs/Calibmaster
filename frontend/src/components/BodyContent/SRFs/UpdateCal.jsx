@@ -3,7 +3,7 @@ import { Spinner } from "react-rainbow-components";
 //import { Modal ,Card,Button} from "react-rainbow-components";
 import StatusBadge from "../../UI/StatusBadge";
 import CustomProgress from "../../UI/CustomProgress";
-import config from "../../../utils/config.js";
+import config from "../../../utils/config.json";
 import { useState, useContext } from "react";
 import { useDispatch } from "react-redux";
 import { notificationActions } from "../../../store/nofitication";
@@ -34,6 +34,7 @@ import {
 import dayjs from "dayjs";
 import DownloadDraftCertificate from "./DownloadDraftCertificate";
 import GlobalNotification from "../../../utils/GlobalNotification";
+import { usePermissions } from "../../../hooks/usePermissions";
 const { Title, Text } = Typography;
 
 const groups = [
@@ -63,6 +64,7 @@ const UpdateCal = (props) => {
   const auth = useContext(AuthContext);
   const dispatch = useDispatch("");
   const { modalType } = props;
+  const { hasPermission } = usePermissions();
 
   const [lab_type, setlab_type] = useState(props.item.labtype)
 
@@ -236,7 +238,7 @@ const UpdateCal = (props) => {
           return;
         }
         //updateUlrNumber();
-        !(canGenerateCertificate && auth.department === "Manager") && await generateCertificateHandler();
+        !(canGenerateCertificate && hasPermission("AUTHORIZE_RESULT")) && await generateCertificateHandler();
       }
 
       setIsLoading(true);
@@ -334,6 +336,7 @@ const UpdateCal = (props) => {
         srf_item_id: props?.item?.srf_item_id,
         customer_info,
         reportGenerateDate,
+        calibrationDate,
         sendDraft
       }
 
@@ -532,7 +535,7 @@ const UpdateCal = (props) => {
                 <Row gutter={[16, 16]} align="middle" justify={props.item.status !== "Report Generated" ? "start" : "center"} wrap>
                   {/* Calibration Date */}
                   {props.item.status !== "Report Generated" && (
-                    <Col xs={24} sm={12} md={4}>
+                    <Col xs={24} sm={12} md={6}>
                       <DatePicker
                         value={calibrationDate ? dayjs(calibrationDate) : null}
                         onChange={(value) => {
@@ -547,24 +550,9 @@ const UpdateCal = (props) => {
                     </Col>
                   )}
 
-                  {/* Mark Calibrated */}
-                  {props.item.status !== "Report Generated" && (
-                    <Col xs={24} sm={12} md={3}>
-                      <Button
-                        type="primary"
-                        icon={<FileDoneOutlined />}
-                        onClick={() => updatecalHandler(1)}
-                        disabled={!GenerateCertificate || isMasterBlocked}
-                        size="large"
-                        block
-                      >
-                        Mark Calibrated
-                      </Button>
-                    </Col>
-                  )}
 
                   {/* Draft Switch */}
-                  <Col xs={24} sm={12} md={3}>
+                  <Col xs={24} sm={12} md={4} style={{ display: "flex", justifyContent: "center" }}>
                     <Tooltip
                       title={
                         sendDraft
@@ -583,7 +571,7 @@ const UpdateCal = (props) => {
                   </Col>
 
                   {/* Report Date */}
-                  <Col xs={24} sm={12} md={4}>
+                  <Col xs={24} sm={12} md={6}>
                     <Tooltip title="Please Select Report Generated Date">
                       <DatePicker
                         value={reportGenerateDate ? dayjs(reportGenerateDate) : null}
@@ -594,7 +582,7 @@ const UpdateCal = (props) => {
                         style={{ width: "100%" }}
                         placeholder="Select Report Generated Date"
                         size="large"
-                        disabled={!GenerateCertificate || !isCalibrationSaved || isMasterBlocked}
+                        disabled={!GenerateCertificate || isMasterBlocked}
                         disabledDate={(current) => {
                           if (!calibrationDate) return false; // no restriction if no calibration date
 
@@ -609,39 +597,41 @@ const UpdateCal = (props) => {
                   </Col>
 
                   {/* Generate / Mark Report */}
-                  <Col xs={24} sm={12} md={4}>
-                    {canGenerateCertificate && ["admin", "Calibration"].includes(auth.department) ? (
-                      <Button
-                        type="primary"
-                        icon={<FilePdfOutlined />}
-                        onClick={generateCertificateHandler}
-                        disabled={!GenerateCertificate || !isCalibrationSaved || isMasterBlocked}
-                        size="large"
-                        block
-                      >
-                        Generate as Certificate
-                      </Button>
-                    ) : (
-                      <Button
-                        icon={<FileTextOutlined />}
-                        onClick={() => updatecalHandler(2)}
-                        size="large"
-                        block
-                      >
-                        Mark as Report
-                      </Button>
-                    )}
-                  </Col>
+                  {props.item.status === "Report Generated" && (
+                    <Col xs={24} sm={12} md={8}>
+                      {canGenerateCertificate && hasPermission("ENTER_RESULT") ? (
+                        <Button
+                          type="primary"
+                          icon={<FilePdfOutlined />}
+                          onClick={generateCertificateHandler}
+                          disabled={!GenerateCertificate || isMasterBlocked}
+                          size="large"
+                          block
+                        >
+                          Generate as Certificate
+                        </Button>
+                      ) : (
+                        <Button
+                          icon={<FileTextOutlined />}
+                          onClick={() => updatecalHandler(2)}
+                          size="large"
+                          block
+                        >
+                          Mark as Report
+                        </Button>
+                      )}
+                    </Col>
+                  )}
 
                   {/* Combined Action */}
                   {props.item.status !== "Report Generated" && (
-                    <Col xs={24} md={6}>
+                    <Col xs={24} md={8}>
                       <Button
                         type="primary"
                         icon={<CheckCircleOutlined />}
                         style={{ backgroundColor: "#52c41a", borderColor: "#52c41a" }}
                         onClick={() => updatecalHandler(3)}
-                        disabled={!GenerateCertificate || !isCalibrationSaved || isMasterBlocked}
+                        disabled={!GenerateCertificate || isMasterBlocked}
                         size="large"
                         block
                       >

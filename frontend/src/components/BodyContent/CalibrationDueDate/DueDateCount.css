@@ -1,3 +1,64 @@
-.rainbow-table_header-container {
-  justify-content: center;
+/* 
+  Custom styles for the Ant Design Calendar integration.
+  Most styling is handled via Tailwind CSS and inline Emotion styles,
+  but specific overrides for the full-screen calendar go here.
+*/
+
+.ant-picker-calendar-full .ant-picker-panel {
+  background: transparent;
+}
+
+.ant-picker-calendar-date-content {
+  height: 80px !important;
+  overflow: hidden;
+}
+
+/* Make cell borders clearer */
+.ant-picker-calendar-date {
+  border-top: 2px solid #e5e7eb !important;
+  /* Tailwind gray-200 */
+  border-left: 1px solid #f3f4f6 !important;
+  /* Tailwind gray-100 */
+  margin: 0 !important;
+  padding: 8px !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  background-color: #fff !important;
+}
+
+/* Right border for the last column */
+.ant-picker-calendar-date:last-child {
+  border-right: 1px solid #f3f4f6 !important;
+}
+
+.ant-picker-calendar-date:hover {
+  background: #f8fafc !important;
+  /* Tailwind slate-50 */
+  border-top-color: #3b82f6 !important;
+  /* Tailwind blue-500 */
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  z-index: 10;
+}
+
+/* Prominent Today Highlight */
+.ant-picker-calendar-date-today {
+  background: #eff6ff !important;
+  /* Tailwind blue-50 */
+  border-top-color: #2563eb !important;
+  /* Tailwind blue-600 */
+  border-left-color: #bfdbfe !important;
+}
+
+.ant-picker-calendar-date-today .ant-picker-calendar-date-value {
+  color: #1d4ed8 !important;
+  font-weight: 800 !important;
+}
+
+.ant-picker-calendar-header {
+  padding: 0 !important;
+}
+
+/* Ensure the grid looks like a proper table */
+.ant-picker-calendar-full .ant-picker-cell-inner {
+  min-width: unset !important;
 }

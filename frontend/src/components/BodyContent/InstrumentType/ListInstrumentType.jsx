@@ -8,10 +8,11 @@ import {
 } from "@ant-design/icons";
 import { useDispatch } from "react-redux";
 import { AuthContext } from "../../../context/auth-context";
-import config from "../../../utils/config.js";
+import config from "../../../utils/config.json";
 import { notificationActions } from "../../../store/nofitication";
 import { labIdActions } from "../../../store/labId";
 import { useNavigate } from "react-router-dom";
+import { usePermissions } from "../../../hooks/usePermissions";
 import { addNewId, searchByNameFunction } from "./higherOrderFunction";
 import DataTable from "../../common/DataTable";
 import showConfirmationDialog from "../../../utils/showConfirmationToast";
@@ -22,6 +23,7 @@ const ListInstrumentType = () => {
     const auth = useContext(AuthContext);
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const { hasPermission } = usePermissions();
 
     const [instrumentTypeList, setInstrumentTypeList] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -135,30 +137,37 @@ const ListInstrumentType = () => {
         }
     };
 
-    const ActionMenu = ({ row }) => (
-        <Dropdown
-            menu={{
-                items: [
-                    {
-                        key: "edit",
-                        label: "Edit",
-                        icon: <EditFilled />,
-                        onClick: () => redirectHandler(row.instrument_type_id),
-                    },
-                    {
-                        key: "delete",
-                        label: "Delete",
-                        icon: <DeleteFilled />,
-                        danger: true,
-                        onClick: () => handleDelete(row.instrument_type_id),
-                    },
-                ],
-            }}
-            trigger={["click"]}
-        >
-            <Button icon={<MoreOutlined />} />
-        </Dropdown>
-    );
+    const ActionMenu = ({ row }) => {
+        const menuItems = [];
+        if (hasPermission("EDIT_INSTRUMENT_VARIANT")) {
+            menuItems.push({
+                key: "edit",
+                label: "Edit",
+                icon: <EditFilled />,
+                onClick: () => redirectHandler(row.instrument_type_id),
+            });
+        }
+        if (hasPermission("DELETE_INSTRUMENT_VARIANT")) {
+            menuItems.push({
+                key: "delete",
+                label: "Delete",
+                icon: <DeleteFilled />,
+                danger: true,
+                onClick: () => handleDelete(row.instrument_type_id),
+            });
+        }
+
+        if (menuItems.length === 0) return null;
+
+        return (
+            <Dropdown
+                menu={{ items: menuItems }}
+                trigger={["click"]}
+            >
+                <Button icon={<MoreOutlined />} />
+            </Dropdown>
+        );
+    };
 
     const columns = [
         {

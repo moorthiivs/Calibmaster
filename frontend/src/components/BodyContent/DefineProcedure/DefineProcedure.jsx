@@ -3,7 +3,7 @@ import { Input, Card, Button, Select, TableWithBrowserPagination, Column, } from
 import { notificationActions } from '../../../store/nofitication';
 import { AuthContext } from '../../../context/auth-context';
 import { useDispatch, useSelector } from 'react-redux';
-import config from "../../../utils/config.js";
+import config from "../../../utils/config.json";
 import { useNavigate } from "react-router-dom";
 import AddMasterEquipments from './MasterEquipments/AddMasterEquipments';
 import ListMasterEquipments from './MasterEquipments/ListMasterEquipments';
@@ -469,6 +469,7 @@ const DefineProcedure = () => {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
+                    Authorization: "Bearer " + auth.token,
                 },
                 body: JSON.stringify(bodyData)
             });

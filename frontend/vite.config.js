@@ -8,4 +8,12 @@ export default defineConfig(({ mode }) => ({
     tailwindcss(),
     react()
   ],
+  server: {
+    proxy: {
+      '/env-config.js': {
+        target: 'http://localhost:5000',
+        changeOrigin: true
+      }
+    }
+  }
 }))

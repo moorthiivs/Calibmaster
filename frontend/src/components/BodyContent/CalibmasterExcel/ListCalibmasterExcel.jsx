@@ -5,7 +5,7 @@ import {
 } from 'react-rainbow-components'
 import { useDispatch } from 'react-redux'
 import { AuthContext } from '../../../context/auth-context'
-import config from '../../../utils/config.js'
+import config from '../../../utils/config.json'
 import { notificationActions } from '../../../store/nofitication'
 import Loader from '../../UI/Loader'
 import { format, isEqual } from 'date-fns'
@@ -270,7 +270,7 @@ function ListCalibmasterExcel() {
 
   const ActionMenu = ({ row }) => {
     const menuItems = [
-      {
+      auth.permissions.includes("EDIT_EXCEL") && {
         key: "edit",
         label: "Edit File",
         icon: <EditFilled />,
@@ -289,14 +289,14 @@ function ListCalibmasterExcel() {
         },
         //disabled: !row?.diagram_image || row.diagram_image.length === 0,
       },
-      {
+      auth.permissions.includes("DELETE_EXCEL") && {
         key: "delete",
         label: "Delete Excel File",
         icon: <DeleteFilled />,
         danger: true,
         onClick: () => handleDelete(row),
       },
-    ];
+    ].filter(Boolean);
 
     return (
       <Dropdown
@@ -368,7 +368,7 @@ function ListCalibmasterExcel() {
       align: "center",
       render: (_, row) => <UpdatedDateComponent row={row} />,
     },
-    {
+    auth.permissions.includes("EDIT_EXCEL") && {
       title: "Edit File",
       key: "edit",
       align: "center",
@@ -380,7 +380,7 @@ function ListCalibmasterExcel() {
       align: "center",
       render: (_, row) => <ActionMenu row={row} />,
     },
-  ];
+  ].filter(Boolean);
 
 
 
@@ -428,16 +428,18 @@ function ListCalibmasterExcel() {
           <Select.Option value="updated">Updated (Latest First)</Select.Option>
         </Select>
 
-        <Tooltip title="Add New Calibmaster Excel Sheet">
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            size='large'
-            onClick={() => {
-              navigate("/dashboard/excel/create");
-            }}
-          />
-        </Tooltip>
+        {auth.permissions.includes("CREATE_EXCEL") && (
+          <Tooltip title="Add New Calibmaster Excel Sheet">
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              size='large'
+              onClick={() => {
+                navigate("/dashboard/excel/create");
+              }}
+            />
+          </Tooltip>
+        )}
       </div>
 
 

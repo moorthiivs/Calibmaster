@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext, useCallback } from "react";
 import { AuthContext } from "../../../context/auth-context";
 import { apipostHandler } from "../../../utils/api";
-import config from "../../../utils/config.js";
+import config from "../../../utils/config.json";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -31,12 +31,12 @@ const { RangePicker } = DatePicker;
 const { Option } = Select;
 
 
-const EmployeeTrack = () => {
+const UserTrack = () => {
   const auth = useContext(AuthContext);
   const navigate = useNavigate();
   const [labs, setLabs] = useState([]);
   const [selectedLab, setSelectedLab] = useState(null);
-  const [activeEmployees, setActiveEmployees] = useState([]);
+  const [activeUsers, setActiveUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedUserIds, setSelectedUserIds] = useState([]);
   const [stats, setStats] = useState({ todayHours: 0, monthlyHours: 0, user: null });
@@ -79,7 +79,7 @@ const EmployeeTrack = () => {
   const fetchLabs = useCallback(async () => {
     try {
       // Use the new public route
-      const result = await fetch(config.Calibmaster.URL + "/api/employee-track/labs");
+      const result = await fetch(config.Calibmaster.URL + "/api/user-track/labs");
       const data = await result.json();
       if (data.status === "SUCCESS") {
         setLabs(data.data);
@@ -89,14 +89,14 @@ const EmployeeTrack = () => {
     }
   }, []);
 
-  const fetchActiveEmployees = useCallback(async (labId, startDate = selectedDate, endDate = null, skipClearSelection = false) => {
+  const fetchActiveUsers = useCallback(async (labId, startDate = selectedDate, endDate = null, skipClearSelection = false) => {
     if (!labId) return;
     setLoading(true);
     // Ensure dates are formatted as YYYY-MM-DD strings
     const formattedStart = (typeof startDate === "string") ? startDate : (dayjs.isDayjs(startDate) ? startDate.format("YYYY-MM-DD") : dayjs(startDate).format("YYYY-MM-DD"));
     const formattedEnd = endDate ? ((typeof endDate === "string") ? endDate : (dayjs.isDayjs(endDate) ? endDate.format("YYYY-MM-DD") : dayjs(endDate).format("YYYY-MM-DD"))) : null;
 
-    const result = await apipostHandler("/api/employee-track/active-employees", {
+    const result = await apipostHandler("/api/user-track/active-users", {
       labId,
       date: formattedStart,
       endDate: formattedEnd
@@ -104,7 +104,7 @@ const EmployeeTrack = () => {
 
     if (result.data?.status === "SUCCESS") {
       const emps = result.data.data;
-      setActiveEmployees(emps);
+      setActiveUsers(emps);
       // Clear multi-selection when switching labs or dates
       if (!skipClearSelection) {
         setSelectedUserIds([]);
@@ -122,7 +122,7 @@ const EmployeeTrack = () => {
 
     // Stats are only for single user view
     if (userId && !Array.isArray(userId)) {
-      const statsResult = await apipostHandler("/api/employee-track/user-stats", { userId, labId, date: formattedDate }, null);
+      const statsResult = await apipostHandler("/api/user-track/user-stats", { userId, labId, date: formattedDate }, null);
       if (statsResult.data?.status === "SUCCESS") {
         setStats(statsResult.data.data);
       }
@@ -130,7 +130,7 @@ const EmployeeTrack = () => {
       setStats({ todayHours: 0, monthlyHours: 0, user: null });
     }
 
-    const logsResult = await apipostHandler("/api/employee-track/daily-report", { userId, date: formattedDate, labId }, null);
+    const logsResult = await apipostHandler("/api/user-track/daily-report", { userId, date: formattedDate, labId }, null);
     if (logsResult.data?.status === "SUCCESS") {
       setLogs(logsResult.data.data);
       setCurrentPage(1); // Reset to first page when user or date changes
@@ -144,17 +144,17 @@ const EmployeeTrack = () => {
 
   const handleLabSelect = (lab) => {
     setSelectedLab(lab);
-    fetchActiveEmployees(lab.lab_id);
+    fetchActiveUsers(lab.lab_id);
   };
 
-  const handleUserSelect = (employee) => {
+  const handleUserSelect = (user) => {
     // Single select:Focus on this user, show stats
-    setSelectedUser(employee);
+    setSelectedUser(user);
     // Also include in bulk selection if not already there
-    if (!selectedUserIds.includes(employee.userId)) {
-      setSelectedUserIds([employee.userId]);
+    if (!selectedUserIds.includes(user.userId)) {
+      setSelectedUserIds([user.userId]);
     }
-    fetchUserDetailStats(employee.userId, selectedLab.lab_id, selectedDate);
+    fetchUserDetailStats(user.userId, selectedLab.lab_id, selectedDate);
     // On mobile, close sidebar after selection
     if (window.innerWidth < 1024) setIsSidebarOpen(false);
   };
@@ -166,9 +166,9 @@ const EmployeeTrack = () => {
       // Auto-trigger fetch if something is selected
       if (newIds.length > 0) {
         if (isRangeMode) {
-          fetchFilteredReport(newIds.length === activeEmployees.length ? null : newIds, selectedLab.lab_id, dateRange[0].format("YYYY-MM-DD"), dateRange[1].format("YYYY-MM-DD"));
+          fetchFilteredReport(newIds.length === activeUsers.length ? null : newIds, selectedLab.lab_id, dateRange[0].format("YYYY-MM-DD"), dateRange[1].format("YYYY-MM-DD"));
         } else {
-          fetchUserDetailStats(newIds.length === activeEmployees.length ? null : newIds, selectedLab.lab_id, selectedDate.format("YYYY-MM-DD"));
+          fetchUserDetailStats(newIds.length === activeUsers.length ? null : newIds, selectedLab.lab_id, selectedDate.format("YYYY-MM-DD"));
         }
       }
       return newIds;
@@ -179,7 +179,7 @@ const EmployeeTrack = () => {
 
   const handleToggleAll = (checked) => {
     if (checked) {
-      const allIds = activeEmployees.map(e => e.userId);
+      const allIds = activeUsers.map(e => e.userId);
       setSelectedUserIds(allIds);
       setSelectedUser(null);
       if (isRangeMode && dateRange[0] && dateRange[1]) {
@@ -200,7 +200,7 @@ const EmployeeTrack = () => {
     setSelectedDate(date);
     const formattedDate = date.format("YYYY-MM-DD");
     if (selectedLab) {
-      fetchActiveEmployees(selectedLab.lab_id, formattedDate);
+      fetchActiveUsers(selectedLab.lab_id, formattedDate);
       const targetIds = selectedUserIds.length > 1 ? selectedUserIds : (selectedUser ? selectedUser.userId : (selectedUserIds.length === 1 ? selectedUserIds[0] : null));
       fetchUserDetailStats(targetIds, selectedLab.lab_id, formattedDate);
     }
@@ -209,7 +209,7 @@ const EmployeeTrack = () => {
   const fetchFilteredReport = async (userId, labId, startDate, endDate) => {
     setLoading(true);
     try {
-      const result = await apipostHandler("/api/employee-track/filtered-report", {
+      const result = await apipostHandler("/api/user-track/filtered-report", {
         userId,
         labId,
         startDate,
@@ -238,7 +238,7 @@ const EmployeeTrack = () => {
     if (selectedLab) {
       const targetIds = (selectedUserIds.length > 1 || (!selectedUser && selectedUserIds.length === 1))
         ? selectedUserIds
-        : (selectedUser ? selectedUser.userId : (selectedUserIds.length === activeEmployees.length ? null : selectedUserIds));
+        : (selectedUser ? selectedUser.userId : (selectedUserIds.length === activeUsers.length ? null : selectedUserIds));
 
       fetchFilteredReport(
         targetIds.length === 0 ? null : targetIds,
@@ -246,8 +246,8 @@ const EmployeeTrack = () => {
         start.format("YYYY-MM-DD"),
         end.format("YYYY-MM-DD")
       );
-      // Also update the sidebar to only show employees active in this range
-      fetchActiveEmployees(selectedLab.lab_id, start.format("YYYY-MM-DD"), end.format("YYYY-MM-DD"));
+      // Also update the sidebar to only show users active in this range
+      fetchActiveUsers(selectedLab.lab_id, start.format("YYYY-MM-DD"), end.format("YYYY-MM-DD"));
     }
   };
 
@@ -285,7 +285,7 @@ const EmployeeTrack = () => {
         }
 
         try {
-          const { data } = await apipostHandler("/api/employee-track/admin-manual-logout", {
+          const { data } = await apipostHandler("/api/user-track/admin-manual-logout", {
             userId: emp.userId,
             password: resetPassword,
             logoutType: "ADMIN_RESET"
@@ -297,7 +297,7 @@ const EmployeeTrack = () => {
               description: `Successfully logged out ${emp.User.name}.`,
               placement: "topRight"
             });
-            fetchActiveEmployees(selectedLab.lab_id, selectedDate, null, true);
+            fetchActiveUsers(selectedLab.lab_id, selectedDate, null, true);
             if (selectedUser?.userId === emp.userId) {
               fetchUserDetailStats(emp.userId, selectedLab.lab_id, selectedDate);
             }
@@ -317,8 +317,8 @@ const EmployeeTrack = () => {
   const handleExportCSV = () => {
     if (!logs || logs.length === 0) return;
 
-    let reportTitle = "Employee_Activity_Report";
-    if (!selectedUser && selectedUserIds.length === activeEmployees.length) {
+    let reportTitle = "User_Activity_Report";
+    if (!selectedUser && selectedUserIds.length === activeUsers.length) {
       reportTitle = "Full_Team_Activity_Report";
     } else if (selectedUserIds.length > 1) {
       reportTitle = "Group_Activity_Report";
@@ -326,7 +326,7 @@ const EmployeeTrack = () => {
       reportTitle = `Activity_Report_${selectedUser.User.name.replace(/\s+/g, '_')}`;
     }
 
-    const headers = ["Employee", "Date", "Status", "Login Time", "Logout Time", "Type / Reason", "IP Address", "Duration (Hrs)"];
+    const headers = ["User", "Date", "Status", "Login Time", "Logout Time", "Type / Reason", "IP Address", "Duration (Hrs)"];
     const csvRows = logs.map(log => {
       const row = [
         `"${log.User?.name || "Unknown"}"`,
@@ -362,10 +362,10 @@ const EmployeeTrack = () => {
     if (!logs || logs.length === 0) return;
     const doc = new jsPDF();
 
-    let reportTitle = "Employee Activity Report";
+    let reportTitle = "User Activity Report";
     let fileNameTitle = "Activity_Report";
 
-    if (!selectedUser && selectedUserIds.length === activeEmployees.length) {
+    if (!selectedUser && selectedUserIds.length === activeUsers.length) {
       reportTitle = "Full Team Activity Report";
       fileNameTitle = "Full_Team_Report";
     } else if (selectedUserIds.length > 1) {
@@ -376,7 +376,7 @@ const EmployeeTrack = () => {
       fileNameTitle = selectedUser.User.name.replace(/\s+/g, '_');
     }
 
-    const tableColumn = ["Employee", "Date", "Event", "Login Time", "Logout Time", "Reason", "Duration"];
+    const tableColumn = ["User", "Date", "Event", "Login Time", "Logout Time", "Reason", "Duration"];
     const tableRows = logs.map(log => {
       return [
         log.User?.name || "Unknown",
@@ -389,7 +389,7 @@ const EmployeeTrack = () => {
       ];
     });
 
-    // --- Calculate Summary Totals per Employee ---
+    // --- Calculate Summary Totals per User ---
     const userTotals = {};
     logs.forEach(log => {
       const name = log.User?.name || "Unknown";
@@ -430,7 +430,7 @@ const EmployeeTrack = () => {
       doc.text("Activity Summary (Total Hours)", 14, currentY);
 
       autoTable(doc, {
-        head: [["Employee", "Total Working Hours"]],
+        head: [["User", "Total Working Hours"]],
         body: summaryRows,
         startY: currentY + 3,
         theme: "grid",
@@ -463,7 +463,7 @@ const EmployeeTrack = () => {
     setIsSettingsOpen(true);
     setSettingsLoading(true);
     try {
-      const { data } = await apipostHandler("/api/employee-track/get-settings", {}, auth.token);
+      const { data } = await apipostHandler("/api/user-track/get-settings", {}, auth.token);
       if (data && data.status === "SUCCESS") {
         form.setFieldsValue({
           idleTimeoutMinutes: data.data.idleTimeoutMinutes,
@@ -483,7 +483,7 @@ const EmployeeTrack = () => {
     try {
       const values = await form.validateFields();
       setSettingsLoading(true);
-      const { data } = await apipostHandler("/api/employee-track/update-settings", values, auth.token);
+      const { data } = await apipostHandler("/api/user-track/update-settings", values, auth.token);
       if (data && data.status === "SUCCESS") {
         notification.success({
           message: "Settings Saved Successfully",
@@ -504,7 +504,7 @@ const EmployeeTrack = () => {
     }
   };
 
-  const filteredEmployees = activeEmployees.filter(emp =>
+  const filteredUsers = activeUsers.filter(emp =>
     emp.User.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     emp.User.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -518,7 +518,7 @@ const EmployeeTrack = () => {
         <div className="max-w-4xl w-full">
           <div className="text-center mb-12">
             <h1 className="text-4xl font-black text-slate-900 mb-4 tracking-tighter">Laboratory Tracking Terminal</h1>
-            <p className="text-slate-500 font-medium">Select a laboratory branch to view real-time employee attendance and working hours.</p>
+            <p className="text-slate-500 font-medium">Select a laboratory branch to view real-time user attendance and working hours.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -549,7 +549,7 @@ const EmployeeTrack = () => {
 
   return (
     <div className="flex h-screen bg-slate-50 font-sans text-slate-900 overflow-hidden">
-      {/* Sidebar - Active Employees List */}
+      {/* Sidebar - Active Users List */}
       <div
         className={`fixed inset-y-0 left-0 lg:relative flex flex-col bg-white border-r border-slate-200 transition-all duration-300 overflow-hidden z-40 lg:z-20 ${isSidebarOpen
           ? "translate-x-0 w-80 shadow-2xl lg:shadow-none"
@@ -573,8 +573,8 @@ const EmployeeTrack = () => {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Checkbox
-                checked={selectedUserIds.length === activeEmployees.length && activeEmployees.length > 0}
-                indeterminate={selectedUserIds.length > 0 && selectedUserIds.length < activeEmployees.length}
+                checked={selectedUserIds.length === activeUsers.length && activeUsers.length > 0}
+                indeterminate={selectedUserIds.length > 0 && selectedUserIds.length < activeUsers.length}
                 onChange={(e) => handleToggleAll(e.target.checked)}
                 className="scale-90"
               />
@@ -583,11 +583,11 @@ const EmployeeTrack = () => {
             {loading ? (
               <div className="h-4 w-12 bg-slate-200 rounded-full animate-pulse"></div>
             ) : (
-              <span className={`text-[10px] px-2 py-0.5 rounded-full font-black ${activeEmployees.filter(emp => emp.status === "LOGIN").length > 0
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-black ${activeUsers.filter(emp => emp.status === "LOGIN").length > 0
                 ? "bg-emerald-100 text-emerald-700 shadow-sm"
                 : "bg-slate-100 text-slate-500"
                 }`}>
-                {activeEmployees.filter(emp => emp.status === "LOGIN").length} ONLINE
+                {activeUsers.filter(emp => emp.status === "LOGIN").length} ONLINE
               </span>
             )}
           </div>
@@ -599,7 +599,7 @@ const EmployeeTrack = () => {
             ) : (
               <input
                 type="text"
-                placeholder="Search employees..."
+                placeholder="Search users..."
                 className="w-full pl-10 pr-4 py-2 bg-slate-100 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500 transition-all outline-none"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -609,19 +609,19 @@ const EmployeeTrack = () => {
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-2">
-          {/* Global / All Employees Entry */}
-          {!loading && filteredEmployees.length > 0 && (
+          {/* Global / All Users Entry */}
+          {!loading && filteredUsers.length > 0 && (
             <button
               onClick={() => {
                 setSelectedUser(null);
-                setSelectedUserIds(activeEmployees.map(e => e.userId));
+                setSelectedUserIds(activeUsers.map(e => e.userId));
                 if (isRangeMode && dateRange[0] && dateRange[1]) {
                   fetchFilteredReport(null, selectedLab?.lab_id, dateRange[0].format("YYYY-MM-DD"), dateRange[1].format("YYYY-MM-DD"));
                 } else if (!isRangeMode && selectedLab) {
                   fetchUserDetailStats(null, selectedLab.lab_id, selectedDate.format("YYYY-MM-DD"));
                 }
               }}
-              className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all group ${!selectedUser && selectedUserIds.length === activeEmployees.length
+              className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all group ${!selectedUser && selectedUserIds.length === activeUsers.length
                 ? "bg-blue-50 text-blue-700 shadow-sm"
                 : "hover:bg-slate-50 text-slate-600"
                 }`}
@@ -630,7 +630,7 @@ const EmployeeTrack = () => {
                 <Users className="w-6 h-6 text-blue-600" />
               </div>
               <div className="flex-1 text-left">
-                <p className="font-bold text-sm">All Employees</p>
+                <p className="font-bold text-sm">All Users</p>
                 <p className="text-[10px] text-slate-400 uppercase tracking-wider">Group Overview</p>
               </div>
               <ChevronRight className={`w-4 h-4 transition-transform ${!selectedUser ? "translate-x-1" : "opacity-0 group-hover:opacity-100"}`} />
@@ -650,8 +650,8 @@ const EmployeeTrack = () => {
                 </div>
               </div>
             ))
-          ) : filteredEmployees.length > 0 ? (
-            filteredEmployees.map((emp) => (
+          ) : filteredUsers.length > 0 ? (
+            filteredUsers.map((emp) => (
               <div key={emp.userId} className="relative group/card">
                 <button
                   onClick={() => handleUserSelect(emp)}
@@ -718,7 +718,7 @@ const EmployeeTrack = () => {
           ) : (
             <div className="text-center py-10">
               <Users className="w-12 h-12 text-slate-200 mx-auto mb-2" />
-              <p className="text-slate-400 text-sm">No employee activity found</p>
+              <p className="text-slate-400 text-sm">No user activity found</p>
             </div>
           )}
         </div>
@@ -780,7 +780,7 @@ const EmployeeTrack = () => {
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <h1 className="text-lg sm:text-xl font-black tracking-tight text-slate-800 uppercase truncate">
-                    {selectedUser ? selectedUser.User.name : (selectedLab ? "All Activity View" : "Employee Monitor")}
+                    {selectedUser ? selectedUser.User.name : (selectedLab ? "All Activity View" : "User Monitor")}
                   </h1>
                   {selectedUser && (
                     <span className={`shrink-0 w-2 h-2 rounded-full ${selectedUser.status === 'LOGIN' ? 'bg-green-500 animate-pulse' : 'bg-slate-300'}`}></span>
@@ -794,7 +794,7 @@ const EmployeeTrack = () => {
                       <span className="bg-slate-100 px-2 py-0.5 rounded text-slate-600 uppercase text-[9px] sm:text-[10px] font-black">{selectedUser.User.department}</span>
                     </>
                   ) : (
-                    <span>{selectedLab ? `Viewing activity summary for ${selectedLab.lab_name}` : "Select an employee to begin session tracking"}</span>
+                    <span>{selectedLab ? `Viewing activity summary for ${selectedLab.lab_name}` : "Select a user to begin session tracking"}</span>
                   )}
                 </div>
               </div>
@@ -905,13 +905,13 @@ const EmployeeTrack = () => {
                     ? selectedUserIds 
                     : (selectedUser ? selectedUser.userId : (selectedUserIds.length === 1 ? selectedUserIds[0] : null));
 
-                  const isAllSelected = selectedUserIds.length === activeEmployees.length;
+                  const isAllSelected = selectedUserIds.length === activeUsers.length;
                   const fetchTarget = (isAllSelected && !selectedUser) ? null : targetIds;
 
                   if (isRangeMode && dateRange[0] && dateRange[1]) {
                     fetchFilteredReport(fetchTarget, selectedLab?.lab_id, dateRange[0].format("YYYY-MM-DD"), dateRange[1].format("YYYY-MM-DD"));
                   } else {
-                    fetchActiveEmployees(selectedLab?.lab_id, selectedDate.format("YYYY-MM-DD"), null, true);
+                    fetchActiveUsers(selectedLab?.lab_id, selectedDate.format("YYYY-MM-DD"), null, true);
                     fetchUserDetailStats(fetchTarget, selectedLab?.lab_id, selectedDate.format("YYYY-MM-DD"));
                   }
                 }}
@@ -1019,7 +1019,7 @@ const EmployeeTrack = () => {
                   <table className="w-full text-left">
                     <thead className="bg-slate-50/50">
                       <tr>
-                        {!selectedUser && <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Employee</th>}
+                        {!selectedUser && <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">User</th>}
                         <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Date</th>
                         <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Event</th>
                         <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Login Time</th>
@@ -1177,9 +1177,9 @@ const EmployeeTrack = () => {
               <div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mb-6 animate-pulse">
                 <Users className="w-12 h-12 text-slate-200" />
               </div>
-              <h2 className="text-2xl font-black text-slate-800 mb-2 tracking-tight">Select an Employee</h2>
+              <h2 className="text-2xl font-black text-slate-800 mb-2 tracking-tight">Select a User</h2>
               <p className="text-slate-400 max-w-sm mb-8">
-                Choose an active employee from the left panel to view their detailed working hours, login events, and activity logs.
+                Choose an active user from the left panel to view their detailed working hours, login events, and activity logs.
               </p>
               <div className="flex gap-2">
                 <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
@@ -1195,7 +1195,7 @@ const EmployeeTrack = () => {
         title={
           <div className="flex items-center gap-2 text-slate-800">
             <Settings className="w-5 h-5 text-blue-600" />
-            Employee Tracking Settings
+            User Tracking Settings
           </div>
         }
         open={isSettingsOpen}
@@ -1285,4 +1285,4 @@ const EmployeeTrack = () => {
   );
 };
 
-export default EmployeeTrack;
+export default UserTrack;

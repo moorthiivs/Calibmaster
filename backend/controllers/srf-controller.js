@@ -28,6 +28,7 @@ let err;
 
 const addSRFHandler = async (req, res, next) => {
 
+
   const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
   let code = 200;
   const path = "/api/srf/add";
@@ -1394,6 +1395,7 @@ const addSRFHandler = async (req, res, next) => {
 };
 
 const getSRFs = async (req, res, next) => {
+
   const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
   let code = 200;
   const path = "/api/srf/getall";
@@ -3144,6 +3146,8 @@ exports.addItemtoSRF = addItemtoSRF;
 exports.addBulkItemtoSRF = addBulkItemtoSRF;
 exports.getsrfbyId = getsrfbyId;
 exports.getSRFs = getSRFs;
+
+
 exports.addSRFHandler = addSRFHandler;
 exports.getSrfItems = getSrfItems;
 exports.fetchSrfItem = fetchSrfItem;

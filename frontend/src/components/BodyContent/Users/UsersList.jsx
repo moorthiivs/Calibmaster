@@ -1,10 +1,11 @@
 import { useContext, useEffect, useState } from "react";
 import { Spinner, MenuItem, CheckboxToggle, ButtonMenu } from "react-rainbow-components";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faEdit, faEllipsisV, faLock, faSearch } from "@fortawesome/free-solid-svg-icons";
+import { faEdit, faEllipsisV, faLock, faSearch, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { useDispatch, useSelector } from "react-redux";
 import { AuthContext } from "../../../context/auth-context";
-import config from "../../../utils/config.js";
+import { usePermissions } from "../../../hooks/usePermissions";
+import config from "../../../utils/config.json";
 import { notificationActions } from "../../../store/nofitication";
 import { usersActions } from "../../../store/users";
 import EditUserModal from "./EditUserModal";
@@ -14,7 +15,7 @@ import "./UsersList.css";
 import ClientUserModal from "./ClientUserModal";
 import Loader from "../../UI/Loader";
 import DataTable from "../../common/DataTable";
-import { Input, Space, Button, Tooltip } from "antd";
+import { Input, Space, Button, Tooltip, Modal, message } from "antd";
 import { EyeFilled, EyeInvisibleFilled, SearchOutlined } from "@ant-design/icons";
 
 
@@ -30,6 +31,7 @@ const UsersList = (props) => {
   const auth = useContext(AuthContext);
   const dispatch = useDispatch();
   const users = useSelector((state) => state.users.list);
+  const { hasPermission } = usePermissions();
 
   const [resetPasswordModal, setResetPasswordModal] = useState(false);
 
@@ -94,51 +96,46 @@ const UsersList = (props) => {
     fetchUsers();
   }, []);
 
-  // const userdeleteHandler = async (v) => {
-  //   setIsLoaded(false);
-  //   const requestOptions = {
-  //     method: "POST",
-  //     headers: {
-  //       "Content-Type": "application/json",
-  //       Authorization: "Bearer " + auth.token,
-  //     },
-  //     body: JSON.stringify({ userId: v, labId: auth.labId }),
-  //   };
-  //   const errornotification = {
-  //     title: "Error while Deleting User!!",
-  //     description: "UserId: " + v,
-  //     icon: "error",
-  //     state: true,
-  //     timeout: 15000,
-  //   };
-  //   fetch(config.Calibmaster.URL + "/api/users/deleteuser", requestOptions)
-  //     .then(async (response) => {
-  //       const data = await response.json();
-  //       setIsLoaded(true);
-  //       console.log(data);
-  //       if (data) {
-  //         if (data.code === 200) {
-  //           const newNotification = {
-  //             title: "User Deleted Successfully",
-  //             description: "UserId: " + v,
-  //             icon: "success",
-  //             state: true,
-  //             timeout: 15000,
-  //           };
-  //           //console.log(data);
-  //           dispatch(usersActions.changeusers(data.data));
-  //           dispatch(notificationActions.changenotification(newNotification));
-  //         } else {
-  //           dispatch(notificationActions.changenotification(errornotification));
-  //         }
-  //       } else {
-  //         dispatch(notificationActions.changenotification(errornotification));
-  //       }
-  //     })
-  //     .catch((err) => {
-  //       dispatch(notificationActions.changenotification(errornotification));
-  //     });
-  // };
+  const userDeleteHandler = (v) => {
+    Modal.confirm({
+      title: "Are you sure you want to delete this user?",
+      content: "This action cannot be undone. If the user has history in the system, they should be disabled instead.",
+      okText: "Delete",
+      okType: "danger",
+      cancelText: "Cancel",
+      onOk: async () => {
+        setIsLoaded(false);
+        try {
+          const response = await fetch(config.Calibmaster.URL + "/api/users/deleteuser", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: "Bearer " + auth.token,
+            },
+            body: JSON.stringify({ userId: v, labId: auth.labId }),
+          });
+          const data = await response.json();
+          setIsLoaded(true);
+
+          if (data.code === 200) {
+            dispatch(notificationActions.changenotification({
+              title: "User Deleted Successfully",
+              icon: "success",
+              state: true,
+              timeout: 5000,
+            }));
+            fetchUsers();
+          } else {
+            // Show the specific error message from backend (e.g. "associated with records")
+            message.error(data.message || "Failed to delete user");
+          }
+        } catch (err) {
+          setIsLoaded(true);
+          message.error("An error occurred while deleting the user.");
+        }
+      },
+    });
+  };
 
   const userEditHandler = (v) => {
     setEditUserModal(true);
@@ -408,19 +405,40 @@ const UsersList = (props) => {
   };
 
   const renderToggle = ({ row }) => {
+    if (hasPermission("EDIT_USER")) {
+      return (
+        <CheckboxToggle
+          value={row.rstatus}
+          onChange={() => toggleUserStatus(row)}
+        />
+      );
+    }
+    // Read-only status badge for users without EDIT_USER
     return (
-      <CheckboxToggle
-        value={row.rstatus}
-        onChange={() => toggleUserStatus(row)}
-      />
+      <span style={{
+        padding: "2px 10px",
+        borderRadius: "12px",
+        fontSize: "12px",
+        fontWeight: 600,
+        background: row.rstatus === 1 ? "#d1fae5" : "#fee2e2",
+        color: row.rstatus === 1 ? "#065f46" : "#991b1b",
+      }}>
+        {row.rstatus === 1 ? "Active" : "Inactive"}
+      </span>
     );
   };
 
   const ActionsComponent = ({ row }) => {
-
     return <ButtonMenu menuAlignment="center" menuSize="x-small" title='actions' buttonSize={'small'} icon={<FontAwesomeIcon icon={faEllipsisV} />} >
-      {row?.department != 'Client' && <MenuItem label="Edit" icon={<FontAwesomeIcon icon={faEdit} />} iconPosition="left" onClick={(event, data) => userEditHandler(row.id)} />}
-      <MenuItem label="Reset Password" icon={<FontAwesomeIcon icon={faLock} />} iconPosition="left" onClick={(event, data) => passwordResetHandler(row)} />
+      {(row?.department != 'Client' && hasPermission("EDIT_USER")) && (
+        <MenuItem label="Edit" icon={<FontAwesomeIcon icon={faEdit} />} iconPosition="left" onClick={(event, data) => userEditHandler(row.id)} />
+      )}
+      {hasPermission("PASSWORD_RESET_USER") && (
+        <MenuItem label="Reset Password" icon={<FontAwesomeIcon icon={faLock} />} iconPosition="left" onClick={(event, data) => passwordResetHandler(row)} />
+      )}
+      {hasPermission("DELETE_USER") && (
+        <MenuItem label="Delete" icon={<FontAwesomeIcon icon={faTrash} />} iconPosition="left" onClick={(event, data) => userDeleteHandler(row.id)} variant="destructive" />
+      )}
     </ButtonMenu>
   };
 

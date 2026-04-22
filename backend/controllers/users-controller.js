@@ -55,6 +55,10 @@ const login = async (req, res, next) => {
               ],
             },
           },
+          {
+            model: require("../models").Role,
+            as: "role",
+          }
         ],
       });
     } else {
@@ -124,19 +128,23 @@ const login = async (req, res, next) => {
   }
 
   let token;
+  let refreshToken;
   let userId = existingUser.id;
 
-  //Creating Token
+  //Creating Access Token (short-lived: 10h)
   try {
     token = jwt.sign(
       {
         userId: existingUser.id,
         name: existingUser.name,
         email: existingUser.email,
+        labId: existingUser.labId,
+        roleId: existingUser.roleId,
+        permissions: existingUser.role ? existingUser.role.permissions : [],
         department: existingUser.department,
       },
       config.TOKEN_SECRET,
-      { expiresIn: "10h" }
+      { expiresIn: "8h" }
     );
   } catch (err) {
     isError = true;
@@ -146,6 +154,21 @@ const login = async (req, res, next) => {
     error.code = code;
     error.path = path;
     return errorHandler(error, req, res, next);
+  }
+
+  // Creating Refresh Token (long-lived: 7 days) — stored in DB
+  try {
+    refreshToken = jwt.sign(
+      { userId: existingUser.id, department: existingUser.department },
+      config.REFRESH_TOKEN_SECRET,
+      { expiresIn: "7d" }
+    );
+    // Store refresh token in DB (plain — not hashed for simplicity, can bcrypt if needed)
+    await User.update({ refreshToken }, { where: { id: existingUser.id } });
+  } catch (err) {
+    // Refresh token failure is non-fatal — access token still works
+    console.error("[login] Failed to store refresh token:", err);
+    refreshToken = null;
   }
 
   //Retuning 200 response
@@ -160,6 +183,7 @@ const login = async (req, res, next) => {
         data: {
           userId: userId,
           token: token,
+          refreshToken: refreshToken,
           name: existingUser.name,
           email: existingUser.email,
           department: existingUser.department,
@@ -167,6 +191,8 @@ const login = async (req, res, next) => {
           image: existingUser.lab.dataValues.brand_logo,
           imgtype: existingUser.lab.dataValues.brand_logo_mime_type,
           labId: existingUser.labId,
+          roleId: existingUser.roleId,
+          permissions: existingUser.role ? existingUser.role.permissions : [],
         },
         message: "Login Success!!",
       });
@@ -177,6 +203,7 @@ const login = async (req, res, next) => {
         data: {
           userId: userId,
           token: token,
+          refreshToken: null,
           name: existingUser.name,
           email: existingUser.email,
           department: existingUser.department,
@@ -185,6 +212,90 @@ const login = async (req, res, next) => {
         message: "Login Success!!",
       });
     }
+  }
+};
+
+// ── Refresh Token Endpoint ────────────────────────────────────────────────────
+const refreshTokenHandler = async (req, res, next) => {
+  const { refreshToken } = req.body;
+
+  if (!refreshToken) {
+    return res.status(401).json({ status: "FAILURE", code: 401, message: "Refresh token missing" });
+  }
+
+  let decoded;
+  try {
+    decoded = jwt.verify(refreshToken, config.REFRESH_TOKEN_SECRET);
+  } catch (err) {
+    return res.status(401).json({ status: "FAILURE", code: 401, message: "Refresh token expired or invalid. Please log in again." });
+  }
+
+  try {
+    const Role = require("../models").Role;
+    const user = await User.findOne({
+      where: { id: decoded.userId, refreshToken: refreshToken },
+      include: [{ model: Role, as: "role" }],
+    });
+
+    if (!user) {
+      // Token was revoked (logout happened) or doesn't match stored token
+      return res.status(401).json({ status: "FAILURE", code: 401, message: "Refresh token revoked. Please log in again." });
+    }
+
+    if (user.rstatus === 0) {
+      return res.status(401).json({ status: "FAILURE", code: 401, message: "Your account has been disabled." });
+    }
+
+    // Issue a fresh access token
+    const newAccessToken = jwt.sign(
+      {
+        userId: user.id,
+        name: user.name,
+        email: user.email,
+        labId: user.labId,
+        roleId: user.roleId,
+        permissions: user.role ? user.role.permissions : [],
+        department: user.department,
+      },
+      config.TOKEN_SECRET,
+      { expiresIn: "10h" }
+    );
+
+    // Rotate refresh token — issue a new one and store it (prevents reuse)
+    const newRefreshToken = jwt.sign(
+      { userId: user.id, department: user.department },
+      config.REFRESH_TOKEN_SECRET,
+      { expiresIn: "7d" }
+    );
+    await user.update({ refreshToken: newRefreshToken });
+
+    return res.status(200).json({
+      status: "SUCCESS",
+      code: 200,
+      data: {
+        token: newAccessToken,
+        refreshToken: newRefreshToken,
+      },
+      message: "Token refreshed successfully",
+    });
+
+  } catch (err) {
+    console.error("[refreshToken] Error:", err);
+    return res.status(500).json({ status: "FAILURE", code: 500, message: "Internal server error" });
+  }
+};
+
+// ── Logout — Revoke Refresh Token ─────────────────────────────────────────────
+const logoutUser = async (req, res, next) => {
+  try {
+    const userId = req.userId; // set by check-auth middleware
+    if (userId) {
+      await User.update({ refreshToken: null }, { where: { id: userId } });
+    }
+    return res.status(200).json({ status: "SUCCESS", code: 200, message: "Logged out successfully" });
+  } catch (err) {
+    console.error("[logout] Error:", err);
+    return res.status(500).json({ status: "FAILURE", code: 500, message: "Internal server error" });
   }
 };
 
@@ -200,18 +311,7 @@ const adduser = async (req, res, next) => {
   const valid = newUserSchema(req.body);
   let isError = false;
 
-  //Checking Admin User If not return Error Response
-  const isadmin = req.department == "admin";
 
-  if (!isadmin) {
-    isError = true;
-    code = 401;
-    action = "Unauthorized to add user!!";
-    const error = new Error(action);
-    error.code = code;
-    error.path = path;
-    return errorHandler(error, req, res, next);
-  }
 
   if (!valid) {
     isError = true;
@@ -223,7 +323,12 @@ const adduser = async (req, res, next) => {
     return errorHandler(error, req, res, next);
   }
 
-  const { name, email, password, department, labId } = req.body;
+  let { name, email, password, department, labId, title, roleId } = req.body;
+  let signature = req.file ? 'employee_signature/' + req.file.filename : null;
+
+  // Convert types from FormData
+  labId = parseInt(labId, 10);
+  roleId = roleId ? parseInt(roleId, 10) : null;
 
   const calibmaster_client_id = new Date().getTime();
 
@@ -231,8 +336,6 @@ const adduser = async (req, res, next) => {
   if (department === "Client") {
     companyId = req.body.companyId;
   }
-
-  // return res.json(req.body);
 
   //Checking user in Database
   let existingUser;
@@ -283,7 +386,10 @@ const adduser = async (req, res, next) => {
       rstatus: 1,
       labId,
       calibmaster_client_id,
-      companyId
+      companyId,
+      title,
+      signature,
+      roleId
     });
     const result = await newUser.save();
   } catch (err) {
@@ -425,7 +531,6 @@ const adduser = async (req, res, next) => {
 };
 
 const getAllUsers = async (req, res, next) => {
-
   const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
   let code = 200;
   const path = "/api/users/getall";
@@ -445,25 +550,10 @@ const getAllUsers = async (req, res, next) => {
     error.path = path;
     return errorHandler(error, req, res, next);
   }
-
-  //Checking Admin User If not return Error Response
-  const isadmin = req.department == "admin";
-
-  if (!isadmin) {
-    isError = true;
-    code = 401;
-    action = "Unauthorized Usage!!";
-    const error = new Error(action);
-    error.code = code;
-    error.path = path;
-    return errorHandler(error, req, res, next);
-  }
-
-  //Getting All Users
   try {
     users = await User.findAll({
       where: {
-        department: { [Op.ne]: "admin" },
+        department: { [Op.ne]: "root" },
         // rstatus: 1,
         labId: labId,
       },
@@ -513,17 +603,6 @@ const getuserbyid = async (req, res, next) => {
   let userId = req.userId;
   let isError = false;
   let user;
-  //Checking Admin User If not return Error Response
-  const isadmin = req.department == "admin";
-  if (!isadmin) {
-    isError = true;
-    code = 401;
-    action = "User Already Exists!!";
-    const error = new Error(action);
-    error.code = code;
-    error.path = path;
-    return errorHandler(error, req, res, next);
-  }
 
   //If userId not exists in body return Error Response
   if (!req.body.userId) {
@@ -574,17 +653,6 @@ const updateuser = async (req, res, next) => {
 
   let valid;
   let isError = false;
-  //Checking Admin User If not return Error Response
-  const isadmin = req.department == "admin";
-  if (!isadmin) {
-    isError = true;
-    code = 401;
-    action = "Unauthorized Usage!!";
-    const error = new Error(action);
-    error.code = code;
-    error.path = path;
-    return errorHandler(error, req, res, next);
-  }
 
   if (req.body.password) {
     valid = newUserSchema(req.body);
@@ -625,11 +693,29 @@ const updateuser = async (req, res, next) => {
     error.path = path;
     return errorHandler(error, req, res, next);
   }
+
+
+  let { title, roleId } = req.body;
+  roleId = roleId ? parseInt(roleId, 10) : null;
+  
+  let updateData = {
+    name: req.body.name,
+    email: req.body.email,
+    department: req.body.department,
+    title,
+    roleId
+  };
+
+  if (req.file) {
+    updateData.signature = 'employee_signature/' + req.file.filename;
+  }
+
   let hashedPassword;
   if (req.body.password) {
     //Encrypting the password
     try {
       hashedPassword = await bcrypt.hash(req.body.password, 12);
+      updateData.password = hashedPassword;
     } catch (err) {
       isError = true;
       code = 500;
@@ -639,38 +725,18 @@ const updateuser = async (req, res, next) => {
       error.path = path;
       return errorHandler(error, req, res, next);
     }
-    try {
-      await existingUser.update({
-        name: req.body.name,
-        email: req.body.email,
-        department: req.body.department,
-        password: hashedPassword,
-      });
-    } catch (err) {
-      isError = true;
-      code = 500;
-      action = "Internal Server Error!!";
-      const error = new Error(action);
-      error.code = code;
-      error.path = path;
-      return errorHandler(error, req, res, next);
-    }
-  } else {
-    try {
-      await existingUser.update({
-        name: req.body.name,
-        email: req.body.email,
-        department: req.body.department,
-      });
-    } catch (err) {
-      isError = true;
-      code = 500;
-      action = "Internal Server Error!!";
-      const error = new Error(action);
-      error.code = code;
-      error.path = path;
-      return errorHandler(error, req, res, next);
-    }
+  }
+
+  try {
+    await existingUser.update(updateData);
+  } catch (err) {
+    isError = true;
+    code = 500;
+    action = "Internal Server Error!!";
+    const error = new Error(action);
+    error.code = code;
+    error.path = path;
+    return errorHandler(error, req, res, next);
   }
   let users;
   //Getting All Users
@@ -715,17 +781,6 @@ const enableuser = async (req, res, next) => {
   let sessionId = req.sessionId;
   let userId = req.userId;
   let isError = false;
-  //Checking Admin User If not return Error Response
-  const isadmin = req.department == "admin";
-  if (!isadmin) {
-    isError = true;
-    code = 401;
-    action = "Unauthorized Usage!!";
-    const error = new Error(action);
-    error.code = code;
-    error.path = path;
-    return errorHandler(error, req, res, next);
-  }
 
   if (!req.body.userId && !req.body.labId) {
     isError = true;
@@ -836,17 +891,6 @@ const disableuser = async (req, res, next) => {
   let sessionId = req.sessionId;
   let userId = req.userId;
   let isError = false;
-  //Checking Admin User If not return Error Response
-  const isadmin = req.department == "admin";
-  if (!isadmin) {
-    isError = true;
-    code = 401;
-    action = "Unauthorized Usage!!";
-    const error = new Error(action);
-    error.code = code;
-    error.path = path;
-    return errorHandler(error, req, res, next);
-  }
 
   if (!req.body.userId && !req.body.labId) {
     isError = true;
@@ -1223,7 +1267,83 @@ const fetchUsersByLabId = async (req, res) => {
     return errorHandler(error, req, res, next);
   }
 }
+const deleteUser = async (req, res, next) => {
+  const { userId, labId } = req.body;
+  const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+  const path = "/api/users/deleteuser";
+  let action = "Deleting User!!";
+  let sessionId = req.sessionId;
 
+  try {
+    if (!userId || !labId) {
+      const error = new Error("User ID and Lab ID are required");
+      error.code = 400;
+      return errorHandler(error, req, res, next);
+    }
+
+    const srfitem = require("../models").srfitem;
+    const UserTracking = require("../models").UserTracking;
+
+    // 1. Check for associations in srfitem
+    const associatedSrf = await srfitem.findOne({
+      where: {
+        [Op.or]: [
+          { created_by_user_id: userId },
+          { updated_by_user_id: String(userId) },
+          { assignedTo: userId },
+          { deletedby_id: userId }
+        ]
+      }
+    });
+
+    if (associatedSrf) {
+      return res.status(409).json({
+        status: "FAILURE",
+        code: 409,
+        message: "Cannot delete user: This user is associated with SRF items. Please disable the user instead to preserve audit history."
+      });
+    }
+
+    // 2. Check for associations in UserTracking
+    const associatedTracking = await UserTracking.findOne({
+      where: { userId }
+    });
+
+    if (associatedTracking) {
+      return res.status(409).json({
+        status: "FAILURE",
+        code: 409,
+        message: "Cannot delete user: This user has historical tracking/login data. Please disable the user instead."
+      });
+    }
+
+    // 3. Perform deletion
+    const deletedCount = await User.destroy({
+      where: { id: userId, labId: labId }
+    });
+
+    if (deletedCount === 0) {
+      const error = new Error("User not found or already deleted");
+      error.code = 404;
+      return errorHandler(error, req, res, next);
+    }
+
+    let message = `${ip} ${req.userId} ${sessionId} 200 ${path} - ${action}`;
+    logger.info(message);
+
+    return res.status(200).json({
+      status: "SUCCESS",
+      code: 200,
+      message: "User deleted successfully"
+    });
+
+  } catch (err) {
+    console.error("[deleteUser] Error:", err);
+    return errorHandler(err, req, res, next);
+  }
+}
+
+exports.deleteuser = deleteUser;
 exports.enableuser = enableuser;
 exports.disableuser = disableuser;
 exports.updateuser = updateuser;
@@ -1233,4 +1353,6 @@ exports.adduser = adduser;
 exports.login = login;
 exports.resetPassword = resetPassword;
 exports.adminResetPassword = adminResetPassword;
-exports.fetchUsersByLabId = fetchUsersByLabId
+exports.fetchUsersByLabId = fetchUsersByLabId;
+exports.refreshTokenHandler = refreshTokenHandler;
+exports.logoutUser = logoutUser;

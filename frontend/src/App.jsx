@@ -12,10 +12,11 @@ import Dashboard from "./Pages/Dashboard";
 import LoginPage from "./Pages/LoginPage";
 import UnavailablePage from "./Pages/UnavailablePage";
 import OfflinePage from "./Pages/OfflinePage";
-import config from "./utils/config.js";
+import config from "./utils/config.json";
 import ExcelTable from "./components/BodyContent/CalibmasterExcel/ExcelTable/ExcelTable";
 import EnterResult from "./components/BodyContent/SRFs/ResultComponent/EnterResult";
 import { apipostHandler } from "./utils/api";
+import { tryRefreshToken } from "./utils/apiClient";
 
 // ✅ Import all page components
 import AddSRF from "./components/BodyContent/AddSRF/AddSRF";
@@ -47,8 +48,7 @@ import CreateCertificateConfig from "./components/BodyContent/CMSettings/Certifi
 import ListCertificateConfig from "./components/BodyContent/CMSettings/Certificate/ListCertificateConfig";
 import DefineProcedure from "./components/BodyContent/DefineProcedure/DefineProcedure";
 import ListDefinedProcedure from "./components/BodyContent/DefineProcedure/ListDefinedProcedure";
-import CreateEmployee from "./components/BodyContent/EmployeeMasters/CreateEmployee";
-import ListEmployee from "./components/BodyContent/EmployeeMasters/ListEmployee";
+import Roles from "./components/BodyContent/Roles/Roles";
 import DueDateChecker from "./components/BodyContent/CalibrationDueDate/DueDateCount";
 import PasswordReset from "./components/BodyContent/AdminInfo/PasswordReset";
 import AddBankConfig from "./components/BodyContent/BankConfig/AddBankDetails";
@@ -57,7 +57,7 @@ import QuotationConfig from "./components/BodyContent/Quotation/QuotationConfig/
 import QuotationConfigList from "./components/BodyContent/Quotation/QuotationConfig/QuotationConfigList";
 import QuotationItem from "./components/BodyContent/Quotation/QuotationItem/QuotationItem";
 import QuotationCustomerList from "./components/BodyContent/Quotation/QuotationItem/QuotationCustomerList";
-import AddULR from "./components/BodyContent/AddULR/AddULR";
+import AddUlr from "./components/BodyContent/AddULR/AddUlr";
 import ListULR from "./components/BodyContent/AddULR/ListULR";
 import CreateUncertaintyParameter from "./components/BodyContent/Uncertainty-Parameter/CreateUncertaintyParameter";
 import ListUncertaintyParameter from "./components/BodyContent/Uncertainty-Parameter/ListUncertaintyParameter";
@@ -75,127 +75,98 @@ import CertificateFormatCreator from "./components/BodyContent/CertificateFormat
 import InwardReports from "./components/BodyContent/Reports/InwardReports";
 import MakeModelPage from "./components/BodyContent/MakeAndModel/MakeModelPage";
 import DeletedIndex from "./components/BodyContent/DataStorage/DeletedIndex";
-import EmployeeTrack from "./components/BodyContent/EmployeeTrack/EmployeeTrack";
+import UserTrack from "./components/BodyContent/UserTrack/UserTrack";
+import DashboardErrorBoundary from "./components/errors/DashboardErrorBoundary";
 
 // ─── Task Management (NEW) ────────────────────────────────────────────────────
 import TaskList from "./Pages/TaskManagement/TaskList";
 import CreateTask from "./Pages/TaskManagement/CreateTask";
 import TaskDetail from "./Pages/TaskManagement/TaskDetail";
 
-import DashboardErrorBoundary from "./components/errors/DashboardErrorBoundary";
 import PageErrorBoundary from "./components/errors/PageErrorBoundary";
 import WarrringModel from "./components/UI/WarrringModel";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const AppContent = () => {
-  // ✅ Synchronously initialize auth state from localStorage to prevent redirect loops on mount
-  const [userData, setUserData] = useState(() => {
-    const stored = localStorage.getItem("calibmaster_userData");
-    if (stored) {
-      const data = JSON.parse(stored);
-      if (new Date(data.expiration) > new Date()) return data;
-    }
-    return null;
-  });
-
-  const [token, setToken] = useState(userData?.token || null);
-  const [userId, setUserId] = useState(userData?.userId || null);
-  const [tokenExp, setTokenExp] = useState(userData ? new Date(userData.expiration) : null);
-  const [name, setName] = useState(userData?.name || null);
-  const [department, setDepartment] = useState(userData?.department || null);
-  const [email, setEmail] = useState(userData?.email || null);
-  const [labId, setLabId] = useState(userData?.labId || null);
-  // ✅ Check if running in Electron
-  const isDesktop = !!window.electron;
-
-  // ✅ Initialize states from cache to allow offline boot
-  const [availability, setAvailability] = useState(() => {
-    return JSON.parse(localStorage.getItem("calibmaster_availability") || "true");
-  });
-  const [version, setVersion] = useState(() => {
-    return localStorage.getItem("calibmaster_version") || "1.0.0";
-  });
+  const [token, setToken] = useState(null);
+  const [userId, setUserId] = useState(null);
+  const [tokenExp, setTokenExp] = useState(null);
+  const [name, setName] = useState(null);
+  const [department, setDepartment] = useState(null);
+  const [email, setEmail] = useState(null);
+  const [availability, setAvailability] = useState(false);
+  const [labId, setLabId] = useState(null);
+  const [version, setVersion] = useState(null);
   const [networkOnline, setNetworkOnline] = useState(true);
   const [idleTimeoutMinutes, setIdleTimeoutMinutes] = useState(20);
   const [sessionSynced, setSessionSynced] = useState(false);
 
   const [showIdleModal, setShowIdleModal] = useState(false);
-  const [countdown, setCountdown] = useState(10);
+  const [countdown, setCountdown] = useState(60);
 
   const isLoading = useSelector((state) => state.isloading.state);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
   const lastActivityTimeRef = useRef(Date.now());
+  const sessionWasStaleRef = useRef(false);
   const channelRef = useRef(null);
 
 
-  // useEffect(() => {
-  //   const handleOnline = () => {
-  //     setNetworkOnline(true);
-  //     notification.success({
-  //       message: "Back Online",
-  //       description: "Internet connection restored.",
-  //       placement: "bottomRight",
-  //     });
-  //     navigate(-1); // go back to last page
-  //   };
+  useEffect(() => {
+    const handleOnline = () => {
+      setNetworkOnline(true);
+      notification.success({
+        message: "Back Online",
+        description: "Internet connection restored.",
+        placement: "bottomRight",
+      });
+      navigate(-1); // go back to last page
+    };
 
-  //   const handleOffline = () => {
-  //     setNetworkOnline(false);
-  //     notification.warning({
-  //       message: "Offline Mode",
-  //       description: "You are currently offline. Redirecting...",
-  //       placement: "bottomRight",
-  //     });
-  //     navigate("/offline");
-  //   };
+    const handleOffline = () => {
+      setNetworkOnline(false);
+      notification.warning({
+        message: "Offline Mode",
+        description: "You are currently offline. Redirecting...",
+        placement: "bottomRight",
+      });
+      navigate("/offline");
+    };
 
-  //   window.addEventListener("online", handleOnline);
-  //   window.addEventListener("offline", handleOffline);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
 
-  //   return () => {
-  //     window.removeEventListener("online", handleOnline);
-  //     window.removeEventListener("offline", handleOffline);
-  //   };
-  // }, [navigate]);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, [navigate]);
 
 
   useEffect(() => {
-    const checkAvailability = async () => {
-      try {
-        const response = await fetch(config.Calibmaster.URL + "/api/heartbeat/check");
+    fetch(config.Calibmaster.URL + "/api/heartbeat/check")
+      .then(async (response) => {
         const data = await response.json();
-
         if (data?.status === "available") {
           setAvailability(true);
           setVersion(data.version);
-          // Sync to cache
-          localStorage.setItem("calibmaster_availability", "true");
-          localStorage.setItem("calibmaster_version", data.version);
         } else {
           setAvailability(false);
-          localStorage.setItem("calibmaster_availability", "false");
         }
-      } catch (err) {
-        console.warn("Heartbeat failed (Offline):", err);
-        // On Desktop, we don't block access if the network fails
-        if (!isDesktop) {
-          setAvailability(false);
-        }
-      }
-    };
-
-    checkAvailability();
-    // Re-check periodically
-    const interval = setInterval(checkAvailability, 60000);
-    return () => clearInterval(interval);
-  }, [isDesktop]);
+      })
+      .catch(() => {
+        setAvailability(false);
+      });
+  }, []);
 
 
-  const login = useCallback((uid, token, name, email, department, labid, expirationDate) => {
+  const [roleId, setRoleId] = useState(null);
+  const [permissions, setPermissions] = useState([]);
+
+  const login = useCallback((uid, token, name, email, department, labid, roleIdParam, permissionsParam, expirationDate) => {
 
     const decodedToken = jwtDecode(token);
-    //const tokenExpirationDate = expirationDate || new Date(new Date().getTime() + 1000 * 60); // 1 minute for testing
     // exp is in seconds → convert to milliseconds
     const tokenExpirationDate =
       expirationDate || new Date(decodedToken.exp * 1000);
@@ -205,6 +176,8 @@ const AppContent = () => {
     setDepartment(department);
     setEmail(email);
     setLabId(labid);
+    setRoleId(roleIdParam);
+    setPermissions(permissionsParam || []);
     setTokenExp(tokenExpirationDate);
 
     localStorage.setItem(
@@ -216,6 +189,8 @@ const AppContent = () => {
         department,
         email,
         labId: labid,
+        roleId: roleIdParam,
+        permissions: permissionsParam || [],
         expiration: tokenExpirationDate.toISOString(),
       })
     );
@@ -227,8 +202,8 @@ const AppContent = () => {
       channelRef.current.postMessage({ type: "LOGOUT" });
     }
     // Track Logout - Avoid hitting the API if it's a stale or synchronized broadcast logout
-    if (userId !== null && userId !== undefined && token && type !== "STALE_SESSION" && type !== "SYNC_LOGOUT") {
-      apipostHandler("/api/employee-track/logout", { userId, logoutType: type }, token);
+    if (userId && token && email !== "root@iviewsense.com" && type !== "STALE_SESSION" && type !== "SYNC_LOGOUT") {
+      apipostHandler("/api/user-track/logout", { userId, logoutType: type }, token);
     }
     setShowIdleModal(false);
     setToken(null);
@@ -238,39 +213,80 @@ const AppContent = () => {
     setDepartment(null);
     setEmail(null);
     setLabId(null);
-    localStorage.clear()
-    sessionStorage.clear()
+    setRoleId(null);
+    setPermissions([]);
+    localStorage.clear();
+    sessionStorage.clear();
     localStorage.removeItem("calibmaster_userData");
     localStorage.removeItem("logo");
+    localStorage.removeItem("token");
+    localStorage.removeItem("refreshToken");
   }, [userId, token, dispatch]);
 
-  // (Redundant but safe: logic moved to sync initializer)
   useEffect(() => {
-    if (!token) {
-      const storedData = JSON.parse(localStorage.getItem("calibmaster_userData"));
-      if (storedData?.token && new Date(storedData.expiration) > new Date()) {
-        login(
-          storedData.userId,
-          storedData.token,
-          storedData.name,
-          storedData.email,
-          storedData.department,
-          storedData.labId,
-          new Date(storedData.expiration)
-        );
-      }
+    const storedData = JSON.parse(localStorage.getItem("calibmaster_userData"));
+    if (storedData?.token && new Date(storedData.expiration) > new Date()) {
+      login(
+        storedData.userId,
+        storedData.token,
+        storedData.name,
+        storedData.email,
+        storedData.department,
+        storedData.labId,
+        storedData.roleId,
+        storedData.permissions,
+        new Date(storedData.expiration)
+      );
     }
-  }, [login, token]);
+  }, [login]);
 
-  // Auto Logout (Token Expiration)
+  // ── Token Expiry: Try Refresh First, Logout Only If Refresh Fails ──────────
   useEffect(() => {
     let logoutTimer;
     if (token && tokenExp) {
       const remainingTime = new Date(tokenExp).getTime() - new Date().getTime();
+
+      const handleExpiry = async () => {
+        // 1. Try to silently refresh the access token
+        const newToken = await tryRefreshToken();
+        if (newToken) {
+          // Refresh succeeded — update React state + localStorage so everything uses new token
+          try {
+            const decoded = jwtDecode(newToken);
+            const newExp = new Date(decoded.exp * 1000);
+            setToken(newToken);
+            setTokenExp(newExp);
+
+            // Update calibmaster_userData so page refresh also gets the new token
+            const stored = JSON.parse(localStorage.getItem("calibmaster_userData") || "{}");
+            localStorage.setItem("calibmaster_userData", JSON.stringify({
+              ...stored,
+              token: newToken,
+              expiration: newExp.toISOString(),
+            }));
+            localStorage.setItem("token", newToken);
+
+            console.log("[App] Token silently refreshed — session continues");
+          } catch (e) {
+            console.error("[App] Failed to decode refreshed token", e);
+            logout("SESSION_EXPIRED");
+          }
+        } else {
+          // 2. Refresh failed (refresh token expired/revoked) → log out
+          console.warn("[App] Refresh token expired — logging out");
+          logout("SESSION_EXPIRED");
+        }
+      };
+
       if (remainingTime > 0) {
-        logoutTimer = setTimeout(() => logout("SESSION_EXPIRED"), remainingTime);
+        // Fire refresh 5 seconds BEFORE token expires (works for tokens as short as 6s)
+        const PROACTIVE_BUFFER_MS = 5000;
+        const refreshAt = Math.max(remainingTime - PROACTIVE_BUFFER_MS, 0);
+        console.log(`[App] Token refresh scheduled in ${Math.round(refreshAt / 1000)}s`);
+        logoutTimer = setTimeout(handleExpiry, refreshAt);
       } else {
-        logout("SESSION_EXPIRED");
+        // Already expired — try refresh immediately
+        handleExpiry();
       }
     }
     return () => {
@@ -281,7 +297,7 @@ const AppContent = () => {
   // Fetch Global Settings
   useEffect(() => {
     if (token) {
-      apipostHandler("/api/employee-track/get-settings", {}, token)
+      apipostHandler("/api/user-track/get-settings", {}, token)
         .then(({ data }) => {
           if (data && data.status === "SUCCESS") {
             setIdleTimeoutMinutes(data.data.idleTimeoutMinutes || 20);
@@ -351,27 +367,25 @@ const AppContent = () => {
       if (document.visibilityState === "visible") {
         hasHadFirstActivity = true;
         lastActivityTimeRef.current = Date.now();
-        setShowIdleModal(false);
+        if (!sessionWasStaleRef.current) setShowIdleModal(false);
       }
     };
     const handleWindowFocus = () => {
       hasHadFirstActivity = true;
       lastActivityTimeRef.current = Date.now();
-      setShowIdleModal(false);
+      if (!sessionWasStaleRef.current) setShowIdleModal(false);
     };
     document.addEventListener("visibilitychange", handleVisibilityChange);
     window.addEventListener("focus", handleWindowFocus);
     // ─────────────────────────────────────────────────────────────────────────
 
-    const WARNING_DURATION = 10 * 1000; // 10 sec
+    const WARNING_DURATION = 60 * 1000; // 60 sec
 
     // Exclude pages where internal editors (Handsontable, result entry) absorb
     // all pointer/keyboard events and they never reach document-level listeners,
     // causing false idle timeouts. These pages don't need idle logout.
     const isExcludedFromIdle =
-
-      location.pathname.includes("/exceltable") ||
-      location.pathname.includes("/enter-result") ||
+      email === "root@iviewsense.com" ||
       location.pathname.includes("/employee-track");
 
     let checkInterval;
@@ -390,7 +404,7 @@ const AppContent = () => {
         ) {
           setShowIdleModal(true);
         } else if (timeSinceLastActivity < idleTimeMillis) {
-          setShowIdleModal(false);
+          if (!sessionWasStaleRef.current) setShowIdleModal(false);
         }
 
         if (timeSinceLastActivity >= idleTimeMillis + WARNING_DURATION) {
@@ -435,8 +449,13 @@ const AppContent = () => {
       return;
     }
 
+    if (email === "root@iviewsense.com") {
+      setSessionSynced(true);
+      return;
+    }
+
     // 1. Verify Session
-    apipostHandler("/api/employee-track/verify-session", { userId }, token)
+    apipostHandler("/api/user-track/verify-session", { userId }, token)
       .then((res) => {
         if (res.data && res.data.valid === false) {
           logout("STALE_SESSION");
@@ -474,8 +493,8 @@ const AppContent = () => {
       const newCount = Math.max(0, activeTabs - 1);
       localStorage.setItem('cm_open_tabs', newCount);
 
-      if (newCount === 0) {
-        const url = config.Calibmaster.URL + "/api/employee-track/intent-logout";
+      if (newCount === 0 && email !== "root@iviewsense.com") {
+        const url = config.Calibmaster.URL + "/api/user-track/intent-logout";
         const params = new URLSearchParams();
         params.append("userId", userId);
         navigator.sendBeacon(url, params);
@@ -496,24 +515,44 @@ const AppContent = () => {
   // a normally active session would be killed within minutes.
 
 
+  // useEffect(() => {
+  //   if (!token || !userId) return;
+
+  //   const ping = () => {
+  //     // Fire-and-forget — we don't want to block the UI or log errors on every ping
+  //     apipostHandler("/api/user-track/heartbeat-ping", { userId }, token).catch(() => { });
+  //   };
+
+  //   ping(); // Immediate ping on mount / login
+  //   const pingInterval = setInterval(ping, 90 * 1000); // every 90s
+  //   return () => clearInterval(pingInterval);
+  // }, [token, userId]);
+  // Heartbeat ping: keeps the DB LOGIN record's updatedAt timestamp fresh.
+  // Reads token from localStorage at call-time so it always uses the latest
+  // refreshed token — not the stale closed-over React state value.
   useEffect(() => {
     if (!token || !userId) return;
 
     const ping = () => {
-      // Periodic heartbeat check: ensures the session is still valid in the database
-      // and updates the updatedAt timestamp to prevent auto-cleanup crons.
-      apipostHandler("/api/employee-track/heartbeat-ping", { userId }, token)
+      // Always read the latest token from localStorage (updated by refresh flow)
+      const currentToken = localStorage.getItem("token") || token;
+      apipostHandler("/api/user-track/heartbeat-ping", { userId }, currentToken)
         .then((res) => {
           if (res.data && res.data.valid === false) {
-            // Admin reset or database logout detected — immediately terminate session
-            logout("ADMIN_RESET");
+            const lType = res.data.logoutType;
+            if (lType === "INACTIVE" || lType === "STALE_SESSION" || lType === "BROWSER_CLOSE" || lType === "AUTO") {
+              sessionWasStaleRef.current = true;
+              setShowIdleModal(true);
+            } else {
+              logout("ADMIN_RESET");
+            }
           }
         })
         .catch(() => { });
     };
 
     ping(); // Immediate ping on mount / login
-    const pingInterval = setInterval(ping, 20 * 1000); // Check every 20 seconds
+    const pingInterval = setInterval(ping, 20 * 1000);
     return () => clearInterval(pingInterval);
   }, [token, userId]);
 
@@ -521,7 +560,7 @@ const AppContent = () => {
   useEffect(() => {
     if (!showIdleModal) return;
 
-    setCountdown(10);
+    setCountdown(60);
 
     const timer = setInterval(() => {
       setCountdown((prev) => {
@@ -542,15 +581,32 @@ const AppContent = () => {
     }
   }, [token]);
 
-  const handleStayLoggedIn = () => {
-    lastActivityTimeRef.current = Date.now();
-    setShowIdleModal(false);
-    setCountdown(10);
+  const handleStayLoggedIn = async () => {
+    try {
+      // If the heartbeat detected the session was already closed as stale,
+      // we must re-open a new LOGIN record before resetting the timer.
+      if (sessionWasStaleRef.current) {
+        const res = await apipostHandler("/api/user-track/login", { userId }, token);
+        if (res.error || res.data?.status === "ERROR") {
+          throw new Error(res.error || res.data?.message || "Login failed");
+        }
+        sessionWasStaleRef.current = false;
+      }
 
-    channel.postMessage({
-      type: "ACTIVITY",
-      time: Date.now(),
-    });
+      lastActivityTimeRef.current = Date.now();
+      setShowIdleModal(false);
+      setCountdown(60);
+
+      if (channelRef.current) {
+        channelRef.current.postMessage({
+          type: "ACTIVITY",
+          time: Date.now(),
+        });
+      }
+    } catch (error) {
+      console.error("Session recovery failed:", error);
+      logout("INACTIVE");
+    }
   };
   return (
     <AuthContext.Provider
@@ -562,6 +618,8 @@ const AppContent = () => {
         email,
         department,
         labId,
+        roleId,
+        permissions,
         backEndVersion: version,
         login,
         logout,
@@ -586,7 +644,7 @@ const AppContent = () => {
         {!availability && <Route path="*" element={<UnavailablePage />} />}
 
         {/* Login routes */}
-        {((availability || isDesktop) && !token) && (
+        {availability && !token && (
           <>
             <Route path="/" element={<LoginPage />} />
             <Route path="*" element={<Navigate to="/" />} />
@@ -594,79 +652,112 @@ const AppContent = () => {
         )}
 
         {/* Authenticated routes */}
-        {((availability || isDesktop) && token && !sessionSynced) && (
+        {availability && token && !sessionSynced && (
           <Route path="*" element={null} /> // Render nothing while waiting for initial ping to sync
         )}
 
-        {((availability || isDesktop) && token && sessionSynced) && (
+        {availability && token && sessionSynced && (
           <>
             <Route path="/dashboard" element={<DashboardErrorBoundary><Dashboard /></DashboardErrorBoundary>}>
               <Route index element={<WelcomeScreen />} />
-              <Route path="labs" element={<Labs />} />
-              <Route path="labs/list" element={<LabList />} />
-              <Route path="labs/edit" element={<EditLab />} />
-              <Route path="customers" element={<ListCustomer />} />
-              <Route path="customers/create" element={<CreateCustomer />} />
-              <Route path="customers/edit" element={<EditCustomer />} />
-              <Route path="users/add" element={<AddUser />} />
-              <Route path="users" element={<Users />} />
-              <Route path="uom/create" element={<CreateUOM />} />
-              <Route path="uom" element={<ListUOM />} />
-              <Route path="uom/edit" element={<EditUOM />} />
-              <Route path="make-model" element={<MakeModelPage />} />
-              <Route path="instruments/create" element={<CreateInstrument />} />
-              <Route path="instruments" element={<ListInstrument />} />
-              <Route path="instruments/edit" element={<EditInstrument />} />
-              <Route path="instrument-types/create" element={<CreateInstrumentType />} />
-              <Route path="instrument-types" element={<ListInstrumentType />} />
-              <Route path="instrument-types/edit" element={<EditInstrumentType />} />
-              <Route path="uncertainty/create" element={<CreateUncertaintyParameter />} />
-              <Route path="uncertainty" element={<ListUncertaintyParameter />} />
-              <Route path="srf-config/add" element={<AddSRFConfig />} />
-              <Route path="srf-config" element={<ListSRFConfig />} />
-              <Route path="ulr/add" element={<AddULR />} />
-              <Route path="ulr" element={<ListULR />} />
-              <Route path="srf/add" element={<AddSRF />} />
-              <Route path="srf" element={<SRFs />} />
-              <Route path="standard-details" element={<StandardDetails />} />
-              <Route path="masters" element={<ListMaster />} />
-              <Route path="certificate-config/create" element={<CreateCertificateConfig />} />
-              <Route path="certificate-config" element={<ListCertificateConfig />} />
-              <Route path="certificate-format" element={<CertificateFormatCreator />} />
-              <Route path="data-storage" element={<DeletedIndex />} />
-              <Route path="master-doc/add" element={<MasterListDocAdd />} />
-              <Route path="master-doc" element={<MasterListDocList />} />
-              <Route path="master-doc-detail/add" element={<MasterListDocDetailAdd />} />
-              <Route path="master-doc-detail" element={<MasterListDocDetailList />} />
-              <Route path="master-doc-format/add" element={<MasterListDocFormatAdd />} />
-              <Route path="master-doc-format" element={<MasterListDocFormatList />} />
-              <Route path="procedures/define" element={<DefineProcedure />} />
-              <Route path="procedures" element={<ListDefinedProcedure />} />
-              <Route path="excel/create" element={<CreateCalibmasterExcel />} />
-              <Route path="excel" element={<ListCalibmasterExcel />} />
-              <Route path="employees/create" element={<CreateEmployee />} />
-              <Route path="employees" element={<ListEmployee />} />
-              <Route path="calibration-due" element={<DueDateChecker />} />
-              <Route path="reset-password" element={<PasswordReset />} />
-              <Route path="bank-config/add" element={<AddBankConfig />} />
-              <Route path="bank-config" element={<ListBankConfig />} />
-              <Route path="quotation-config/create" element={<QuotationConfig />} />
-              <Route path="quotation-config" element={<QuotationConfigList />} />
-              <Route path="quotation/create" element={<QuotationItem />} />
-              <Route path="quotation/customers" element={<QuotationCustomerList />} />
-              <Route path="email" element={<Email />} />
-              <Route path="sync" element={<SyncPage />} />
-              <Route path="scanner" element={<ScannerEnterResult />} />
-              <Route path="inward-reports" element={<InwardReports />} />
+              <Route path="labs" element={<ProtectedRoute requiredPermission="MANAGE_LABS" element={<Labs />} />} />
+              <Route path="labs/list" element={<ProtectedRoute requiredPermission="MANAGE_LABS" element={<LabList />} />} />
+              <Route path="labs/edit" element={<ProtectedRoute requiredPermission="ACCESS_LAB_INFO" element={<EditLab />} />} />
+              <Route path="customers" element={<ProtectedRoute requiredPermission="LIST_CUSTOMER" element={<ListCustomer />} />} />
+              <Route path="customers/create" element={<ProtectedRoute requiredPermission="CREATE_CUSTOMER" element={<CreateCustomer />} />} />
+              <Route path="customers/edit" element={<ProtectedRoute requiredPermission="CREATE_CUSTOMER" element={<EditCustomer />} />} />
+              <Route path="users/add" element={<ProtectedRoute requiredPermission="CREATE_USER" element={<AddUser />} />} />
+              <Route path="users" element={<ProtectedRoute requiredPermission="LIST_USER" element={<Users />} />} />
+              {/* UOM */}
+              <Route path="uom/create" element={<ProtectedRoute requiredPermission="CREATE_UOM" element={<CreateUOM />} />} />
+              <Route path="uom" element={<ProtectedRoute requiredPermission="LIST_UOM" element={<ListUOM />} />} />
+              <Route path="uom/edit" element={<ProtectedRoute requiredPermission="EDIT_UOM" element={<EditUOM />} />} />
 
+              {/* Instruments */}
+              <Route path="make-model" element={<ProtectedRoute requiredPermission="ACCESS_MAKE_MODEL" element={<MakeModelPage />} />} />
+              <Route path="instruments/create" element={<ProtectedRoute requiredPermission="CREATE_INSTRUMENT" element={<CreateInstrument />} />} />
+              <Route path="instruments" element={<ProtectedRoute requiredPermission="LIST_INSTRUMENT" element={<ListInstrument />} />} />
+              <Route path="instruments/edit" element={<ProtectedRoute requiredPermission="EDIT_INSTRUMENT" element={<EditInstrument />} />} />
+              <Route path="instrument-types/create" element={<ProtectedRoute requiredPermission="CREATE_INSTRUMENT_VARIANT" element={<CreateInstrumentType />} />} />
+              <Route path="instrument-types" element={<ProtectedRoute requiredPermission="LIST_INSTRUMENT_VARIANT" element={<ListInstrumentType />} />} />
+              <Route path="instrument-types/edit" element={<ProtectedRoute requiredPermission="CREATE_INSTRUMENT_VARIANT" element={<EditInstrumentType />} />} />
+
+              {/* Uncertainty Parameters */}
+              <Route path="uncertainty/create" element={<ProtectedRoute requiredPermission="CREATE_MASTER" element={<CreateUncertaintyParameter />} />} />
+              <Route path="uncertainty" element={<ProtectedRoute requiredPermission="LIST_MASTER" element={<ListUncertaintyParameter />} />} />
+
+              {/* SRF Config */}
+              <Route path="srf-config/add" element={<ProtectedRoute requiredPermission="CREATE_SRF_CONFIG" element={<AddSRFConfig />} />} />
+              <Route path="srf-config" element={<ProtectedRoute requiredPermission="LIST_SRF_CONFIG" element={<ListSRFConfig />} />} />
+
+              {/* ULR */}
+              <Route path="ulr/add" element={<ProtectedRoute requiredPermission="CREATE_ULR" element={<AddUlr />} />} />
+              <Route path="ulr" element={<ProtectedRoute requiredPermission="LIST_ULR" element={<ListULR />} />} />
+
+              {/* SRF */}
+              <Route path="srf/add" element={<ProtectedRoute requiredPermission="CREATE_SRF" element={<AddSRF />} />} />
+              <Route path="srf" element={<ProtectedRoute requiredPermission="LIST_SRF" element={<SRFs />} />} />
+
+              {/* Masters */}
+              <Route path="standard-details" element={<ProtectedRoute requiredPermission="CREATE_MASTER" element={<StandardDetails />} />} />
+              <Route path="masters" element={<ProtectedRoute requiredPermission="LIST_MASTER" element={<ListMaster />} />} />
+
+              {/* Certificate Config */}
+              <Route path="certificate-config/create" element={<ProtectedRoute requiredPermission="ACCESS_CERTIFICATE_CONFIG" element={<CreateCertificateConfig />} />} />
+              <Route path="certificate-config" element={<ProtectedRoute requiredPermission="ACCESS_CERTIFICATE_CONFIG" element={<ListCertificateConfig />} />} />
+              <Route path="certificate-format" element={<ProtectedRoute requiredPermission="ACCESS_CERTIFICATE_FORMAT" element={<CertificateFormatCreator />} />} />
+
+              {/* Data Storage */}
+              <Route path="data-storage" element={<ProtectedRoute requiredPermission="ACCESS_DATA_STORAGE" element={<DeletedIndex />} />} />
+
+              {/* Master Documents */}
+              <Route path="master-doc/add" element={<ProtectedRoute requiredPermission="CREATE_MASTER_DOC" element={<MasterListDocAdd />} />} />
+              <Route path="master-doc" element={<ProtectedRoute requiredPermission="LIST_MASTER_DOC" element={<MasterListDocList />} />} />
+              <Route path="master-doc-detail/add" element={<ProtectedRoute requiredPermission="CREATE_DOC_DETAIL" element={<MasterListDocDetailAdd />} />} />
+              <Route path="master-doc-detail" element={<ProtectedRoute requiredPermission="LIST_DOC_DETAIL" element={<MasterListDocDetailList />} />} />
+              <Route path="master-doc-format/add" element={<ProtectedRoute requiredPermission="CREATE_DOC_FORMAT" element={<MasterListDocFormatAdd />} />} />
+              <Route path="master-doc-format" element={<ProtectedRoute requiredPermission="LIST_DOC_FORMAT" element={<MasterListDocFormatList />} />} />
+
+              {/* Procedures */}
+              <Route path="procedures/define" element={<ProtectedRoute requiredPermission="CREATE_PROCEDURE" element={<DefineProcedure />} />} />
+              <Route path="procedures" element={<ProtectedRoute requiredPermission="LIST_PROCEDURE" element={<ListDefinedProcedure />} />} />
+
+              {/* Calibmaster Excel */}
+              <Route path="excel/create" element={<ProtectedRoute requiredPermission="CREATE_EXCEL" element={<CreateCalibmasterExcel />} />} />
+              <Route path="excel" element={<ProtectedRoute requiredPermission="LIST_EXCEL" element={<ListCalibmasterExcel />} />} />
+
+              {/* Roles & Access */}
+              <Route path="roles" element={<ProtectedRoute requiredPermission="ACCESS_ROLES" element={<Roles />} />} />
+              <Route path="user-track" element={<ProtectedRoute requiredPermission="ACCESS_USER_TRACK" element={<UserTrack />} />} />
+
+              {/* Calibration Due Dates */}
+              <Route path="calibration-due" element={<ProtectedRoute requiredPermission="ACCESS_DUE_DATE" element={<DueDateChecker />} />} />
+
+              
               {/* ─── Task Management (NEW) ───────────────────────────────── */}
-              <Route path="tasks" element={<TaskList />} />
-              <Route path="tasks/create" element={<CreateTask />} />
-              <Route path="tasks/:task_id" element={<TaskDetail />} />
-            </Route>
+              <Route path="tasks" element={<ProtectedRoute requiredPermission="ACCESS_TASKS" element={<TaskList />} />} />
+              <Route path="tasks/create" element={<ProtectedRoute requiredPermission="ACCESS_TASKS" element={<CreateTask />} />} />
+              <Route path="tasks/:task_id" element={<ProtectedRoute requiredPermission="ACCESS_TASKS" element={<TaskDetail />} />} />
 
-            <Route path="/offline" element={<OfflinePage />} />
-            <Route path="/unavailable" element={<UnavailablePage />} />
+              {/* Self-service — no permission required */}
+              <Route path="reset-password" element={<PasswordReset />} />
+
+              {/* Bank Config — requires ACCESS_BANK_CONFIG (admin bypass applies) */}
+              <Route path="bank-config/add" element={<ProtectedRoute requiredPermission="ACCESS_BANK_CONFIG" element={<AddBankConfig />} />} />
+              <Route path="bank-config" element={<ProtectedRoute requiredPermission="ACCESS_BANK_CONFIG" element={<ListBankConfig />} />} />
+
+              {/* Quotation */}
+              <Route path="quotation-config/create" element={<ProtectedRoute requiredPermission="ACCESS_QUOTATION_CONFIG" element={<QuotationConfig />} />} />
+              <Route path="quotation-config" element={<ProtectedRoute requiredPermission="ACCESS_QUOTATION_CONFIG" element={<QuotationConfigList />} />} />
+              <Route path="quotation/create" element={<ProtectedRoute requiredPermission="CREATE_QUOTATION" element={<QuotationItem />} />} />
+              <Route path="quotation/customers" element={<ProtectedRoute requiredPermission="LIST_QUOTATION" element={<QuotationCustomerList />} />} />
+
+              {/* System */}
+              <Route path="email" element={<ProtectedRoute requiredPermission="ACCESS_EMAIL" element={<Email />} />} />
+              <Route path="sync" element={<ProtectedRoute requiredPermission="SYNC_DATA" element={<SyncPage />} />} />
+              <Route path="scanner" element={<ProtectedRoute requiredPermission="ACCESS_SCANNER" element={<ScannerEnterResult />} />} />
+              <Route path="inward-reports" element={<ProtectedRoute requiredPermission="ACCESS_REPORTS" element={<InwardReports />} />} />
+            </Route>
 
             <Route path="/exceltable" element={<PageErrorBoundary ><ExcelTable /></PageErrorBoundary>} />
             <Route
@@ -678,9 +769,9 @@ const AppContent = () => {
           </>
         )}
 
-        {/* Employee Track Routes */}
+        {/* User Track Routes */}
         {availability && (
-          <Route path="/employee-track" element={<EmployeeTrack />} />
+          <Route path="/user-track" element={<UserTrack />} />
         )}
       </Routes>
     </AuthContext.Provider>

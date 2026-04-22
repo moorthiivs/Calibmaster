@@ -1,4 +1,4 @@
-const { EmployeeTracking, User, sequelize, EmployeeTrackConfig } = require("../models");
+const { UserTracking, User, sequelize, UserTrackConfig } = require("../models");
 const { errorHandler } = require("../helpers/error-handler");
 const { Op } = require("sequelize");
 const moment = require("moment-timezone");
@@ -9,22 +9,24 @@ const loginTrack = async (req, res, next) => {
     const { userId } = req.body;
 
     try {
+        const user = await User.findByPk(userId);
+        if (user && user.email === "root@iviewsense.com") {
+            return res.status(200).json({ status: "SUCCESS", message: "Tracking skipped for root user" });
+        }
+
         const timeZone = "Asia/Kolkata";
         const loginAt = moment().tz(timeZone).toDate();
         const date = moment().tz(timeZone).format("YYYY-MM-DD");
 
-        const [config] = await EmployeeTrackConfig.findOrCreate({
+        const [config] = await UserTrackConfig.findOrCreate({
             where: {},
             defaults: { idleTimeoutMinutes: 20, preventConcurrentLogins: false }
         });
 
-        // userId 0 is SuperAdmin (root@iviewsense.com)
-        const isSuperAdmin = userId === 0 || userId === '0';
-
-        if (config.preventConcurrentLogins && !isSuperAdmin) {
-            const lastSessionRecord = await EmployeeTracking.findOne({
+        if (config.preventConcurrentLogins) {
+            const lastSessionRecord = await UserTracking.findOne({
                 where: { userId },
-                order: [["empTrackingId", "DESC"]]
+                order: [["userTrackingId", "DESC"]]
             });
 
             if (lastSessionRecord && lastSessionRecord.status !== "LOGOUT") {
@@ -45,7 +47,7 @@ const loginTrack = async (req, res, next) => {
                         logoutType: "STALE",
                         totalHours
                     });
-                    logger.info(`User ${userId} - Stale session #${lastSessionRecord.empTrackingId} auto-closed on new login.`);
+                    logger.info(`User ${userId} - Stale session #${lastSessionRecord.userTrackingId} auto-closed on new login.`);
                 } else {
                     // Session is genuinely active — block concurrent login
                     return res.status(403).json({
@@ -56,7 +58,7 @@ const loginTrack = async (req, res, next) => {
             }
         }
 
-        const newTrack = await EmployeeTracking.create({
+        const newTrack = await UserTracking.create({
             userId,
             loginAt,
             date,
@@ -79,34 +81,40 @@ const logoutTrack = async (req, res, next) => {
     const { userId, logoutType } = req.body;
 
     try {
+        const user = await User.findByPk(userId);
+        if (user && user.email === "root@iviewsense.com") {
+            return res.status(200).json({ status: "SUCCESS", message: "Tracking skipped for root user" });
+        }
+
         const timeZone = "Asia/Kolkata";
         const logoutAt = moment().tz(timeZone).toDate();
 
-        // Find the most recent open LOGIN record for this user
-        const lastLogin = await EmployeeTracking.findOne({
-            where: { userId, status: "LOGIN" },
-            order: [["empTrackingId", "DESC"]]
+        // Find the most recent session record for this user
+        const lastSession = await UserTracking.findOne({
+            where: { userId },
+            order: [["userTrackingId", "DESC"]]
         });
 
-        if (!lastLogin) {
-            // No open session found — nothing to close
-            logger.warn(`User ${userId} - LOGOUT called but no open LOGIN session found.`);
-            return res.status(200).json({ status: "SUCCESS", message: "No active session to close." });
+        if (!lastSession) {
+            // No session found at all — nothing to close
+            logger.warn(`User ${userId} - LOGOUT called but no session records found.`);
+            return res.status(200).json({ status: "SUCCESS", message: "No session to close." });
         }
 
-        const duration = moment.duration(moment(logoutAt).diff(moment(lastLogin.loginAt)));
+        const duration = moment.duration(moment(logoutAt).diff(moment(lastSession.loginAt)));
         const totalHours = Math.max(0, parseFloat(duration.asHours().toFixed(2)));
 
-        // UPDATE the existing LOGIN record in-place instead of creating a new record
-        await lastLogin.update({
-            logoutAt: logoutAt,
+        // Update the record. If it was already LOGOUT (e.g. from a manual DB edit), 
+        // this will just fill in the missing logoutAt and totalHours.
+        await lastSession.update({
+            logoutAt: lastSession.logoutAt || logoutAt,
             status: "LOGOUT",
-            logoutType: logoutType || "MANUAL",
-            totalHours: totalHours
+            logoutType: lastSession.status === "LOGIN" ? (logoutType || "MANUAL") : (lastSession.logoutType || logoutType || "MANUAL"),
+            totalHours: lastSession.totalHours || totalHours
         });
 
-        logger.info(`User ${userId} - LOGIN record #${lastLogin.empTrackingId} updated to LOGOUT (${logoutType || "MANUAL"})`);
-        res.status(200).json({ status: "SUCCESS", message: "Logout event recorded", data: lastLogin });
+        logger.info(`User ${userId} - Session record #${lastSession.userTrackingId} finalized as LOGOUT`);
+        res.status(200).json({ status: "SUCCESS", message: "Logout event recorded", data: lastSession });
     } catch (err) {
         console.error(err);
         const error = new Error("Failed to record logout event");
@@ -121,7 +129,7 @@ const verifySession = async (req, res, next) => {
     const userIdStr = String(req.body.userId);
     const { userId } = req.body;
     try {
-        if (userId === null || userId === undefined) return res.status(400).json({ status: "ERROR" });
+        if (!userId) return res.status(400).json({ status: "ERROR" });
 
         // If they just refreshed, cancel the 7-second browser close timer!
         if (pendingLogouts.has(userIdStr)) {
@@ -131,9 +139,9 @@ const verifySession = async (req, res, next) => {
             return res.status(200).json({ status: "SUCCESS", valid: true });
         }
 
-        const latestSession = await EmployeeTracking.findOne({
+        const latestSession = await UserTracking.findOne({
             where: { userId },
-            order: [["empTrackingId", "DESC"]]
+            order: [["userTrackingId", "DESC"]]
         });
 
         if (latestSession && latestSession.status === "LOGOUT") {
@@ -153,7 +161,7 @@ const intentToLogout = async (req, res) => {
     // Called strictly via sendBeacon on browser close or refresh
     const userIdStr = String(req.body.userId);
     const { userId } = req.body;
-    if (userId === null || userId === undefined) return res.status(400).json({ status: "ERROR" });
+    if (!userId) return res.status(400).json({ status: "ERROR" });
 
     if (pendingLogouts.has(userIdStr)) clearTimeout(pendingLogouts.get(userIdStr));
 
@@ -163,9 +171,9 @@ const intentToLogout = async (req, res) => {
     const timeoutId = setTimeout(async () => {
         try {
             // Find the most recent open LOGIN for this user
-            const latestSession = await EmployeeTracking.findOne({
+            const latestSession = await UserTracking.findOne({
                 where: { userId, status: "LOGIN" },
-                order: [["empTrackingId", "DESC"]]
+                order: [["userTrackingId", "DESC"]]
             });
 
             if (latestSession) {
@@ -181,7 +189,7 @@ const intentToLogout = async (req, res) => {
                     logoutType: "BROWSER_CLOSE",
                     totalHours: totalHours
                 });
-                logger.info(`User ${userId} - LOGIN record #${latestSession.empTrackingId} updated to LOGOUT via BROWSER_CLOSE`);
+                logger.info(`User ${userId} - LOGIN record #${latestSession.userTrackingId} updated to LOGOUT via BROWSER_CLOSE`);
             }
         } catch (e) {
             console.error("Intent logout error details:", e);
@@ -207,7 +215,7 @@ const getDailyReport = async (req, res, next) => {
         };
         if (userId) whereClause.userId = userId;
 
-        const reports = await EmployeeTracking.findAll({
+        const reports = await UserTracking.findAll({
             where: whereClause,
             include: [{
                 model: User,
@@ -215,14 +223,14 @@ const getDailyReport = async (req, res, next) => {
                 where: labId ? { labId } : {},
                 attributes: ["name", "email", "department"]
             }],
-            order: [["empTrackingId", "DESC"]]
+            order: [["userTrackingId", "DESC"]]
         });
 
-        // Find the latest empTrackingId per user among today's records
+        // Find the latest userTrackingId per user among today's records
         const latestIdByUser = {};
         for (const r of reports) {
-            if (!latestIdByUser[r.userId] || r.empTrackingId > latestIdByUser[r.userId]) {
-                latestIdByUser[r.userId] = r.empTrackingId;
+            if (!latestIdByUser[r.userId] || r.userTrackingId > latestIdByUser[r.userId]) {
+                latestIdByUser[r.userId] = r.userTrackingId;
             }
         }
 
@@ -231,7 +239,7 @@ const getDailyReport = async (req, res, next) => {
         // (meaning a newer LOGOUT record already exists, so this LOGIN was never updated).
         const cleanedReports = reports.filter(r => {
             if (r.status !== "LOGIN") return true; // always keep LOGOUT records
-            return r.empTrackingId === latestIdByUser[r.userId]; // only keep a LOGIN if it is the latest event
+            return r.userTrackingId === latestIdByUser[r.userId]; // only keep a LOGIN if it is the latest event
         });
 
         res.status(200).json({ status: "SUCCESS", data: cleanedReports });
@@ -255,7 +263,7 @@ const getMonthlyReport = async (req, res, next) => {
         };
         if (userId) whereClause.userId = userId;
 
-        const reports = await EmployeeTracking.findAll({
+        const reports = await UserTracking.findAll({
             where: whereClause,
             include: [{
                 model: User,
@@ -298,7 +306,7 @@ const getFilteredReport = async (req, res, next) => {
             userWhereClause.labId = labId;
         }
 
-        const reports = await EmployeeTracking.findAll({
+        const reports = await UserTracking.findAll({
             where: whereClause,
             include: [{
                 model: User,
@@ -329,11 +337,11 @@ const getDashboardStats = async (req, res, next) => {
         const finalDate = queryDate || moment().tz("Asia/Kolkata").format("YYYY-MM-DD");
 
         // Find the latest event for each user today
-        const latestEvents = await EmployeeTracking.findAll({
+        const latestEvents = await UserTracking.findAll({
             where: { date: finalDate },
             attributes: [
                 "userId",
-                [sequelize.fn("MAX", sequelize.col("empTrackingId")), "latestId"]
+                [sequelize.literal('MAX("empTrackingId")'), "latestId"]
             ],
             group: ["userId"],
             raw: true
@@ -352,9 +360,9 @@ const getDashboardStats = async (req, res, next) => {
         }
 
         // Count how many of those latest events are "LOGIN"
-        const activeUsersCount = await EmployeeTracking.count({
+        const activeUsersCount = await UserTracking.count({
             where: {
-                empTrackingId: { [Op.in]: latestIds },
+                userTrackingId: { [Op.in]: latestIds },
                 status: "LOGIN"
             },
             include: [{
@@ -365,7 +373,7 @@ const getDashboardStats = async (req, res, next) => {
         });
 
         // Total hours worked today (sum of totalHours from all LOGOUT events today)
-        const loggedOutHoursToday = await EmployeeTracking.sum("totalHours", {
+        const loggedOutHoursToday = await UserTracking.sum("totalHours", {
             where: {
                 date: finalDate,
                 status: "LOGOUT"
@@ -378,7 +386,7 @@ const getDashboardStats = async (req, res, next) => {
         });
 
         // Add real-time accrued hours from actively logged-in sessions today
-        const activeSessions = await EmployeeTracking.findAll({
+        const activeSessions = await UserTracking.findAll({
             where: {
                 date: finalDate,
                 status: "LOGIN"
@@ -433,13 +441,13 @@ const getActiveEmployees = async (req, res, next) => {
         const dateFilter = finalEndDate ? { [Op.between]: [finalStartDate, finalEndDate] } : finalStartDate;
 
         // 1. Find latest event for each user in the track records for this period
-        const latestEvents = await EmployeeTracking.findAll({
+        const latestEvents = await UserTracking.findAll({
             where: {
                 date: dateFilter
             },
             attributes: [
                 "userId",
-                [sequelize.fn("MAX", sequelize.col("empTrackingId")), "latestId"]
+                [sequelize.literal('MAX("empTrackingId")'), "latestId"]
             ],
             group: ["userId"],
             raw: true
@@ -452,9 +460,9 @@ const getActiveEmployees = async (req, res, next) => {
         }
 
         // 2. Get details of the actual tracking records and join with User
-        const activityRecords = await EmployeeTracking.findAll({
+        const activityRecords = await UserTracking.findAll({
             where: {
-                empTrackingId: { [Op.in]: latestIds }
+                userTrackingId: { [Op.in]: latestIds }
             },
             include: [{
                 model: User,
@@ -513,7 +521,7 @@ const getUserStats = async (req, res, next) => {
         const monthEnd = selectedMoment.clone().endOf("month").toDate();
 
         // 1. Today's total logged-out hours
-        const todayLoggedOutHours = await EmployeeTracking.sum("totalHours", {
+        const todayLoggedOutHours = await UserTracking.sum("totalHours", {
             where: {
                 userId,
                 date: queryDate,
@@ -522,9 +530,9 @@ const getUserStats = async (req, res, next) => {
         });
 
         // Add real-time accrued hours from active session today
-        const activeSessionToday = await EmployeeTracking.findOne({
+        const activeSessionToday = await UserTracking.findOne({
             where: { userId, date: queryDate, status: "LOGIN" },
-            order: [["empTrackingId", "DESC"]]
+            order: [["userTrackingId", "DESC"]]
         });
 
         let accruedToday = 0;
@@ -538,7 +546,7 @@ const getUserStats = async (req, res, next) => {
         const todayHours = (todayLoggedOutHours || 0) + accruedToday;
 
         // 2. Monthly total logged-out hours
-        const monthlyLoggedOutHours = await EmployeeTracking.sum("totalHours", {
+        const monthlyLoggedOutHours = await UserTracking.sum("totalHours", {
             where: {
                 userId,
                 status: "LOGOUT",
@@ -548,9 +556,9 @@ const getUserStats = async (req, res, next) => {
 
         // Add real-time accrued hours from active session this month
         let accruedMonthly = 0;
-        const activeSessionMonthly = await EmployeeTracking.findOne({
+        const activeSessionMonthly = await UserTracking.findOne({
             where: { userId, status: "LOGIN", loginAt: { [Op.between]: [monthStart, monthEnd] } },
-            order: [["empTrackingId", "DESC"]]
+            order: [["userTrackingId", "DESC"]]
         });
         if (activeSessionMonthly) {
             const duration = moment.duration(moment(nowTime).diff(moment(activeSessionMonthly.loginAt)));
@@ -584,7 +592,7 @@ const getUserStats = async (req, res, next) => {
 
 const getSettings = async (req, res, next) => {
     try {
-        const [config] = await EmployeeTrackConfig.findOrCreate({
+        const [config] = await UserTrackConfig.findOrCreate({
             where: {},
             defaults: { idleTimeoutMinutes: 20, preventConcurrentLogins: false, resetPassword: 'admin123' }
         });
@@ -601,9 +609,9 @@ const updateSettings = async (req, res, next) => {
     try {
         const { idleTimeoutMinutes, preventConcurrentLogins, resetPassword } = req.body;
 
-        let config = await EmployeeTrackConfig.findOne();
+        let config = await UserTrackConfig.findOne();
         if (!config) {
-            config = await EmployeeTrackConfig.create({ idleTimeoutMinutes, preventConcurrentLogins, resetPassword });
+            config = await UserTrackConfig.create({ idleTimeoutMinutes, preventConcurrentLogins, resetPassword });
         } else {
             config.idleTimeoutMinutes = idleTimeoutMinutes;
             config.preventConcurrentLogins = preventConcurrentLogins;
@@ -627,7 +635,7 @@ const adminManualLogout = async (req, res, next) => {
             return res.status(400).json({ status: "ERROR", message: "User ID and Password are required" });
         }
 
-        const config = await EmployeeTrackConfig.findOne();
+        const config = await UserTrackConfig.findOne();
         if (!config || config.resetPassword !== password) {
             return res.status(401).json({ status: "ERROR", message: "Invalid Reset Password" });
         }
@@ -636,9 +644,9 @@ const adminManualLogout = async (req, res, next) => {
         const timeZone = "Asia/Kolkata";
         const logoutAt = moment().tz(timeZone).toDate();
 
-        const lastLogin = await EmployeeTracking.findOne({
+        const lastLogin = await UserTracking.findOne({
             where: { userId, status: "LOGIN" },
-            order: [["empTrackingId", "DESC"]]
+            order: [["userTrackingId", "DESC"]]
         });
 
         if (!lastLogin) {
@@ -669,27 +677,39 @@ const heartbeatPing = async (req, res, next) => {
     const { userId } = req.body;
     try {
         
-        if (userId === null || userId === undefined) return res.status(400).json({ status: "ERROR" });
+        if (!userId) return res.status(400).json({ status: "ERROR" });
 
         // Find the latest open LOGIN session and touch its updatedAt.
         // The heartbeatLogout cron uses updatedAt to detect sessions that went silent.
-        const activeSession = await EmployeeTracking.findOne({
+        const activeSession = await UserTracking.findOne({
             where: { userId, status: "LOGIN" },
-            order: [["empTrackingId", "DESC"]]
+            order: [["userTrackingId", "DESC"]]
         });
 
         if (activeSession) {
             // Direct update query bypasses Sequelize's "did fields change?" instance checks
             // and forces the DB row to update, bumping the updatedAt timestamp.
-            await EmployeeTracking.update(
+            await UserTracking.update(
                 { updatedAt: new Date() },
-                { where: { empTrackingId: activeSession.empTrackingId } }
+                { where: { userTrackingId: activeSession.userTrackingId } }
             );
             return res.status(200).json({ status: "SUCCESS", valid: true });
         }
 
-        // If no active LOGIN session is found for this user today, they shouldn't be here
-        return res.status(200).json({ status: "SUCCESS", valid: false });
+        // If no active LOGIN session is found for this user today, they shouldn't be here.
+        // Return the logoutType of the most recent closed session so the frontend
+        // can decide whether to offer a "Stay Logged In" recovery (for STALE sessions)
+        // or force a logout (for ADMIN_RESET/MANUAL logouts).
+        const lastSession = await UserTracking.findOne({
+            where: { userId },
+            order: [["userTrackingId", "DESC"]]
+        });
+
+        return res.status(200).json({
+            status: "SUCCESS",
+            valid: false,
+            logoutType: lastSession ? lastSession.logoutType : null
+        });
     } catch (err) {
         console.error(err);
         const error = new Error("Heartbeat ping failed");
@@ -708,7 +728,7 @@ exports.getDailyReport = getDailyReport;
 exports.getMonthlyReport = getMonthlyReport;
 exports.getFilteredReport = getFilteredReport;
 exports.getDashboardStats = getDashboardStats;
-exports.getActiveEmployees = getActiveEmployees;
+exports.getActiveUsers = getActiveEmployees;
 exports.getUserStats = getUserStats;
 exports.getSettings = getSettings;
 exports.updateSettings = updateSettings;

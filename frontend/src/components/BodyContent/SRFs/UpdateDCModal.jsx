@@ -8,7 +8,7 @@ import { AuthContext } from "../../../context/auth-context";
 import { srfitemsActions } from "../../../store/srfitems";
 import CustomInput from "../../Inputs/CustomInput";
 import StatusBadge from "../../UI/StatusBadge";
-import config from "../../../utils/config.js";
+import config from "../../../utils/config.json";
 import { getBase64 } from "../../../utils/utilfuns";
 import { childSrfItemsActions } from "../../../store/childSrfItems";
 import { selecteditemsActions } from "../../../store/selecteditems";
@@ -16,6 +16,7 @@ import { formattedDate } from "../../helpers/Helper";
 import { convertDateFormat } from "../../../utils/filters";
 import Loader from "../../UI/Loader";
 import showErrorDialog from "../../../utils/showErrorToast";
+import { usePermissions } from "../../../hooks/usePermissions";
 
 const UpdateDCModal = (props) => {
 
@@ -37,6 +38,7 @@ const UpdateDCModal = (props) => {
 
   const dispatch = useDispatch();
   const auth = useContext(AuthContext);
+  const { hasPermission } = usePermissions();
   const selecteditems = useSelector((state) => state.selecteditems.list);
 
   const [reportGenerateDate, setReportGenerateDate] = useState("");
@@ -285,7 +287,7 @@ const UpdateDCModal = (props) => {
                 </span>
               </p>
 
-              {auth.department != "Calibration" ? (
+              {hasPermission("EDIT_SRF") ? (
                 <>
                   <p className="bold">
                     Contact Person:{" "}
@@ -319,13 +321,13 @@ const UpdateDCModal = (props) => {
 
               <div className="srf__items__container">
 
-                <Card className="items__table__card mt-10" style={{ marginBottom: "1rem" }}>
+                <Card className="items__table__card" style={{ marginBottom: "1rem" }}>
                   <SRFItemsListView srfItems={selecteditems} />
                 </Card>
 
                 <Card className="items__table__card mtop1">
-                  <div className="dc__info__container flex justify-center my-3 mx-5 gap-3">
-                    <div className="add__srf__item__container w-full my-10" >
+                  <div className="dc__info__container flex justify-center my-3">
+                    <div className="add__srf__item__container w-full" >
                       <DatePicker
                         formatStyle="medium"
                         label="Report Generated Date"
@@ -338,7 +340,7 @@ const UpdateDCModal = (props) => {
                       />
                     </div>
 
-                    <div className="add__srf__item__container w-full my-10" >
+                    <div className="add__srf__item__container w-full" >
                       <Input
                         label="Dispatch DC No"
                         placeholder="Dispatch DC No"
@@ -348,7 +350,7 @@ const UpdateDCModal = (props) => {
                         value={dispatchDcNo}
                       />
                     </div>
-                    <div className="add__srf__item__container w-full my-10" >
+                    <div className="add__srf__item__container w-full" >
                       <DateTimePicker
                         label="Dispatch DC Date"
                         value={dispatchDcDate}
@@ -360,7 +362,7 @@ const UpdateDCModal = (props) => {
                         cancelLabel={"Cancel"}
                       />
                     </div>
-                    <div className="add__srf__item__container w-full my-10" >
+                    <div className="add__srf__item__container w-full" >
                       <Select
                         label="Dispatch Mode"
                         options={[

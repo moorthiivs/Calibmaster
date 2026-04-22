@@ -1,5 +1,8 @@
-import React, { useEffect, useState } from "react";
-import { Form, Input, Button, Card, Row, Col, Select, Spin } from "antd";
+import React, { useEffect, useState, useContext } from "react";
+import { Form, Input, Button, Card, Row, Col, Select, Spin, Upload } from "antd";
+import { UploadOutlined } from "@ant-design/icons";
+import { AuthContext } from "../../../context/auth-context";
+import config from "../../../utils/config.json";
 
 const { Option } = Select;
 
@@ -16,7 +19,9 @@ const UserForm = ({
     onDepartmentChange
 }) => {
 
-    const [isDirty, setIsDirty] = useState(false);
+    const [roles, setRoles] = useState([]);
+    const [loadingRoles, setLoadingRoles] = useState(false);
+    const auth = useContext(AuthContext);
 
     useEffect(() => {
         if (initialData) {
@@ -24,13 +29,52 @@ const UserForm = ({
         }
     }, [initialData]);
 
+    useEffect(() => {
+        const fetchRoles = async () => {
+            setLoadingRoles(true);
+            try {
+                const response = await fetch(config.Calibmaster.URL + "/api/roles/list", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: "Bearer " + auth.token,
+                    },
+                    body: JSON.stringify({ labId: auth.labId }),
+                });
+                const data = await response.json();
+                if (data.code === 200) {
+                    setRoles(data.data);
+                }
+            } catch (err) {
+                console.error("Failed to fetch roles:", err);
+            } finally {
+                setLoadingRoles(false);
+            }
+        };
+        fetchRoles();
+    }, [auth.token]);
 
-    const handleFieldsChange = () => {
-        if (mode === 'edit') {
-            const touched = form.isFieldsTouched(true);
-            setIsDirty(touched);
+    // Auto-populate legacy department based on selected Role
+    const handleRoleChange = (roleId) => {
+        const selectedRole = roles.find(r => r.id === roleId);
+        if (selectedRole) {
+            // Map role name to legacy department if possible, otherwise use role name
+            const roleName = selectedRole.name;
+            let legacyDept = "Calibration"; // Default
+            if (["CSD", "Calibration", "Accounts", "Client", "Manager", "admin"].includes(roleName)) {
+                legacyDept = roleName;
+            } else if (roleName.toLowerCase().includes("admin") || roleName.toLowerCase().includes("root")) {
+                legacyDept = "Manager"; // Fallback for elevated roles
+            } else {
+                legacyDept = roleName; // Use custom role name as dept
+            }
+            
+            form.setFieldsValue({ department: legacyDept });
+            onDepartmentChange && onDepartmentChange(legacyDept);
         }
     };
+
+
 
     return (
         <Card title={mode === "edit" ? "Edit User" : "Add User"}>
@@ -40,7 +84,6 @@ const UserForm = ({
                 autoComplete="off"
                 onFinish={onSubmit}
                 initialValues={initialData}
-                onFieldsChange={handleFieldsChange}
                 size="large"
             >
                 <Row gutter={[16, 0]}>
@@ -71,28 +114,59 @@ const UserForm = ({
                         <Form.Item
                             label="Password"
                             name="password"
-                            rules={[{ required: true, message: "Please enter password" }]}
+                            rules={mode === 'create' ? [{ required: true, message: "Please enter password" }] : []}
                         >
-                            <Input.Password placeholder="Enter password" />
+                            <Input.Password placeholder={mode === 'edit' ? "Leave blank to keep current" : "Enter password"} />
+                        </Form.Item>
+                    </Col>
+
+                    {/* Legacy Department (Hidden) */}
+                    <Form.Item
+                        name="department"
+                        noStyle
+                    >
+                        <Input type="hidden" />
+                    </Form.Item>
+
+                    <Col xs={24} md={12}>
+                        <Form.Item
+                            label="RBAC Role"
+                            name="roleId"
+                            rules={[{ required: true, message: "Please select RBAC role" }]}
+                        >
+                            <Select placeholder="Select RBAC role" loading={loadingRoles} onChange={handleRoleChange}>
+                                {roles.map((role) => (
+                                    <Option key={role.id} value={role.id}>
+                                        {role.name}
+                                    </Option>
+                                ))}
+                            </Select>
                         </Form.Item>
                     </Col>
 
                     <Col xs={24} md={12}>
                         <Form.Item
-                            label="Role"
-                            name="department"
-                            rules={[{ required: true, message: "Please select role" }]}
+                            label="Title (e.g. Quality Manager)"
+                            name="title"
+                            rules={[{ required: true, message: "Please enter title" }]}
                         >
-                            <Select placeholder="Select role" onChange={(value) => {
-                                onDepartmentChange(value);
-                                form.setFieldsValue({ department: value });
-                            }} getPopupContainer={(triggerNode) => triggerNode.parentNode}>
-                                {departments.map((role, idx) => (
-                                    <Option key={idx} value={role.value}>
-                                        {role.label}
-                                    </Option>
-                                ))}
-                            </Select>
+                            <Input placeholder="Enter title" />
+                        </Form.Item>
+                    </Col>
+
+                    <Col xs={24} md={12}>
+                        <Form.Item
+                            label="Signature Image"
+                            name="signature"
+                            valuePropName="fileList"
+                            getValueFromEvent={(e) => {
+                                if (Array.isArray(e)) return e;
+                                return e && e.fileList;
+                            }}
+                        >
+                            <Upload beforeUpload={() => false} maxCount={1} listType="picture">
+                                <Button icon={<UploadOutlined />}>Click to Upload</Button>
+                            </Upload>
                         </Form.Item>
                     </Col>
 
@@ -151,19 +225,13 @@ const UserForm = ({
 
                     <Col span={24}>
                         <Form.Item>
-                            <Button type="primary" htmlType="submit" block disabled={mode === "edit" && !isDirty}>
+                            <Button type="primary" htmlType="submit" block disabled={isLoading} loading={isLoading}>
                                 {mode === "edit" ? "Update User" : "Add User"}
                             </Button>
                         </Form.Item>
                     </Col>
                 </Row>
             </Form>
-
-            {isLoading && (
-                <div style={{ textAlign: "center" }}>
-                    <Spin />
-                </div>
-            )}
         </Card>
     );
 };

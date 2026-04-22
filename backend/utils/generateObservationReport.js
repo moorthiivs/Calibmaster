@@ -371,11 +371,11 @@ async function generateObservationReport(
           // SIGNATURE NAMES
           [
             { text: "Name", alignment: "center", border: [true, false, true, true] },
-            { text: calibrated_employee_name || "-", alignment: "center", border: [true, false, true, true] },
+            { text: `${calibrated_employee_name || "-"}`, alignment: "center", border: [true, false, true, true] },
             { text: "Name", alignment: "center", border: [true, false, true, true] },
-            { text: approved_employee_name || "-", alignment: "center", border: [true, false, true, true] },
+            { text: `${approved_employee_name || "-"}`, alignment: "center", border: [true, false, true, true] },
             { text: 'Name', alignment: 'center', fontSize: 8, border: [true, false, true, true] },
-            { text: authorized_employee_name || "-", alignment: 'center', fontSize: 8, border: [true, false, true, true] }
+            { text: `${authorized_employee_name || "-"}`, alignment: 'center', fontSize: 8, border: [true, false, true, true] }
           ],
 
           // REMARKS

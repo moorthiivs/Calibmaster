@@ -146,7 +146,7 @@ const generate = async (req, res, next) => {
 
     try {
 
-        const { lab_id, srf_id, srf_item_id, customer_info, reportGenerateDate } = req.body;
+        const { lab_id, srf_id, srf_item_id, customer_info, reportGenerateDate, calibrationDate } = req.body;
 
         const skip_response = req.body?.skip_response || false;
 
@@ -358,9 +358,9 @@ const generate = async (req, res, next) => {
             : "--";
 
         // cal_date
-        let cal_date = item?.calibration_done_date
-            ? format(new Date(item.calibration_done_date), "dd-MM-yyyy")
-            : "--";
+        let cal_date = calibrationDate
+            ? format(new Date(calibrationDate), "dd-MM-yyyy")
+            : (item?.calibration_done_date ? format(new Date(item.calibration_done_date), "dd-MM-yyyy") : "--");
 
         // due_date
         let due_date = item?.calibration_due_date
@@ -371,7 +371,7 @@ const generate = async (req, res, next) => {
         // ***  Query Master Result List  *** 
         let masterResult = await masterResultTable.findOne({
             where: { lab_id, srf_id, srf_item_id },
-            include: ["calibrated_employee_master", "approved_employee_master", "authorizedby_employee_master"]
+            include: ["calibrated_user", "approved_user", "authorizedby_user"]
         });
         // return res.json(masterResult);
 
@@ -434,16 +434,12 @@ const generate = async (req, res, next) => {
 
         const yearRange = `${prevYear.toString().slice(-2)}-${currentYear.toString().slice(-2)}`;
 
-        //const certificate_number = await generateAndAssignCertificateNo(item, srf, itemCount, CertificateFormat, Item)
 
         const certificate_number = await generateAndAssignCertificateNo({
             item,
             srf,
             itemCount,
-            //Certformat, // this should be a CertificateFormat row, with `required_fields` and `format_template`
-            //CertificateFormat, // this should be the Sequelize model
-            Item, // this should be the Sequelize model
-            //Customer,
+            Item,
             labId: lab_id
         });
 
@@ -462,20 +458,20 @@ const generate = async (req, res, next) => {
         });
 
         // *** Seal & Logos area ***
-        let calibrated_employee_master = await masterResult.calibrated_employee_master;
-        let calibrated_employee_name = calibrated_employee_master.employee_full_name;
-        let calibrated_employee_role = calibrated_employee_master.employee_role;
-        let calibrated_employee_signature = calibrated_employee_master.employee_signature;
+        let calibrated_user = masterResult.calibrated_user;
+        let calibrated_employee_name = calibrated_user?.name || '-';
+        let calibrated_employee_role = calibrated_user?.title || 'Calibration Engineer';
+        let calibrated_employee_signature = calibrated_user?.signature;
 
-        let approved_employee_master = await masterResult.approved_employee_master;
-        let approved_employee_name = approved_employee_master.employee_full_name;
-        let approved_employee_role = approved_employee_master.employee_role;
-        let approved_employee_signature = approved_employee_master.employee_signature;
+        let approved_user = masterResult.approved_user;
+        let approved_employee_name = approved_user?.name || '-';
+        let approved_employee_role = approved_user?.title || 'Technical Manager';
+        let approved_employee_signature = approved_user?.signature;
 
-        let authorized_employee_master = await masterResult.authorizedby_employee_master;
-        let authorized_employee_name = authorized_employee_master?.employee_full_name;
-        let authorized_employee_role = authorized_employee_master?.employee_role;
-        let authorized_employee_signature = authorized_employee_master?.employee_signature;
+        let authorizedby_user = masterResult.authorizedby_user;
+        let authorized_employee_name = authorizedby_user?.name || '-';
+        let authorized_employee_role = authorizedby_user?.title || 'Quality Manager';
+        let authorized_employee_signature = authorizedby_user?.signature;
 
         let lab_address = [
             lab.address1?.replace(/,\s*$/, '').trim(),
@@ -537,6 +533,8 @@ const generate = async (req, res, next) => {
         const sign2LogoPath = path.resolve(__dirname, `../public/${approved_employee_signature}`);
         const sign2LogoBuffer = await imageToBuffer(sign2LogoPath);
 
+        const sign3LogoPath = path.resolve(__dirname, `../public/${authorized_employee_signature}`);
+        const sign3LogoBuffer = await imageToBuffer(sign3LogoPath);
 
         let environmentalbody = [];
 
@@ -545,21 +543,6 @@ const generate = async (req, res, next) => {
         const defaultRH = "50 ± 10%";
 
 
-        // let row1 = [
-        //     { text: 'TEMP', alignment: 'center', bold: true },
-        //     { text: defaultTemp, alignment: 'center' },
-        //     { text: 'RH', alignment: 'center', bold: true },
-        //     { text: defaultRH, alignment: 'center' },
-        // ];
-
-
-        // let row2 = [
-        //     { text: 'ACTUAL', alignment: 'center', bold: true },
-        //     { text: `${temperature || '-'}`, alignment: 'center' },
-        //     { text: 'ACTUAL', alignment: 'center', bold: true },
-        //     { text: `${humidity || '-'}`, alignment: 'center' },
-        // ];
-        // Row 1
         let row1 = [
             {
                 text: 'ENVIRONMENTAL\nCONDITIONS',
@@ -607,17 +590,7 @@ const generate = async (req, res, next) => {
 
         const totalCols = row1.length;
 
-        // const headerRow = [
-        //     {
-        //         text: 'ENVIRONMENTAL CONDITIONS',
-        //         alignment: 'center',
-        //         colSpan: totalCols,
-        //         bold: true
-        //     },
-        //     ...Array(totalCols - 1).fill({})
-        // ];
 
-        //environmentalbody.push(headerRow);
         environmentalbody.push(row1);
         environmentalbody.push(row2);
 
@@ -646,12 +619,6 @@ const generate = async (req, res, next) => {
                 { text: capitalizeEachWord(idNo) || "-", alignment: 'center' }
             ],
             ...(instrumentDynamicRows || buildRangeLcTypeRow(range, lc, type, masterResult, isEnabled)),
-            // [
-            //     { text: 'CALIBRATION PROCEDURE & REF.STD:', alignment: 'left', colSpan: 2 },
-            //     {},
-            //     { text: `${capitalizeEachWord(calibration_procedure) || '-'}`, alignment: 'center', colSpan: 2 },
-            //     {}
-            // ],
             [
                 { text: 'CALIBRATION PROCEDURE :', alignment: 'left', bold: true },
 
@@ -833,26 +800,28 @@ const generate = async (req, res, next) => {
             },
             footer: function (currentPage, pageCount) {
                 const qrBuffer = lab_QR_LOGO_2_Buffer || lab_QR_LOGO_1_Buffer;
+                const SIGN_HEIGHT = Number(cmsSettingsMap['SIGNATURE_HEIGHT_CERTIFICATE']?.setting_value) || 20;
+                const labelMargin = SIGN_HEIGHT * 0.130;
 
                 const signatureTable = {
                     table: {
                         widths: ['16.6%', '16.6%', '16.6%', '16.6%', '16.6%', '16.6%'],
                         body: [
                             [
-                                { text: 'Calibrated By', alignment: 'center', fontSize: 8, },
-                                { text: '', alignment: 'center' },
-                                { text: 'Reviewd by', alignment: 'center', fontSize: 8, },
-                                { text: '', alignment: 'center' },
-                                { text: 'Authorized By', alignment: 'center', fontSize: 8, },
-                                { text: '', alignment: 'center' }
+                                { text: 'Calibrated By', alignment: 'center', fontSize: 8, valingn: 'center', margin: [0, labelMargin, 0, labelMargin] },
+                                sign1LogoBuffer ? { image: sign1LogoBuffer, fit: [SIGN_HEIGHT, SIGN_HEIGHT], alignment: 'center' } : { text: "", alignment: 'center' },
+                                { text: 'Reviewed by', alignment: 'center', fontSize: 8, valingn: 'center', margin: [0, labelMargin, 0, labelMargin] },
+                                sign2LogoBuffer ? { image: sign2LogoBuffer, fit: [SIGN_HEIGHT, SIGN_HEIGHT], alignment: 'center' } : { text: "", alignment: 'center' },
+                                { text: 'Authorized By', alignment: 'center', fontSize: 8, valingn: 'center', margin: [0, labelMargin, 0, labelMargin] },
+                                sign3LogoBuffer ? { image: sign3LogoBuffer, fit: [SIGN_HEIGHT, SIGN_HEIGHT], alignment: 'center' } : { text: "", alignment: 'center' }
                             ],
                             [
                                 { text: 'Name', alignment: 'center', fontSize: 8, },
-                                { text: calibrated_employee_name, alignment: 'center', fontSize: 8, },
+                                { text: `${calibrated_employee_name}`, alignment: 'center', fontSize: 8, },
                                 { text: 'Name', alignment: 'center', fontSize: 8, },
-                                { text: approved_employee_name, alignment: 'center', fontSize: 8, },
+                                { text: `${approved_employee_name}`, alignment: 'center', fontSize: 8, },
                                 { text: 'Name', alignment: 'center', fontSize: 8, },
-                                { text: authorized_employee_name || "-", alignment: 'center', fontSize: 8, }
+                                { text: `${authorized_employee_name}`, alignment: 'center', fontSize: 8, }
                             ]
                         ]
                     },
@@ -932,7 +901,7 @@ const generate = async (req, res, next) => {
                         ]]
                     },
                     layout: 'noBorders',
-                    margin: [isNABL ? 60 : 95, 0, isNABL ? 20 : 13, 15]
+                    margin: [isNABL ? 60 : 95, 0, isNABL ? 20 : 13, 0]
                 });
                 return out;
             },
@@ -1556,7 +1525,7 @@ const verify_certificate = async (req, res, next) => {
         const isExpired = expiredMasters.length > 0;
         const isBlockedBeforeDue = blockedMasters.length > 0;
 
-        const masterdeviceexpire = blockCalibrationSetting?.is_enable ? {
+        const masterdeviceexpire = blockCalibrationSetting.is_enable ? {
             isExpired,
             isBlockedBeforeDue,
             blockDays,
@@ -1698,7 +1667,7 @@ const cleanValue = (val) =>
     typeof val === 'string' ? val.replace(/\s+/g, ' ').trim() : val;
 
 const applySymbol = (val, symbol, pos) => {
-    if (!symbol || !val || val === '-') return val;
+    if (!symbol || !val || val === '-' || val === "N/A") return val;
     return pos === 'Suffix' ? `${val}${symbol}` : `${symbol}${val}`;
 };
 
@@ -1826,6 +1795,7 @@ const applyTableVAlignWorkaround = (tableRows) => {
 };
 
 
+
 function formatDynamicRowsFromOriginalRanges(
     rangesArray,
     masterResult = [],
@@ -1834,76 +1804,121 @@ function formatDynamicRowsFromOriginalRanges(
     description
 ) {
     if (!Array.isArray(rangesArray) || rangesArray.length === 0) return null;
-    //console.log(rangesArray, "rangesArray");
 
-    const isMeasuringPin = /measuring\s*pin/i.test(description || '');
-    const isTaperMandrel = /TAPER\s*MANDREL/i.test(description || '');
-    const isCoAxialGauge = /CO-AXIAL\s*GAUGE/i.test(description || '');
-    const isConcentricityGauge = /CONCENTRICITY\s*GAUGE/i.test(description || '');
+    const isSpecialType = /measuring\s*pin|taper\s*mandrel|co-axial\s*gauge|concentricity\s*gauge/i.test(description || '');
+
+    let keyValuePairs = [];
+    let order = 0;
+
     let rangeMin = null;
     let rangeMax = null;
     let rangeValue = null;
     let lcValue = null;
+
+    let rangeMinSymbol = '', rangeMinSymbolPos = 'Prefix';
+    let rangeMaxSymbol = '', rangeMaxSymbolPos = 'Prefix';
+    let rangeValueSymbol = '', rangeValueSymbolPos = 'Prefix';
+    let lcSymbol = '', lcSymbolPos = 'Prefix';
+
+    let rangeMinOrder = null;
+    let rangeMaxOrder = null;
+    let rangeValueOrder = null;
+    let lcOrder = null;
+
     let uom = '';
-    let symbol = '';
-    let symbolPos = 'Prefix';
+    let globalSymbol = '';
+    let globalSymbolPos = 'Prefix';
 
-    let keyValuePairs = [];
+    console.log(rangesArray, "rangesArray");
 
     // -----------------------------
-    // STEP 1: Extract RANGE / LC
+    // STEP 1: Extract + Preserve Order
     // -----------------------------
-    for (const obj of rangesArray) {
-        if (!obj || typeof obj !== 'object') continue;
+    rangesArray.forEach(obj => {
+        if (!obj || typeof obj !== 'object') return;
 
-        // Pick first valid UOM
-        if (
-            !uom &&
+        const localUom =
             obj.InstrumentparameterUOM &&
-            obj.InstrumentparameterUOM.toString().toLowerCase() !== 'select'
-        ) {
-            uom = obj.InstrumentparameterUOM;
+                obj.InstrumentparameterUOM.toLowerCase() !== 'select'
+                ? obj.InstrumentparameterUOM
+                : '';
+
+        if (!uom && localUom) uom = localUom;
+
+        if (!globalSymbol && obj.Symbols) {
+            globalSymbol = obj.Symbols;
+            globalSymbolPos = obj.SymbolPos || 'Prefix';
         }
 
-        // Capture symbol info
-        if (!symbol && obj.Symbols) {
-            symbol = obj.Symbols;
-            symbolPos = obj.SymbolPos || 'Prefix';
-        }
+        const rowSymbol = obj.Symbols || '';
+        const rowSymbolPos = obj.SymbolPos || 'Prefix';
 
-        for (const [key, value] of Object.entries(obj)) {
-            if (!value) continue;
+        Object.entries(obj).forEach(([key, value]) => {
+            if (
+                !value ||
+                key === 'InstrumentUOMID' ||
+                key === 'InstrumentparameterUOM' ||
+                key === 'Symbols' ||
+                key === 'SymbolPos' ||
+                key === 'isNaN'
+            ) return;
 
             const normalizedKey = key.toLowerCase().replace(/\./g, '').trim();
 
-            // ---------- RANGE ----------
+            const displayValue = obj.isNaN ? "N/A" : cleanValue(value);
+
+            // ---------- RANGE / LC Handling ----------
             if (normalizedKey.includes('range')) {
                 if (typeof value === 'string' && value.includes('-')) {
-                    // Case: "0-300"
-                    rangeValue = cleanValue(value);
+                    rangeValue = displayValue;
+                    rangeValueSymbol = obj.Symbols || '';
+                    rangeValueSymbolPos = obj.SymbolPos || 'Prefix';
+                    if (rangeValueOrder === null) rangeValueOrder = order;
                 } else if (normalizedKey.includes('min')) {
-                    rangeMin = cleanValue(value);
+                    rangeMin = displayValue;
+                    rangeMinSymbol = obj.Symbols || '';
+                    rangeMinSymbolPos = obj.SymbolPos || 'Prefix';
+                    if (rangeMinOrder === null) rangeMinOrder = order;
                 } else if (normalizedKey.includes('max')) {
-                    rangeMax = cleanValue(value);
+                    rangeMax = displayValue;
+                    rangeMaxSymbol = obj.Symbols || '';
+                    rangeMaxSymbolPos = obj.SymbolPos || 'Prefix';
+                    if (rangeMaxOrder === null) rangeMaxOrder = order;
                 } else {
-                    // Case: "01992"
-                    rangeValue = cleanValue(value);
+                    rangeValue = displayValue;
+                    rangeValueSymbol = obj.Symbols || '';
+                    rangeValueSymbolPos = obj.SymbolPos || 'Prefix';
+                    if (rangeValueOrder === null) rangeValueOrder = order;
                 }
+                order++;
+                return;
             }
 
-            // ---------- LC ----------
             if (
                 normalizedKey === 'lc' ||
-                normalizedKey === 'l c' ||
                 normalizedKey.includes('leastcount')
             ) {
-                lcValue = cleanValue(value);
+                lcValue = displayValue;
+                lcSymbol = obj.Symbols || '';
+                lcSymbolPos = obj.SymbolPos || 'Prefix';
+
+                if (lcOrder === null) lcOrder = order;
+                order++;
+                return;
             }
-        }
-    }
+
+            // ---------- NORMAL FIELDS (Preserve Order) ----------
+            const formattedVal = applySymbol(displayValue, rowSymbol, rowSymbolPos);
+            keyValuePairs.push({
+                name: `${key.toUpperCase()}:`,
+                value: (displayValue === "N/A") ? formattedVal : `${formattedVal}${localUom ? ' ' + localUom : ''}`,
+                _order: order++
+            });
+        });
+    });
 
     // -----------------------------
-    // STEP 2: Build Final RANGE
+    // STEP 2: Build RANGE / LC (append in correct position)
     // -----------------------------
     let finalRange = null;
 
@@ -1913,104 +1928,83 @@ function formatDynamicRowsFromOriginalRanges(
         finalRange = rangeValue;
     }
 
-    const validLC = isValidNumber(lcValue) ? lcValue : null;
+    const validLC = (isValidNumber(lcValue) || lcValue === "N/A") ? lcValue : null;
 
-    if (rangeMin !== null && (isMeasuringPin || isTaperMandrel || isCoAxialGauge || isConcentricityGauge)) {
-        keyValuePairs.push({
-            name: 'RANGE MIN:',
-            value: `${applySymbol(cleanValue(rangeMin), symbol, symbolPos)}${uom ? ' ' + uom : ''}`
-        });
-    }
-
-    if (rangeMax !== null && (isMeasuringPin || isTaperMandrel || isCoAxialGauge || isConcentricityGauge)) {
-        keyValuePairs.push({
-            name: 'RANGE MAX:',
-            value: `${applySymbol(cleanValue(rangeMax), symbol, symbolPos)}${uom ? ' ' + uom : ''}`
-        });
-    }
-
-    if (lcValue !== null && (isMeasuringPin || isTaperMandrel || isCoAxialGauge || isConcentricityGauge)) {
-        keyValuePairs.push({
-            name: 'LC:',
-            value: `${applySymbol(cleanValue(lcValue), symbol, symbolPos)}${uom ? ' ' + uom : ''}`
-        });
-    }
-
-
-
-    if (
-        (!isMeasuringPin && !isTaperMandrel && !isCoAxialGauge && !isConcentricityGauge) &&
-        (finalRange || validLC)
-    ) {
-        let name = '';
-        let display = '';
-
-        if (finalRange && validLC) {
-            name = 'RANGE / L.C:';
-            display = `${applySymbol(finalRange, symbol, symbolPos)} / ${validLC}`;
-        } else if (finalRange) {
-            name = 'RANGE:';   // ✅ FIX
-            display = applySymbol(finalRange, symbol, symbolPos);
-        } else {
-            name = 'L.C:';     // ✅ FIX
-            display = validLC;
+    if (isSpecialType) {
+        if (rangeMin !== null) {
+            const val = applySymbol(rangeMin, rangeMinSymbol, rangeMinSymbolPos);
+            keyValuePairs.push({
+                name: 'RANGE MIN:',
+                value: (rangeMin === "N/A") ? val : `${val}${uom ? ' ' + uom : ''}`,
+                _order: rangeMinOrder !== null ? rangeMinOrder : order++
+            });
         }
 
-        if (uom) display += ` ${uom}`;
+        if (rangeMax !== null) {
+            const val = applySymbol(rangeMax, rangeMaxSymbol, rangeMaxSymbolPos);
+            keyValuePairs.push({
+                name: 'RANGE MAX:',
+                value: (rangeMax === "N/A") ? val : `${val}${uom ? ' ' + uom : ''}`,
+                _order: rangeMaxOrder !== null ? rangeMaxOrder : order++
+            });
+        }
 
-        keyValuePairs.push({
-            name,
-            value: cleanValue(display)
-        });
-    }
+        if (lcValue !== null) {
+            const val = applySymbol(lcValue, lcSymbol, lcSymbolPos);
+            keyValuePairs.push({
+                name: 'LC:',
+                value: (lcValue === "N/A") ? val : `${val}${uom ? ' ' + uom : ''}`,
+                _order: lcOrder !== null ? lcOrder : order++
+            });
+        }
+    } else {
+        if (finalRange || validLC) {
+            let name = '';
+            let display = '';
 
-    // -----------------------------
-    // STEP 4: Other Keys
-    // -----------------------------
-    for (const obj of rangesArray) {
-        const localUom =
-            obj.InstrumentparameterUOM &&
-                obj.InstrumentparameterUOM.toLowerCase() !== 'select'
-                ? obj.InstrumentparameterUOM
-                : '';
+            if (rangeValue && validLC) {
+                name = 'RANGE / L.C:';
+                display = `${applySymbol(rangeValue, rangeValueSymbol, rangeValueSymbolPos)} / ${applySymbol(validLC, lcSymbol, lcSymbolPos)}`;
+            } else if (rangeMin !== null && rangeMax !== null && validLC) {
+                name = 'RANGE / L.C:';
+                display = `${applySymbol(rangeMin, rangeMinSymbol, rangeMinSymbolPos)}-${applySymbol(rangeMax, rangeMaxSymbol, rangeMaxSymbolPos)} / ${applySymbol(validLC, lcSymbol, lcSymbolPos)}`;
+            } else if (finalRange && validLC) {
+                name = 'RANGE / L.C:';
+                // finalRange usually comes from min/max flattened, but if it came from rangeValue it uses rangeValueSymbol
+                const rDisp = rangeValue
+                    ? applySymbol(rangeValue, rangeValueSymbol, rangeValueSymbolPos)
+                    : `${applySymbol(rangeMin, rangeMinSymbol, rangeMinSymbolPos)}-${applySymbol(rangeMax, rangeMaxSymbol, rangeMaxSymbolPos)}`;
+                display = `${rDisp} / ${applySymbol(validLC, lcSymbol, lcSymbolPos)}`;
+            } else if (finalRange) {
+                name = 'RANGE:';
+                display = rangeValue
+                    ? applySymbol(rangeValue, rangeValueSymbol, rangeValueSymbolPos)
+                    : `${applySymbol(rangeMin, rangeMinSymbol, rangeMinSymbolPos)}-${applySymbol(rangeMax, rangeMaxSymbol, rangeMaxSymbolPos)}`;
+            } else {
+                name = 'L.C:';
+                display = applySymbol(validLC, lcSymbol, lcSymbolPos);
+            }
 
-        // Each row can have its own symbol settings (e.g. GO vs NO-GO)
-        const rowSymbol = obj.Symbols || '';
-        const rowSymbolPos = obj.SymbolPos || 'Prefix';
+            if (uom && display !== "N/A") display += ` ${uom}`;
 
-        for (const [key, value] of Object.entries(obj)) {
-            if (
-                !value ||
-                key === 'InstrumentUOMID' ||
-                key === 'InstrumentparameterUOM' ||
-                key === 'Symbols' ||
-                key === 'SymbolPos'
-            ) continue;
-
-            const normalizedKey = key.toLowerCase().replace(/\./g, '').trim();
-
-            // Skip Range & LC (already handled)
-            if (
-                normalizedKey.includes('range') ||
-                normalizedKey === 'lc' ||
-                normalizedKey.includes('leastcount')
-            ) continue;
-
-            // Apply symbol to all measurement values
-            const displayValue = applySymbol(cleanValue(value), rowSymbol, rowSymbolPos);
+            // Find the best order for the combined field (first occurrence)
+            const combinedOrder = [rangeMinOrder, rangeMaxOrder, rangeValueOrder, lcOrder]
+                .filter(o => o !== null);
+            const finalOrder = combinedOrder.length > 0 ? Math.min(...combinedOrder) : order++;
 
             keyValuePairs.push({
-                name: `${key.toUpperCase()}:`,
-                value: `${displayValue}${cleanValue(localUom) ? ' ' + cleanValue(localUom) : ''}`
+                name,
+                value: cleanValue(display),
+                _order: finalOrder
             });
         }
     }
 
     // -----------------------------
-    // STEP 5: Witness
+    // STEP 3: Witness
     // -----------------------------
     if (
-        isEnabled("WITNESSBY_PRINT_CERTIFICATE") &&
+        isEnabled?.("WITNESSBY_PRINT_CERTIFICATE") &&
         Array.isArray(masterResult) &&
         masterResult.length > 0
     ) {
@@ -2019,8 +2013,6 @@ function formatDynamicRowsFromOriginalRanges(
                 w.name && w.designation
                     ? `${capitalizeEachWord(w.name)} - (${capitalizeEachWord(w.designation)})`
                     : w.name
-                        ? capitalizeEachWord(w.name)
-                        : null
             )
             .filter(Boolean)
             .join(', ');
@@ -2028,127 +2020,53 @@ function formatDynamicRowsFromOriginalRanges(
         if (witnessNames) {
             keyValuePairs.push({
                 name: 'WITNESSED BY:',
-                value: capitalizeEachWord(witnessNames)
+                value: witnessNames,
+                _order: order++
             });
         }
     }
 
     // -----------------------------
-    // STEP 6: Instrument Type
+    // STEP 4: Type
     // -----------------------------
     if (type) {
         keyValuePairs.push({
-            //name: 'INSTRUMENT TYPE:',
             name: 'INSTRUMENT / GAUGE SIZE:',
-            value: cleanValue(type)
+            value: cleanValue(type),
+            _order: order++
         });
     }
 
     if (keyValuePairs.length === 0) return null;
 
-    // ✅ -----------------------------
-    // ✅ SORT BEFORE BUILDING ROWS
     // -----------------------------
-    const keyOrder = [];
-
-    rangesArray.forEach(obj => {
-        Object.keys(obj).forEach(k => {
-            if (k === 'InstrumentUOMID' || k === 'InstrumentparameterUOM' || !obj[k]) return;
-
-            const normalized = k.toUpperCase().replace(/\./g, '').trim();
-
-            if (normalized.includes('RANGE') || normalized === 'LC' || normalized.includes('LEASTCOUNT')) {
-                if (isMeasuringPin || isTaperMandrel || isCoAxialGauge || isConcentricityGauge) {
-                    if (normalized.includes('MIN')) keyOrder.push('RANGE MIN:');
-                    else if (normalized.includes('MAX')) keyOrder.push('RANGE MAX:');
-                    else keyOrder.push('LC:');
-                } else {
-                    if (finalRange && validLC) keyOrder.push('RANGE / L.C:');
-                    else if (finalRange) keyOrder.push('RANGE:');
-                    else keyOrder.push('L.C:');
-                }
-            } else if (normalized.includes('SIZE')) {
-                keyOrder.push('INSTRUMENT / GAUGE SIZE:');
-            } else {
-                keyOrder.push(`${k.toUpperCase()}:`);
-            }
-        });
-    });
-
-    // Add any manually added fields (like Witnessed By) to the end of the order list
-    const uniqueKeyOrder = [...new Set([...keyOrder, ...keyValuePairs.map(i => i.name)])];
-
-    keyValuePairs.sort((a, b) => {
-        const aIndex = uniqueKeyOrder.indexOf(a.name);
-        const bIndex = uniqueKeyOrder.indexOf(b.name);
-        return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex);
-    });
+    // STEP 5: FINAL SORT (Stable)
+    // -----------------------------
+    keyValuePairs.sort((a, b) => a._order - b._order);
 
     // -----------------------------
-    // STEP 7: Build PDF Rows (2 columns)
+    // STEP 6: Build Rows (2-column layout)
     // -----------------------------
     let rows = [];
-    const rangeItem = keyValuePairs.find(k => k.name.includes('RANGE'));
-    const setNegItem = keyValuePairs.find(k => k.name.includes('SETVALUENEG'));
-    const setPosItem = keyValuePairs.find(k => k.name.includes('SETVALUEPOS'));
-
-    // ✅ SPECIAL CUSTOMER FORMAT
-    if (rangeItem && setNegItem && setPosItem) {
-
-        rows.push([
-            {
-                text: rangeItem.name,
-                rowSpan: 2,
-                vAlign: 'middle'   // ✅ vertical middle
-            },
-            {
-                text: rangeItem.value,
-                alignment: 'center', // horizontal center
-                rowSpan: 2,
-                vAlign: 'middle'     // ✅ vertical middle
-            },
-            { text: setNegItem.name },
-            { text: setNegItem.value, alignment: 'center' }
-        ]);
-
-        rows.push([
-            {}, // required empty cell for rowSpan
-            {},
-            { text: setPosItem.name },
-            { text: setPosItem.value, alignment: 'center' }
-        ]);
-
-        keyValuePairs = keyValuePairs.filter(k =>
-            !k.name.includes('RANGE') &&
-            !k.name.includes('SETVALUENEG') &&
-            !k.name.includes('SETVALUEPOS')
-        );
-    }
 
     for (let i = 0; i < keyValuePairs.length; i += 2) {
-        const row = [];
-
         const first = keyValuePairs[i];
-        row.push({ text: first.name });
-        row.push({ text: first.value, alignment: 'center' });
+        const second = keyValuePairs[i + 1];
 
-        if (keyValuePairs[i + 1]) {
-            const second = keyValuePairs[i + 1];
-            row.push({ text: second.name });
-            row.push({ text: second.value, alignment: 'center' });
-        } else {
-            row.push({ text: '' }, { text: '' });
-        }
-
-        rows.push(row);
+        rows.push([
+            { text: first.name },
+            { text: first.value, alignment: 'center' },
+            second
+                ? { text: second.name }
+                : { text: '' },
+            second
+                ? { text: second.value, alignment: 'center' }
+                : { text: '' }
+        ]);
     }
-    //console.log(applyTableVAlignWorkaround(rows), "applyTableVAlignWorkaround(rows)");
-
-    //return rows;
+    console.log(applyTableVAlignWorkaround(rows), "applyTableVAlignWorkaround(rows)");
     return applyTableVAlignWorkaround(rows);
 }
-
-
 
 
 const convertFilepathtoBlob = async (filePath, originalFileName) => {
@@ -2269,9 +2187,9 @@ const previewCertificate = async (req, res, next) => {
             ulr_number: 'ULR-DUMMY-123456789', description: 'Calibration of Dummy Instrument', ref_std: 'IS 12345', calibration_procedure: 'WI/CAL/01',
             temperature: { mean: '20.0' }, humidity: { mean: '50.0' }, atmospheric_pressure: '1013', frequency: '50',
             remarks: ['The results given in Calibration Certificate are valid only to the particular instrument submitted for calibration under the above stated condition, certificate shall not be reproduced with out the written permission of the Laboratory.', 'Condition of the MI / Gauges as Received.:Found OK.'], witnessed_by: 'Self', master_list_equipments: [],
-            calibrated_employee_master: { employee_full_name: 'John Doe', employee_role: 'Calibration Engineer', employee_signature: '' },
-            approved_employee_master: { employee_full_name: 'Jane Doe', employee_role: 'Technical Manager', employee_signature: '' },
-            authorizedby_employee_master: { employee_full_name: 'Authorized Signatory', employee_role: 'Quality Manager', employee_signature: '' }
+            calibrated_user: { name: 'John Doe', title: 'Calibration Engineer', signature: '' },
+            approved_user: { name: 'Jane Doe', title: 'Technical Manager', signature: '' },
+            authorizedby_user: { name: 'Authorized Signatory', title: 'Quality Manager', signature: '' }
         };
 
         const lab = {

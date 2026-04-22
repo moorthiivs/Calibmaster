@@ -6,7 +6,7 @@ import CustomButton from "../../../Inputs/CustomButton";
 import { AuthContext } from "../../../../context/auth-context";
 import { useDispatch } from "react-redux";
 import { notificationActions } from "../../../../store/nofitication";
-import config from "../../../../utils/config.js";
+import config from "../../../../utils/config.json";
 import QuotationTableItemInput from "./QuotationTableItemInput";
 import Loader from "../../../UI/Loader";
 
@@ -84,11 +84,12 @@ const SetQuotationItem = (props) => {
       };
 
       let response = await fetch(config.Calibmaster.URL + "/api/quotation/create-quotation", requestOptions);
-      response = await response.json();
-      if (response?.success) {
+      const responseData = await response.json();
+
+      if (response.ok && responseData?.success) {
         setError("");
         const newNotification = {
-          title: response?.msg,
+          title: responseData?.msg || "Quotation sent successfully!",
           description: "",
           icon: "success",
           state: true,
@@ -96,29 +97,31 @@ const SetQuotationItem = (props) => {
         };
         dispatch(notificationActions.changenotification(newNotification));
         setIsLoaded(true);
-      }
-      if (response.status === "FAILURE") {
+      } else {
+        // Display the specific error message from the backend
+        const backendMessage = responseData?.message || responseData?.msg || "Something went wrong while sending the quotation.";
+        setError(backendMessage);
         const errornotification = {
-          title: response.message,
-          description: "",
+          title: "Quotation Error",
+          description: backendMessage,
           icon: "error",
           state: true,
-          timeout: 15000,
+          timeout: 20000,
         };
         dispatch(notificationActions.changenotification(errornotification));
-
         setIsLoaded(true);
       }
     } catch (error) {
-      console.log(error)
+      console.log(error);
       const errornotification = {
         title: "Something went wrong !!",
-        description: "",
+        description: "An unexpected error occurred. Please try again.",
         icon: "error",
         state: true,
         timeout: 15000,
       };
       dispatch(notificationActions.changenotification(errornotification));
+      setIsLoaded(true);
     }
   }
 

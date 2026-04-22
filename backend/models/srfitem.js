@@ -226,6 +226,18 @@ module.exports = (sequelize, DataTypes) => {
       instrument_type_at_calibration: {
         type: DataTypes.STRING,
         allowNull: true,
+      },
+      assignedTo: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+      },
+      Reviewedby: {
+        type: DataTypes.JSON,
+        allowNull: true,
+      },
+      Authorizedby: {
+        type: DataTypes.JSON,
+        allowNull: true,
       }
     },
     {

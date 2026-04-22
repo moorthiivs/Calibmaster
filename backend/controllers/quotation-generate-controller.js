@@ -567,8 +567,25 @@ const createQuotation = async (req, res, next) => {
             }
             catch (err) {
                 console.log(err);
-                const error = new Error("There was an error while sending the quotation to the customer.");
-                error.code = 500;
+
+                // Detect specific SMTP errors and return friendly messages
+                let errorMessage = "There was an error while sending the quotation to the customer.";
+
+                if (err.code === "EENVELOPE") {
+                    // Invalid recipient email address
+                    const rejectedEmail = err.rejected?.[0] || customer_Detail.email;
+                    errorMessage = `Email delivery failed: The email address "${rejectedEmail}" does not exist or is invalid. Please update the customer's email address and try again.`;
+                } else if (err.code === "EAUTH") {
+                    errorMessage = "Email authentication failed. Please check your SMTP username and password in Email Setup.";
+                } else if (err.code === "ECONNECTION" || err.code === "ETIMEDOUT") {
+                    errorMessage = "Could not connect to the email server. Please check your SMTP host and port settings in Email Setup.";
+                } else if (err.responseCode === 550) {
+                    const rejectedEmail = err.rejected?.[0] || customer_Detail.email;
+                    errorMessage = `Email delivery failed: The address "${rejectedEmail}" was rejected by the mail server. Please verify the customer's email is correct.`;
+                }
+
+                const error = new Error(errorMessage);
+                error.code = 422;
                 return errorHandler(error, req, res, next);
             }
         })

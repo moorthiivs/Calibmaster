@@ -20,7 +20,8 @@ import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { createStyles } from 'antd-style';
 import { AuthContext } from '../../../context/auth-context';
-import config from '../../../utils/config.js'
+import config from '../../../utils/config.json'
+import { usePermissions } from '../../../hooks/usePermissions';
 
 import moment from 'moment';
 
@@ -55,6 +56,7 @@ const { Option } = Select;
 
 const InwardReports = () => {
     const auth = useContext(AuthContext)
+    const { hasPermission } = usePermissions();
     const { styles } = useStyle();
     const [dateRange, setDateRange] = useState([]);
     const [selectedDate, setSelectedDate] = useState(dayjs());
@@ -169,6 +171,7 @@ const InwardReports = () => {
 
 
     const fetchCustomers = async () => {
+        if (!hasPermission("LIST_CUSTOMER")) return;
         setloading(true)
         try {
             const response = await fetch(config.Calibmaster.URL + "/api/customers/list", {
@@ -442,7 +445,7 @@ const InwardReports = () => {
                                 onChange={value => setSelectedCustomer(value)}
                                 style={{ width: '100%' }}
                             >
-                                {customerList.map(c => (
+                                {customerList?.map(c => (
                                     <Option key={c.customer_id} value={c.customer_id}>
                                         {c.customer_name}
                                     </Option>

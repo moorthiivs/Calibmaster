@@ -13,11 +13,12 @@ import CustomSelect from "../../Inputs/CustomSelect";
 
 import StatusBadge from "../../UI/StatusBadge";
 import { updatedcSchema } from "../../../Schemas/updatedc";
-import config from "../../../utils/config.js";
+import config from "../../../utils/config.json";
 import { AuthContext } from "../../../context/auth-context";
 import { notificationActions } from "../../../store/nofitication";
 import { srfitemsActions } from "../../../store/srfitems";
 import { updaterepSchema } from "../../../Schemas/updaterep";
+import { usePermissions } from "../../../hooks/usePermissions";
 const dispatchmodes = [
   {
     label: "Post",
@@ -39,6 +40,7 @@ const SRFItemsListView = (props) => {
   const dispatch = useDispatch();
   const [isLoaded, setIsLoaded] = useState(true);
   const auth = useContext(AuthContext);
+  const { hasPermission } = usePermissions();
 
   useEffect(() => {
     setError();
@@ -350,8 +352,7 @@ const SRFItemsListView = (props) => {
         ) : null}
       </Card>
       {error ? <p className="red center w100">{error}</p> : null}
-      {props.mode === "updatedc" &&
-        (auth.department == "admin" || auth.department == "CSD") ? (
+      {props.mode === "updatedc" && hasPermission("EDIT_SRF") ? (
         <Button
           label="Update Dispatch Details"
           variant="brand"
@@ -359,8 +360,7 @@ const SRFItemsListView = (props) => {
           className="mar051"
         />
       ) : null}
-      {props.mode === "updatereport" &&
-        (auth.department == "admin" || auth.department == "CSD") ? (
+      {props.mode === "updatereport" && hasPermission("EDIT_SRF") ? (
         <Button
           label="Update Report Details"
           variant="neutral"
@@ -368,8 +368,7 @@ const SRFItemsListView = (props) => {
           className="mar051"
         />
       ) : null}
-      {props.mode === "updateinvoice" &&
-        (auth.department == "admin" || auth.department == "Accounts") ? (
+      {props.mode === "updateinvoice" && hasPermission("EDIT_SRF") ? (
         <Button
           label="Update Invoice Detail"
           variant="brand"
@@ -377,8 +376,7 @@ const SRFItemsListView = (props) => {
           className="mar051"
         />
       ) : null}
-      {props.mode === "updatepayment" &&
-        (auth.department == "admin" || auth.department == "Accounts") ? (
+      {props.mode === "updatepayment" && hasPermission("EDIT_SRF") ? (
         <Button
           label="Mark as Paid"
           variant="success"

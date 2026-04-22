@@ -3,7 +3,8 @@ import { Card, Input, Button, Tooltip, Dropdown, message } from "antd";
 import { SearchOutlined, EditOutlined, DeleteFilled, MoreOutlined, EditFilled } from "@ant-design/icons";
 import { useDispatch } from "react-redux";
 import { AuthContext } from "../../../context/auth-context";
-import config from "../../../utils/config.js";
+import { usePermissions } from "../../../hooks/usePermissions";
+import config from "../../../utils/config.json";
 import { notificationActions } from "../../../store/nofitication";
 import { useNavigate } from "react-router-dom";
 import { instrumentIdActions } from "../../../store/instrumentId";
@@ -16,6 +17,7 @@ const ListInstrument = () => {
   const auth = useContext(AuthContext);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { hasPermission } = usePermissions();
 
   const [instrumentList, setInstrumentList] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -107,23 +109,30 @@ const ListInstrument = () => {
   }
 
   const ActionMenu = ({ row }) => {
-    const menuItems = [
-      {
+    const menuItems = [];
+    
+    if (hasPermission("EDIT_INSTRUMENT")) {
+      menuItems.push({
         key: "edit",
         label: "Edit",
         icon: <EditFilled />,
         onClick: () => {
           redirectHandler(row.instrument_id)
         },
-      },
-      {
+      });
+    }
+
+    if (hasPermission("DELETE_INSTRUMENT")) {
+      menuItems.push({
         key: "delete",
         label: "Delete",
         icon: <DeleteFilled />,
         danger: true,
         onClick: () => handleDelete(row.instrument_id),
-      },
-    ];
+      });
+    }
+
+    if (menuItems.length === 0) return null;
 
     return (
       <Dropdown
@@ -170,13 +179,14 @@ const ListInstrument = () => {
     //   ),
     // },
 
-    {
-      title: "Actions",
-      key: "actions",
-      align: "center",
-      render: (_, row) => <ActionMenu row={row} />,
-    },
-  ];
+        // Actions column — only rendered if user has at least one action permission
+        (hasPermission("EDIT_INSTRUMENT") || hasPermission("DELETE_INSTRUMENT")) && {
+            title: "Actions",
+            key: "actions",
+            align: "center",
+            render: (_, row) => <ActionMenu row={row} />,
+        },
+    ].filter(Boolean);
 
   return (
     <div className="users__containers">

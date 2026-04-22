@@ -92,7 +92,10 @@ const create = async (req, res, next) => {
                     calibration_procedure, ref_std, instrument_type_id,
                     validity, traceability,
                     temperature, humidity, atmospheric_pressure, frequency, ulr_number, description,
-                    master_list_equipments, remarks, calibrated_employee_id, approved_employee_id, authorizedby_employee_id,
+                    master_list_equipments, remarks, 
+                    calibrated_user_id: calibrated_employee_id, 
+                    approved_user_id: approved_employee_id, 
+                    authorizedby_user_id: authorizedby_employee_id,
                     document_format: selectedFormatdoc, witnessed_by: WitnessbyData
                 },
                 { where: { lab_id, srf_id, srf_item_id, } }
@@ -135,7 +138,10 @@ const create = async (req, res, next) => {
                 unique_id: new Date().getTime(),
                 validity, traceability,
                 temperature, humidity, atmospheric_pressure, frequency, ulr_number, description,
-                master_list_equipments, remarks, calibrated_employee_id, approved_employee_id, authorizedby_employee_id,
+                master_list_equipments, remarks, 
+                calibrated_user_id: calibrated_employee_id, 
+                approved_user_id: approved_employee_id, 
+                authorizedby_user_id: authorizedby_employee_id,
                 document_format: selectedFormatdoc, witnessed_by: WitnessbyData
             });
             const result = await newMasterTable.save();
@@ -161,6 +167,10 @@ const create = async (req, res, next) => {
                 });
                 const result = await newProcedureResultTable.save();
 
+                const updateItemStatus = await Item.update(
+                    { status: "calibration done", assignedTo: calibrated_employee_id },
+                    { where: { lab_id, srf_id, srf_item_id, } }
+                );
                 return res.json({ msg: "Result Tables Added Successfully" });
             } else {
                 const error = new Error("Failed To Add Result Tables");
@@ -245,7 +255,7 @@ const update = async (req, res, next) => {
             calibration_procedure, ref_std,
             validity, traceability,
             temperature, humidity, atmospheric_pressure, frequency, ulr_number,
-            master_list_equipments, remarks, calibrated_employee_id, approved_employee_id,
+            master_list_equipments, remarks, calibrated_employee_id, approved_employee_id, authorizedby_employee_id,
             mainArray
         } = req.body;
 
@@ -254,7 +264,10 @@ const update = async (req, res, next) => {
                 calibration_procedure, ref_std, instrument_type_id,
                 validity, traceability,
                 temperature, humidity, atmospheric_pressure, frequency, ulr_number,
-                master_list_equipments, remarks, calibrated_employee_id, approved_employee_id
+                master_list_equipments, remarks, 
+                calibrated_user_id: calibrated_employee_id, 
+                approved_user_id: approved_employee_id,
+                authorizedby_user_id: authorizedby_employee_id
             },
             { where: { master_result_table_id, lab_id } }
         );

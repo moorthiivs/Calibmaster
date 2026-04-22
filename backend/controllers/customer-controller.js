@@ -11,6 +11,7 @@ const { Company } = require("../models")
 
 const createCustomer = async (req, res, next) => {
 
+
     if (!req.body || !req.body.customer || !req.body.customer_contact) {
         let action = "All fields are required";
         const error = new Error(action);
@@ -177,6 +178,7 @@ const createCustomer = async (req, res, next) => {
 
 const listCustomer = async (req, res, next) => {
 
+
     const { labId } = req.body;
 
     if (!labId) {
@@ -267,6 +269,7 @@ const fetchCustomer = async (req, res, next) => {
 }
 
 const editCustomer = async (req, res, next) => {
+
 
     if (!req.body || !req.body.customer || !req.body.customer_contact || !req.body.customer_id) {
         let action = "All fields are required";

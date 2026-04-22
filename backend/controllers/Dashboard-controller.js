@@ -657,7 +657,8 @@ const ChartData = async (req, res) => {
     const recentActivities = await recentActivity(req);
     res.json({ linechartdata: result, plantwiseData: plantData, gaugeWiseData: gaugeDatas, recentActivities });
   } catch (error) {
-    console.log(error);
+    console.error("ChartData error:", error);
+    res.status(500).json({ error: "Failed to fetch chart data" });
   }
 
 };
@@ -741,9 +742,8 @@ const plantwiseData = async (req) => {
 
     return plantData;
   } catch (error) {
-
-    console.log(error);
-
+    console.error("plantwiseData error:", error);
+    return [];
   }
 
 };
@@ -849,9 +849,8 @@ const gaugeWiseData = async (req) => {
 
     return donutChartData;
   } catch (error) {
-
-    console.log(error);
-
+    console.error("gaugeWiseData error:", error);
+    return [];
   }
 
 };
@@ -929,8 +928,8 @@ const recentActivity = async (req) => {
         id: row.srf_number,
         customer: row.customer.customer_name,
         instrument:
-          item.intrument_type?.instrument?.instrument_name.toString().trim().toUpperCase() ||
-          item.intrument_type?.instrument_full_name.toString().trim().toUpperCase() ||
+          item.intrument_type?.instrument?.instrument_name?.toString().trim().toUpperCase() ||
+          item.intrument_type?.instrument_full_name?.toString().trim().toUpperCase() ||
           "Instrument",
         status:
           item.status === "Report Generated"
@@ -950,7 +949,8 @@ const recentActivity = async (req) => {
     return formatted;
 
   } catch (error) {
-    console.log(error);
+    console.error("recentActivity error:", error);
+    return [];
   }
 };
 

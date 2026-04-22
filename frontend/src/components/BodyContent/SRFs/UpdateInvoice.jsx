@@ -8,12 +8,13 @@ import { AuthContext } from "../../../context/auth-context";
 import { srfitemsActions } from "../../../store/srfitems";
 import CustomInput from "../../Inputs/CustomInput";
 import StatusBadge from "../../UI/StatusBadge";
-import config from "../../../utils/config.js";
+import config from "../../../utils/config.json";
 import { getBase64 } from "../../../utils/utilfuns";
 import { childSrfItemsActions } from "../../../store/childSrfItems";
 import { selecteditemsActions } from "../../../store/selecteditems";
 import { convertDateFormat } from "../../../utils/filters";
 import Loader from "../../UI/Loader";
+import { usePermissions } from "../../../hooks/usePermissions";
 
 const UpdateInvoice = (props) => {
 
@@ -36,6 +37,7 @@ const UpdateInvoice = (props) => {
 
   const selecteditems = useSelector((state) => state.selecteditems.list);
   const auth = useContext(AuthContext);
+  const { hasPermission } = usePermissions();
   const [fileKey, setFileKey] = useState(Date.now());
   const getSRFDetail = async () => {
 
@@ -288,7 +290,7 @@ const UpdateInvoice = (props) => {
                 </span>
               </p>
 
-              {auth.department != "Calibration" ? (
+              {hasPermission("EDIT_SRF") ? (
                 <>
                   <p className="bold">
                     Contact Person:{" "}
@@ -322,12 +324,12 @@ const UpdateInvoice = (props) => {
 
               <div className="srf__items__container">
 
-                <Card className="items__table__card my-5">
+                <Card className="items__table__card" style={{ marginBottom: "1rem" }}>
                   <SRFItemsListView srfItems={selecteditems} />
                 </Card>
 
-                <Card className="items__table__card my-5">
-                  <div className="dc__info__container flex gap-5 my-5 mx-10 justify-center" >
+                <Card className="items__table__card mtop1">
+                  <div className="dc__info__container flex gap-5 my-5" >
                     <div >
                       <CustomInput
                         label="Invoice No."

@@ -5,6 +5,7 @@ const { Op } = require("sequelize");
 const InstrumentParameter = require("../models").InstrumentParameter
 
 const ListInstrument = async (req, res, next) => {
+
   const { lab_id } = req.body;
 
   try {
@@ -29,6 +30,7 @@ const ListInstrument = async (req, res, next) => {
 };
 
 const createInstrument = async (req, res, next) => {
+
   let {
     instrument_name,
     instrument_uom_id,
@@ -184,6 +186,7 @@ const fetchById = async (req, res, next) => {
 };
 
 const editInstrument = async (req, res, next) => {
+
   const {
     instrument_id,
     instrument_name,

@@ -1,13 +1,16 @@
 import { Table, Button, Tooltip, Space } from 'antd';
-import { EyeOutlined, FileSearchOutlined, DeleteOutlined, DownCircleFilled, DownCircleOutlined, CloudDownloadOutlined } from '@ant-design/icons';
+import { EyeOutlined, FileSearchOutlined, DeleteOutlined, CloudDownloadOutlined } from '@ant-design/icons';
 import moment from 'moment';
 import { useEffect, useState } from 'react';
+import { usePermissions } from '../../hooks/usePermissions';
 
 const createDateFormat = (value) => value ? moment(value).format('DD-MM-YYYY') : '';
 
 const AntTableSRF = ({ SRFList, auth, srfViewHandler, srfPreviewHandler, handleDeleteSRF, handleBulkDownload }) => {
 
-    const [isloading, setisloading] = useState(true)
+    const [isloading, setisloading] = useState(true);
+    const { hasPermission } = usePermissions();
+
     const columns = [
         {
             title: 'S.No',
@@ -74,64 +77,74 @@ const AntTableSRF = ({ SRFList, auth, srfViewHandler, srfPreviewHandler, handleD
             align: 'center',
             render: (text) => createDateFormat(text),
         },
-        {
+    ];
+
+    // Evaluate SRF-level permissions once
+    const canViewSRF    = hasPermission('VIEW_SRF');
+    const canEditSRF    = hasPermission('EDIT_SRF');
+    const canDeleteSRF  = hasPermission('DELETE_SRF');
+
+    // Only add the Action column if the user has at least one SRF-level action permission
+    if (canViewSRF || canEditSRF || canDeleteSRF) {
+        columns.push({
             title: 'ACTION',
             key: 'action',
             fixed: 'right',
             align: 'center',
             render: (_, record) => (
-
-
                 <Space size="middle">
-                    {/* View SRF Button */}
-                    <Tooltip title="View SRF">
-                        <Button
-                            icon={<EyeOutlined />}
-                            onClick={() => srfViewHandler(record.srf_id)}
-                        />
-                    </Tooltip>
 
-                    {/* Show Preview & Delete only for admin or CSD */}
-                    {(auth.department === 'admin' || auth.department === 'CSD') && (
-                        <>
-                            {/* Bulk Certificate Download */}
-                            <Tooltip title="Bulk Certificate Download">
-                                <Button
-                                    icon={<CloudDownloadOutlined />}
-                                    type='dashed'
-                                    onClick={() => handleBulkDownload(record.srf_id)}
-                                />
-                            </Tooltip>
-
-                            {/* Preview SRF Button */}
-                            <Tooltip title="Preview SRF (Full Format)">
-                                <Button
-                                    icon={<FileSearchOutlined />}
-                                    type="primary"
-                                    onClick={() => srfPreviewHandler(record.srf_id)}
-                                />
-                            </Tooltip>
-
-                            {/* Delete SRF Button */}
-                            <Tooltip title="Delete SRF">
-                                <Button
-                                    icon={<DeleteOutlined />}
-                                    danger
-                                    onClick={() => handleDeleteSRF(record.srf_id)}
-                                />
-                            </Tooltip>
-
-
-                        </>
+                    {/* View SRF — requires VIEW_SRF permission */}
+                    {canViewSRF && (
+                        <Tooltip title="View SRF">
+                            <Button
+                                icon={<EyeOutlined />}
+                                onClick={() => srfViewHandler(record.srf_id)}
+                            />
+                        </Tooltip>
                     )}
+
+                    {/* Bulk Certificate Download — requires EDIT_SRF permission */}
+                    {canEditSRF && (
+                        <Tooltip title="Bulk Certificate Download">
+                            <Button
+                                icon={<CloudDownloadOutlined />}
+                                type='dashed'
+                                onClick={() => handleBulkDownload(record.srf_id)}
+                            />
+                        </Tooltip>
+                    )}
+
+                    {/* Preview SRF — requires EDIT_SRF permission */}
+                    {canEditSRF && (
+                        <Tooltip title="Preview SRF (Full Format)">
+                            <Button
+                                icon={<FileSearchOutlined />}
+                                type="primary"
+                                onClick={() => srfPreviewHandler(record.srf_id)}
+                            />
+                        </Tooltip>
+                    )}
+
+                    {/* Delete SRF — requires DELETE_SRF permission */}
+                    {canDeleteSRF && (
+                        <Tooltip title="Delete SRF">
+                            <Button
+                                icon={<DeleteOutlined />}
+                                danger
+                                onClick={() => handleDeleteSRF(record.srf_id)}
+                            />
+                        </Tooltip>
+                    )}
+
                 </Space>
             ),
-        },
-    ];
+        });
+    }
 
     useEffect(() => {
-        if (SRFList) setisloading(false)
-    }, [SRFList])
+        if (SRFList) setisloading(false);
+    }, [SRFList]);
 
     return (
         <Table

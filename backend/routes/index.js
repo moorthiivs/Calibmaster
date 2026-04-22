@@ -3,7 +3,6 @@ const path = require("path");
 
 const router = express.Router();
 
-// Task Management + Sync (NEW — additive only, no existing routes modified)
 const taskRoutes = require("./task-routes");
 const syncRoutes = require("./sync-routes");
 
@@ -44,7 +43,8 @@ const cmsRoutes = require('./cms-routes');
 const cmsPermissionsRoutes = require('./cms-permissions-route');
 
 const designProceduresRoutes = require('./design-procedures-routes');
-const employeeMasterRoutes = require('./employee-master-routes');
+
+const rolesRoutes = require('./roles-routes');
 const resultTableRoutes = require('./result-table-routes');
 
 const generateCertificateRoutes = require('./generate-certificate-routes');
@@ -83,7 +83,7 @@ const Dashboard = require('./dashboard-routes')
 const MakeModel = require('./makeModel.routes')
 
 const DataStorage = require('./Data-storage-routes')
-const EmployeeTrack = require('./employee-track-routes')
+const UserTrack = require('./user-track-routes')
 //Routes of the APP
 router.use("/api/heartbeat", heartbeatRoute);
 router.use("/api/users", usersRoutes);
@@ -131,10 +131,10 @@ router.use("/api/cms-permissions-setting", cmsPermissionsRoutes);
 
 // Routes for Design Procedures
 router.use("/api/design-procedures", designProceduresRoutes);
-// Routes for Employee Master
-router.use("/api/employee-master", employeeMasterRoutes);
+// Routes for Result Tables
 // Routes for Result Tables
 router.use("/api/result-tables", resultTableRoutes);
+router.use("/api/roles", rolesRoutes);
 
 // Routes for Dynamic Certificate
 router.use("/api/generate-certificate", generateCertificateRoutes);
@@ -184,7 +184,7 @@ router.use('/api/makemodel/', Authorization, MakeModel)
 
 router.use('/api/data-storage/', Authorization, DataStorage)
 
-router.use('/api/employee-track', EmployeeTrack)
+router.use('/api/user-track', UserTrack)
 
 // ─── Task Management & Sync (NEW) ────────────────────────────────────────────
 router.get('/env-config.js', (req, res) => {
@@ -197,8 +197,8 @@ router.get('/env-config.js', (req, res) => {
     `);
 });
 
-router.use("/api/tasks", taskRoutes);
-router.use("/api/sync",  syncRoutes);
+router.use("/api/tasks", Authorization, taskRoutes);
+router.use("/api/sync", Authorization, syncRoutes);
 
 router.get("/*", (req, res) => {
     const frontendPath = path.join(__dirname + "../../public/index.html");

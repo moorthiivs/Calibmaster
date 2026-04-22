@@ -36,6 +36,23 @@ module.exports = (sequelize, DataTypes) => {
     companyId: {
       type: DataTypes.INTEGER,
       allowNull: true
+    },
+    title: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    signature: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    roleId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+    refreshToken: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      comment: "Hashed refresh token — set on login, cleared on logout"
     }
   });
 
@@ -45,6 +62,12 @@ module.exports = (sequelize, DataTypes) => {
       constrains: true,
       onDelete: "CASCADE",
       foreignKey: "labId",
+    });
+    User.belongsTo(models.Role, {
+      as: "role",
+      constrains: true,
+      onDelete: "SET NULL",
+      foreignKey: "roleId",
     });
   };
 

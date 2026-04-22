@@ -8,6 +8,8 @@ export const AuthContext = createContext({
   department: null,
   email: null,
   labId: null,
+  roleId: null,
+  permissions: [],
   backEndVersion: null,
   login: () => {},
   logout: () => {},

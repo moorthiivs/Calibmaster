@@ -2,8 +2,10 @@ import React, { useContext, useState, useEffect } from 'react';
 import { Card, Button, Input, TableWithBrowserPagination, Column, Spinner } from "react-rainbow-components";
 import { AuthContext } from '../../../context/auth-context';
 import { notificationActions } from "../../../store/nofitication";
-import config from "../../../utils/config.js";
+import config from "../../../utils/config.json";
 import { useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import { usePermissions } from '../../../hooks/usePermissions';
 import EditBankConfig from './EditBankDetails';
 import Loader from '../../UI/Loader';
 
@@ -11,6 +13,8 @@ const ListBankConfig = () => {
 
     const auth = useContext(AuthContext);
     const dispatch = useDispatch();
+    const navigate = useNavigate();
+    const { hasPermission } = usePermissions();
 
     const [BankConfigList, setBankConfigList] = useState([]);
     const [loading, setloading] = useState(false);
@@ -82,8 +86,17 @@ const ListBankConfig = () => {
         <div className="users__container">
             <Card className="users__card">
 
-                <div className="users__label">
-                    <h3 className="text-lg font-bold my-5">LUT Config View</h3>
+                <div className="users__label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h3 className="text-lg font-bold my-5">Bank Config List</h3>
+                    {hasPermission("ACCESS_BANK_CONFIG") && (
+                        <Button
+                            label="+ Add Bank Config"
+                            variant="brand"
+                            size="small"
+                            className="rainbow-m-around_medium"
+                            onClick={() => navigate("/dashboard/bank-config/add")}
+                        />
+                    )}
                 </div>
 
                 <TableWithBrowserPagination

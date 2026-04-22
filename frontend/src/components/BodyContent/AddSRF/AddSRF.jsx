@@ -3,7 +3,7 @@ import { useContext, useEffect, useState } from "react";
 import CompanyLookUp from "./CompanyLookUp";
 import { useDispatch, useSelector } from "react-redux";
 import { AuthContext } from "../../../context/auth-context";
-import config from "../../../utils/config.js";
+import config from "../../../utils/config.json";
 import { companiesActions } from "../../../store/companies";
 import { notificationActions } from "../../../store/nofitication";
 import ItemsList from "../ItemsList/ItemsList";
@@ -12,6 +12,7 @@ import { itemsActions } from "../../../store/items";
 import { formattedDate } from "../../helpers/Helper";
 import Loader from "../../UI/Loader";
 import dayjs from "dayjs";
+import { usePermissions } from "../../../hooks/usePermissions";
 
 const { TextArea } = Input;
 const { Text } = Typography;
@@ -72,6 +73,7 @@ const AddSRF = () => {
   const auth = useContext(AuthContext);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { hasPermission } = usePermissions();
   const items = useSelector((state) => state.items.list);
   const companies = useSelector((state) => state.companies.list);
 
@@ -122,35 +124,31 @@ const AddSRF = () => {
       console.log(error);
     }
   };
-
   // Fetch Companies
   useEffect(() => {
-    const requestOptions = {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer " + auth.token,
-      },
-      body: JSON.stringify({ labId: auth.labId }),
+    const loadCompanies = async () => {
+      if (!hasPermission("LIST_CUSTOMER") && !hasPermission("CREATE_SRF")) return;
+
+      try {
+        const response = await fetch(config.Calibmaster.URL + "/api/customers/list", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + auth.token,
+          },
+          body: JSON.stringify({ labId: auth.labId }),
+        });
+        const data = await response.json();
+        if (data.code === 200 || data.data) {
+          dispatch(companiesActions.changecompanies(data.data));
+        }
+      } catch (err) {
+        console.error("Error while getting Companies:", err);
+        setError("Error While Getting Companies");
+      }
     };
 
-    fetch(config.Calibmaster.URL + "/api/customers/list", requestOptions)
-      .then(async (response) => {
-        const data = await response.json();
-        dispatch(companiesActions.changecompanies(data.data));
-      })
-      .catch((err) => {
-        const errornotification = {
-          title: "Error while getting Companies!!",
-          description: "Getting list of companies from server failed!!",
-          icon: "error",
-          state: true,
-          timeout: 15000,
-        };
-        dispatch(notificationActions.changenotification(errornotification));
-        setError("Error While Getting Companies");
-      });
-
+    loadCompanies();
     fetchSRFConfig();
   }, []);
 

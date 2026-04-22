@@ -78,24 +78,24 @@ const LoginCard = (props) => {
       if (data) {
         if (data.code === 200) {
           const data1 = data.data;
-          if (data1.email != "root@iviewsense.com") {
+          if (data1.email !== "root@iviewsense.com") {
             const prefix = "data:" + data1.imgtype + ";base64,";
             const base64data = new Buffer(data.data.image).toString("base64");
             // localStorage.setItem("logo", prefix + base64data);
             localStorage.setItem("logo", data.data.filename);
-          }
 
-          // Track Login FIRST
-          const trackRes = await apipostHandler("/api/employee-track/login", { userId: data1.userId }, data1.token);
+            // Track Login FIRST
+            const trackRes = await apipostHandler("/api/user-track/login", { userId: data1.userId }, data1.token);
 
-          if (trackRes.data && trackRes.data.status === "ERROR") {
-            notification.error({
-              message: "Concurrent Login Detected",
-              description: trackRes.data.message,
-              placement: "topRight"
-            });
-            setError(trackRes.data.message);
-            return;
+            if (trackRes.data && trackRes.data.status === "ERROR") {
+              notification.error({
+                message: "Concurrent Login Detected",
+                description: trackRes.data.message,
+                placement: "topRight"
+              });
+              setError(trackRes.data.message);
+              return;
+            }
           }
 
           auth.login(
@@ -104,8 +104,16 @@ const LoginCard = (props) => {
             data1.name,
             data1.email,
             data1.department,
-            data1.labId
+            data1.labId,
+            data1.roleId,
+            data1.permissions
           );
+
+          // Store tokens in localStorage for apiClient.js auto-injection
+          localStorage.setItem("token", data1.token);
+          if (data1.refreshToken) {
+            localStorage.setItem("refreshToken", data1.refreshToken);
+          }
 
           setError();
           props.redirect(true);

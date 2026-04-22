@@ -9,6 +9,7 @@ import { HTML5Backend } from 'react-dnd-html5-backend';
 import isEqual from 'lodash/isEqual';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
+import { usePermissions } from '../../../hooks/usePermissions';
 
 const { Option } = Select;
 const ITEM_TYPE = 'PARAMETER_ROW';
@@ -253,6 +254,7 @@ const InstrumentVariantForm = ({
 
     const navigate = useNavigate();
     const dispatch = useDispatch();
+    const { hasPermission } = usePermissions();
 
     const labTypeOptions = ['NABL', 'NON-NABL', 'SERVICE'];
     const CategoryOfItem = ['Variable', 'Attribute'];
@@ -615,17 +617,19 @@ const InstrumentVariantForm = ({
                                     </Select>
                                 </Form.Item>
                             </Col>
-                            <Col>
-                                <Form.Item label=" ">
-                                    <Button
-                                        icon={<PlusOutlined />}
-                                        onClick={onAddNewVariantType}
-                                        disabled={mode === 'edit'}
-                                    >
-                                        New Type
-                                    </Button>
-                                </Form.Item>
-                            </Col>
+                            {hasPermission("CREATE_INSTRUMENT_VARIANT") && (
+                                <Col>
+                                    <Form.Item label=" ">
+                                        <Button
+                                            icon={<PlusOutlined />}
+                                            onClick={onAddNewVariantType}
+                                            disabled={mode === 'edit'}
+                                        >
+                                            New Type
+                                        </Button>
+                                    </Form.Item>
+                                </Col>
+                            )}
                         </Row>
                         <Form.Item style={{ marginTop: 30 }}>
                             <Button

@@ -4,12 +4,12 @@ const {
 } = require('sequelize');
 
 module.exports = (sequelize, DataTypes) => {
-  class EmployeeTrackConfig extends Model {
+  class UserTrackConfig extends Model {
     static associate(models) {
       // No associations needed for global config
     }
   }
-  EmployeeTrackConfig.init({
+  UserTrackConfig.init({
     configId: {
       type: DataTypes.INTEGER,
       autoIncrement: true,
@@ -32,8 +32,8 @@ module.exports = (sequelize, DataTypes) => {
     }
   }, {
     sequelize,
-    modelName: 'EmployeeTrackConfig',
+    modelName: 'UserTrackConfig',
     tableName: 'EmployeeTrackConfig'
   });
-  return EmployeeTrackConfig;
+  return UserTrackConfig;
 };

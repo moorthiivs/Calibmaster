@@ -22,8 +22,17 @@ const schema = {
     labId: {
       type: "number",
     },
+    roleId: {
+      type: "number",
+    },
+    title: {
+      type: "string",
+    },
+    companyId: {
+      type: "string",
+    }
   },
-  required: ["name", "email", "password", "department"],
+  required: ["name", "email", "password", "department", "labId"],
   additionalProperties: true,
 };
 

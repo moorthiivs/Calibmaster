@@ -1,18 +1,18 @@
-const { EmployeeTracking } = require("../models");
+const { UserTracking } = require("../models");
 const moment = require("moment-timezone");
 const fs = require('fs');
 const { Op } = require("sequelize");
 
 const autoLogout = async () => {
     try {
-        const { EmployeeTracking, sequelize } = require("../models");
+        const { UserTracking, sequelize } = require("../models");
         const { Op } = require("sequelize");
 
         // Find latest event for each user
-        const latestEvents = await EmployeeTracking.findAll({
+        const latestEvents = await UserTracking.findAll({
             attributes: [
                 "userId",
-                [sequelize.fn("MAX", sequelize.col("empTrackingId")), "latestId"]
+                [sequelize.literal('MAX("empTrackingId")'), "latestId"]
             ],
             group: ["userId"]
         });
@@ -20,9 +20,9 @@ const autoLogout = async () => {
         const latestIds = latestEvents.map(e => e.dataValues.latestId);
 
         // Filter those whose latest event is "LOGIN"
-        const activeSessions = await EmployeeTracking.findAll({
+        const activeSessions = await UserTracking.findAll({
             where: {
-                empTrackingId: { [Op.in]: latestIds },
+                userTrackingId: { [Op.in]: latestIds },
                 status: "LOGIN"
             }
         });
@@ -43,7 +43,7 @@ const autoLogout = async () => {
             });
 
             // Create a new LOGIN record for the new day so their active session continues seamlessly
-            await EmployeeTracking.create({
+            await UserTracking.create({
                 userId: track.userId,
                 loginAt: logoutAt,
                 date: moment(logoutAt).format("YYYY-MM-DD"),
@@ -75,31 +75,31 @@ const autoLogout = async () => {
 
 const heartbeatLogout = async () => {
     try {
-        const { EmployeeTracking, EmployeeTrackConfig, sequelize } = require("../models");
+        const { UserTracking, UserTrackConfig, sequelize } = require("../models");
         const { Op } = require("sequelize");
 
         // Fetch configured idle timeout
-        const config = await EmployeeTrackConfig.findOne();
-        // Give a generous buffer over the idle timeout (e.g. idle timeout + 5 mins).
+        const config = await UserTrackConfig.findOne();
+        // Give a generous buffer over the idle timeout (e.g. idle timeout + 15 mins).
         // If a browser background tab heavily throttles the 90s heartbeat ping, this stops
         // the session from being prematurely killed. Normal idle logouts happen via the frontend at exactly idleTimeoutMinutes.
-        const maxAgeMinutes = (config && config.idleTimeoutMinutes ? config.idleTimeoutMinutes : 20) + 5;
+        const maxAgeMinutes = (config && config.idleTimeoutMinutes ? config.idleTimeoutMinutes : 20) + 15;
         const limitTimeAgo = new Date(Date.now() - maxAgeMinutes * 60 * 1000);
 
         // Find latest event for each user
-        const latestEvents = await EmployeeTracking.findAll({
+        const latestEvents = await UserTracking.findAll({
             attributes: [
                 "userId",
-                [sequelize.fn("MAX", sequelize.col("empTrackingId")), "latestId"]
+                [sequelize.literal('MAX("empTrackingId")'), "latestId"]
             ],
             group: ["userId"]
         });
 
         const latestIds = latestEvents.map(e => e.dataValues.latestId);
 
-        const activeSessions = await EmployeeTracking.findAll({
+        const activeSessions = await UserTracking.findAll({
             where: {
-                empTrackingId: { [Op.in]: latestIds },
+                userTrackingId: { [Op.in]: latestIds },
                 status: "LOGIN",
                 updatedAt: { [Op.lt]: limitTimeAgo }
             }
@@ -124,7 +124,7 @@ const heartbeatLogout = async () => {
         }
 
         if (count > 0) {
-            console.log(`Heartbeat cron: Logged out ${count} inactive users (BROWSER_CLOSE).`);
+            console.log(`Heartbeat cron: Logged out ${count} inactive users (STALE_SESSION).`);
         }
 
     } catch (err) {

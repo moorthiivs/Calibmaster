@@ -3,7 +3,8 @@ import { Card, Button, Input, Column, Spinner } from "react-rainbow-components";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { AuthContext } from '../../../context/auth-context';
-import config from "../../../utils/config.js";
+import { usePermissions } from '../../../hooks/usePermissions';
+import config from "../../../utils/config.json";
 import { notificationActions } from "../../../store/nofitication";
 import { useDispatch } from 'react-redux';
 import { labIdActions } from '../../../store/labId';
@@ -21,6 +22,7 @@ const ListCustomer = () => {
     const auth = useContext(AuthContext);
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const { hasPermission } = usePermissions();
 
     const [customerList, setCustomerList] = useState([]);
     const [loading, setloading] = useState(false);
@@ -77,6 +79,7 @@ const ListCustomer = () => {
             selector: row => row.id,
             sortable: true,
             style: { fontWeight: 'bold' },
+            width: '80px',
         },
         {
             name: 'Customer Name',
@@ -99,26 +102,7 @@ const ListCustomer = () => {
             selector: row => row.country,
             Alignment: 'center',
         },
-        {
-            name: 'Active',
-            selector: row => <>
-                <Button
-                    label="Edit Customer"
-                    onClick={() => redirectHandler(row.customer_id)}
-                    variant="brand"
-                    size='small'
-                    className="rainbow-m-around_medium"
-                    style={{
-                        whiteSpace: 'nowrap',
-                        overflow: "visible",
-                        textOverflow: 'ellipsis',
-                        maxWidth: '100px'
-                    }}
-                />
-            </>,
-             Alignment: 'center',
-             
-        },
+        // Portal Customer — always visible (read-only action)
         {
             name: 'Portal Customer',
             selector: row => <>
@@ -133,24 +117,37 @@ const ListCustomer = () => {
                     className="rainbow-m-around_medium"
                 />
             </>,
-             Alignment: 'center',
+            Alignment: 'center',
         },
-        // {
-        //     name: 'Delete',
-        //     selector: row => <>
-        //         <Button
-        //             label="Delete"
-        //             onClick={() => {
-        //                 handledeleteCustomer(row.calibmaster_customer_id);
-        //             }}
-        //             variant="destructive"
-        //             size='small'
-        //             className="rainbow-m-around_medium"
-        //         />
-        //     </>,
-        //      Alignment: 'center',
-        // }
-    ];
+        // Edit column — only rendered when user has EDIT_CUSTOMER
+        hasPermission("EDIT_CUSTOMER") && {
+            name: 'Edit',
+            selector: row => (
+                <Button
+                    label="Edit"
+                    onClick={() => redirectHandler(row.customer_id)}
+                    variant="brand"
+                    size='small'
+                    className="rainbow-m-around_medium"
+                />
+            ),
+            Alignment: 'center',
+        },
+        // Delete column — only rendered when user has DELETE_CUSTOMER
+        hasPermission("DELETE_CUSTOMER") && {
+            name: 'Delete',
+            selector: row => (
+                <Button
+                    label="Delete"
+                    onClick={() => handledeleteCustomer(row.customer_id)}
+                    variant="destructive"
+                    size='small'
+                    className="rainbow-m-around_medium"
+                />
+            ),
+            Alignment: 'center',
+        },
+    ].filter(Boolean); // Removes false entries (hidden columns) entirely — header included
 
     const ExpandedComponent = ({ data }) => {
         return <div className="dataContainer_customer">
@@ -224,36 +221,34 @@ const ListCustomer = () => {
 
         try {
 
-            const confirmDelete = await showConfirmationDialog("Are You Sure Want to Delete?");
+            const confirmDelete = await showConfirmationDialog("Are You Sure Want to Delete This Customer?");
       
             if (!confirmDelete) {
               console.log("Cancel Delete!");
               return;
             }
 
-
             const response = await fetch(
                 `${config.Calibmaster.URL}/api/customers/delete-customer`,
                 {
-                  method: 'Delete',
+                  method: 'DELETE',
                   headers: {
                     'Content-Type': 'application/json',
                     Authorization: 'Bearer ' + auth.token
                   },
                   body: JSON.stringify({
-                    lab_id: file.labid,
-                    master_design_procedure_id: file.master_design_procedure_id,
-                    filename: file.FileName,
-                    Fileid: file.cmeid
+                    customerId: customerId,
+                    lab_id: auth.labId,
                   })
                 }
-              )
-            const result = await response.json()
+              );
+            const result = await response.json();
+            if (response.ok) {
+                fetchCustomers();
+            }
             
         } catch (error) {
-            
             console.log(error);
-            
         }
     }
 

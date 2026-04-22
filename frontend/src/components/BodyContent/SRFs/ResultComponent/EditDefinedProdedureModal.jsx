@@ -4,7 +4,7 @@ import { Card, Spinner } from 'react-rainbow-components';
 import { notificationActions } from "../../../../store/nofitication";
 import { AuthContext } from '../../../../context/auth-context';
 import { useDispatch, useSelector } from 'react-redux';
-import config from "../../../../utils/config.js";
+import config from "../../../../utils/config.json";
 import AddMasterEquipments from './MasterEquipments/AddMasterEquipments';
 import ListMasterEquipments from './MasterEquipments/ListMasterEquipments';
 import { addProcedures } from '../../../../store/procedureSlice';
@@ -329,9 +329,9 @@ const EditDefinedProdedureModal = ({ isOpen, onRequestClose, masterId, srf_id, s
             setAddEquipmets(masterTable.master_list_equipments)
             setRemarks(masterTable.remarks)
 
-            setCalibratedByValue(masterTable.calibrated_employee_id);
-            setApprovedByValue(masterTable.approved_employee_id);
-            setauthorizedByValue(masterTable.authorizedby_employee_id)
+            setCalibratedByValue(masterTable.calibrated_user_id || masterTable.calibrated_employee_id);
+            setApprovedByValue(masterTable.approved_user_id || masterTable.approved_employee_id);
+            setauthorizedByValue(masterTable.authorizedby_user_id || masterTable.authorizedby_employee_id)
 
             setIfExist(ifExistResultMasterTable);
             setSetTitle(ifExistResultMasterTable);
@@ -420,25 +420,27 @@ const EditDefinedProdedureModal = ({ isOpen, onRequestClose, masterId, srf_id, s
         try {
             setloading(true);
 
-            const data = await fetch(config.Calibmaster.URL + "/api/employee-master/list", {
+            const data = await fetch(config.Calibmaster.URL + "/api/users/getall", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: "Bearer " + auth.token,
                 },
-                body: JSON.stringify({ lab_id: auth.labId })
+                body: JSON.stringify({ labId: auth.labId })
             });
 
             let response = await data.json();
             let newArray = [{ value: '', label: 'Select' }];
 
-            await response.data.map((item, index) => {
-                newArray[index + 1] = {
-                    value: item.employee_id,
-                    label: `${item.employee_full_name} (${item.employee_role})`,
-                    role: item.employee_role
-                }
-            });
+            if (response.data) {
+                await response.data.map((item, index) => {
+                    newArray[index + 1] = {
+                        value: item.id,
+                        label: `${item.name} (${item.department})`,
+                        role: item.department
+                    }
+                });
+            }
             setEmpList(newArray);
 
             setloading(false);
@@ -528,6 +530,7 @@ const EditDefinedProdedureModal = ({ isOpen, onRequestClose, masterId, srf_id, s
             }
 
             if (Object.keys(ExceljsonData).length === 0 && !isediting) {
+            
                 alert("Please Modify Excel Data And Save Changes, Then Press Save Data");
                 return;
             }
