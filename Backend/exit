@@ -1,0 +1,272 @@
+[33mcommit 027c0de1aa38af4e6a554b79a1e63dbb7c03a89d[m[33m ([m[1;36mHEAD -> [m[1;32mdev-cm-backend-anirban[m[33m, [m[1;31morigin/dev-cm-backend-anirban[m[33m)[m
+Author: anirbanivs <anirban@iviewsense.com>
+Date:   Thu Aug 8 00:13:56 2024 +0530
+
+    enter result api upgraded
+
+[33mcommit a85ed263a50d2ed6605f9382b1d343268a6f5939[m
+Author: anirbanivs <anirban@iviewsense.com>
+Date:   Tue Jul 30 19:43:56 2024 +0530
+
+    before adding new uc
+
+[33mcommit d767f5cd8ab2589f7f65e41b95ab2e57bacbe6b0[m
+Author: anirbanivs <anirban@iviewsense.com>
+Date:   Fri May 31 14:28:45 2024 +0530
+
+    as of now everything is good
+
+[33mcommit b26df77b2f69ea0b10c39d9b00a5ee10134d594f[m
+Author: anirbanivs <anirban@iviewsense.com>
+Date:   Tue May 28 14:18:54 2024 +0530
+
+    anna lab deployed
+
+[33mcommit 417d6909edefab0c0acc5a6acfe1e0c308bd2818[m
+Author: anirbanivs <anirban@iviewsense.com>
+Date:   Mon May 27 17:12:38 2024 +0530
+
+    new changes for manager
+
+[33mcommit c8f963ea15870775e598cd31814193ce4358a973[m
+Author: anirbanivs <anirban@iviewsense.com>
+Date:   Fri May 24 17:52:21 2024 +0530
+
+    put up for roles
+
+[33mcommit 99381da4b350d2999c4961d5929796d43ec26973[m
+Author: anirbanivs <anirban@iviewsense.com>
+Date:   Fri May 24 11:12:09 2024 +0530
+
+    pre commit
+
+[33mcommit d17fa187427d8fba34ace1ae166ee740be01545a[m
+Author: anirbanivs <anirban@iviewsense.com>
+Date:   Wed Apr 17 19:01:26 2024 +0530
+
+    define prodedures controller fetch function upgrade
+
+[33mcommit 97f1c63eac6516699fc6c9cbc5fe83f08ad0321a[m
+Author: anirbanivs <anirban@iviewsense.com>
+Date:   Wed Apr 17 13:20:52 2024 +0530
+
+    produre uncertainties create update added on controllers
+
+[33mcommit 667f7fae706487d13cb12b284c9d35eb1cada65e[m
+Author: anirbanivs <anirban@iviewsense.com>
+Date:   Wed Apr 17 00:36:45 2024 +0530
+
+    procedure uncertainties update added
+
+[33mcommit 9009144746291c8df0f234af72440ee36072dc38[m
+Author: anirbanivs <anirban@iviewsense.com>
+Date:   Tue Apr 16 20:10:12 2024 +0530
+
+    procedure uncertainties create read R&D
+
+[33mcommit 440e4a7dd6f364c20edf33eb2a701653d30dc22e[m
+Author: anirbanivs <anirban@iviewsense.com>
+Date:   Tue Apr 16 17:44:47 2024 +0530
+
+    revert as it is
+
+[33mcommit e955cc10a0d87e0b05d4a220401f067620724464[m
+Author: anirbanivs <anirban@iviewsense.com>
+Date:   Mon Apr 15 19:07:00 2024 +0530
+
+    new column added into master design produre screen
+
+[33mcommit a8176d49f23d036b5e627828dd1860f612c72c94[m
+Author: anirbanivs <anirban@iviewsense.com>
+Date:   Mon Apr 15 14:37:19 2024 +0530
+
+    ump added
+
+[33mcommit 1d569b75c85ca7cc314d17674f1ca25a36030429[m
+Author: anirbanivs <anirban@iviewsense.com>
+Date:   Sun Apr 14 01:16:00 2024 +0530
+
+    ump cru added
+
+[33mcommit 1511ad35dbc9f16c09a285643dbd91ca53c11439[m
+Author: anirbanivs <anirban@iviewsense.com>
+Date:   Wed Apr 10 17:22:33 2024 +0530
+
+    frontend url added
+
+[33mcommit eb1d25c3a33d094b9b1ad2e0a5446c74facbbfcf[m
+Author: anirbanivs <anirban@iviewsense.com>
+Date:   Wed Apr 10 13:20:20 2024 +0530
+
+    smtp config update api added
+
+[33mcommit f222c4958b2723ea65d0c5385d9806ccb35e24da[m
+Author: anirbanivs <anirban@iviewsense.com>
+Date:   Wed Apr 3 10:39:20 2024 +0530
+
+    ulr no generateULRNumber method fixed
+
+[33mcommit 1e3ee741351dcff97c9898bef67e694245da4512[m
+Author: anirbanivs <anirban@iviewsense.com>
+Date:   Tue Mar 26 17:49:50 2024 +0530
+
+    lab qr images & ulrs added on edit controller
+
+[33mcommit 4e290bae158e9a20cde6a5073ee5caca53a84afc[m
+Author: anirbanivs <anirban@iviewsense.com>
+Date:   Tue Mar 26 15:17:54 2024 +0530
+
+    bulk update calibration condition upgrade
+
+[33mcommit 20af83e8f596d94ddf4c68ddfa21694270813432[m
+Author: anirbanivs <anirban@iviewsense.com>
+Date:   Thu Mar 21 23:50:54 2024 +0530
+
+    ulr upgrarded
+
+[33mcommit 57141e4d055a4a9e4591ecc5329664a68da8ad3b[m
+Author: anirbanivs <anirban@iviewsense.com>
+Date:   Wed Mar 20 16:08:16 2024 +0530
+
+    in certificate master ulr no replaced with item ulr no
+
+[33mcommit 3fe020e8a651f9a76d42b26fd7a2adda98aac6e0[m
+Author: anirbanivs <anirban@iviewsense.com>
+Date:   Tue Mar 19 19:36:22 2024 +0530
+
+    ulr generation and vertical table added on certificate
+
+[33mcommit 65aeb39a74db6e0edda55b21f5bbaa45ef3e6cab[m
+Author: anirbanivs <anirban@iviewsense.com>
+Date:   Mon Mar 11 14:27:32 2024 +0530
+
+    latest push, added condtion on update procedure controller
+
+[33mcommit aec2934220d5fefdf4b0bc92f71262cdb2c71576[m
+Author: anirbanivs <anirban@iviewsense.com>
+Date:   Mon Feb 19 17:55:43 2024 +0530
+
+    qr code added on certificate
+
+[33mcommit 9cfc7a2210011f60a9007280b18d1650e804a10d[m
+Author: anirbanivs <anirban@iviewsense.com>
+Date:   Mon Feb 19 15:20:28 2024 +0530
+
+    qr code 1&2 added
+
+[33mcommit f7559970bfa19d7bc26f798fefa9b927046a4756[m
+Author: anirbanivs <anirban@iviewsense.com>
+Date:   Sat Feb 17 18:36:34 2024 +0530
+
+    master equipment email remainder added
+
+[33mcommit 81f50ef9a5e8fa760cc3b64ef34c4f5efd2a915f[m
+Author: anirbanivs <anirban@iviewsense.com>
+Date:   Sat Feb 17 10:50:34 2024 +0530
+
+    cron files shifted into cron-service folder
+
+[33mcommit d2b8c5ce0ced4360e7a1e3f8090ed7703a21c9bc[m
+Author: anirbanivs <anirban@iviewsense.com>
+Date:   Fri Feb 16 18:06:07 2024 +0530
+
+    lab logos added on top of the certificate
+
+[33mcommit 58bfeb73bf08704cc80f81320e44fb9fcb55f8f0[m
+Author: anirbanivs <anirban@iviewsense.com>
+Date:   Fri Feb 16 13:38:18 2024 +0530
+
+    lab seal added on lab create & update controller
+
+[33mcommit c17bc3d7c55c316f03c3eac5a46b7fc0b41f636b[m
+Author: anirbanivs <anirban@iviewsense.com>
+Date:   Thu Feb 15 18:50:33 2024 +0530
+
+    signature is added on certificate api
+
+[33mcommit 86fa8c58edf5d7be090169e762415a438d2f7be6[m
+Author: anirbanivs <anirban@iviewsense.com>
+Date:   Thu Feb 15 18:20:44 2024 +0530
+
+    calib-by & approved-by api updated
+
+[33mcommit 9c1572fe7e0c023f5b30d9cc28d31485c3958cf1[m
+Author: anirbanivs <anirban@iviewsense.com>
+Date:   Thu Feb 15 16:03:22 2024 +0530
+
+    m-equip format added on certificate
+
+[33mcommit a827133ea6b77c0cb77b61bf35c7574e6f32dda4[m
+Author: anirbanivs <anirban@iviewsense.com>
+Date:   Thu Feb 15 13:54:22 2024 +0530
+
+    m-equipment added m-result
+
+[33mcommit 099cb7f20fe001a1b2a6978d864f1118ab97bf0d[m
+Author: anirbanivs <anirban@iviewsense.com>
+Date:   Wed Feb 14 20:02:55 2024 +0530
+
+    standard details helper funtion added
+
+[33mcommit 9529179c862596259385c1c1cee0ce9712c9561b[m
+Author: anirbanivs <anirban@iviewsense.com>
+Date:   Wed Feb 14 18:58:43 2024 +0530
+
+    m-equip added with m-define-procedure
+
+[33mcommit e4971ae1a8a7db19f92c737b06f8d9826524ad4c[m
+Author: anirbanivs <anirban@iviewsense.com>
+Date:   Wed Feb 14 18:55:39 2024 +0530
+
+    master equi added with master define procedueres api
+
+[33mcommit faa4351bb824298ccaa081ebd7ada7ce94227726[m
+Author: anirbanivs <anirban@iviewsense.com>
+Date:   Wed Feb 14 11:33:56 2024 +0530
+
+    srf-item query order added as asc
+
+[33mcommit de54711855aca9ee151238927780df8c57289661[m
+Author: anirbanivs <anirban@iviewsense.com>
+Date:   Wed Feb 14 00:48:09 2024 +0530
+
+    master eqp validity fixed
+
+[33mcommit e69542588338be72db28430e4b94ae4ea96744fb[m
+Author: anirbanivs <anirban@iviewsense.com>
+Date:   Tue Feb 13 22:33:38 2024 +0530
+
+    update define procedures remark
+
+[33mcommit 2ca7633e71e0f078081be8ad9f47751150735d62[m
+Author: anirbanivs <anirban@iviewsense.com>
+Date:   Tue Feb 13 19:48:20 2024 +0530
+
+    main flow fixed
+
+[33mcommit 0b5d51041ebbc7692465d35bee41600703a57297[m
+Author: anirbanivs <anirban@iviewsense.com>
+Date:   Tue Feb 13 13:10:05 2024 +0530
+
+    certificate view api added
+
+[33mcommit 6c4ffa0c0fdd8f7ac869ddcb6fe13effd034df4d[m
+Author: anirbanivs <anirban@iviewsense.com>
+Date:   Tue Feb 13 11:04:11 2024 +0530
+
+    certificate generate working properly
+
+[33mcommit 6216cf93cc67ab707d2b78153123bc8abe226df2[m
+Author: anirbanivs <anirban@iviewsense.com>
+Date:   Mon Feb 12 14:22:29 2024 +0530
+
+    calibmaster to customer portal
+
+[33mcommit 60a4521b4f3d9f15e976da3fa5825b694a0d38c2[m
+Author: anirbanivs <anirban@iviewsense.com>
+Date:   Tue Jan 30 13:43:52 2024 +0530
+
+    emp work on hold
+
+[33mcommit 812c52c5f99634ed6108f4edff4a976472f3fb17[m
+Author: 

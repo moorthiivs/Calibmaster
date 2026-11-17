@@ -1,0 +1,35 @@
+/* DynamicSidebar.css */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+.ant-menu {
+  font-family: 'Inter', sans-serif !important;
+}
+
+.ant-menu-item-group-title {
+  color: #8c8c8c !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 1.5px !important;
+  padding: 24px 16px 8px 24px !important;
+  transition: all 0.3s ease;
+}
+
+.ant-menu-dark .ant-menu-item-group-title {
+  color: #595959 !important;
+}
+
+/* Sidebar Active State Fixes (Previous Request) */
+.ant-menu-item-selected {
+  font-weight: 600 !important;
+}
+
+/* Scrollbar styling for sidebar */
+.ant-layout-sider-children::-webkit-scrollbar {
+  width: 4px;
+}
+
+.ant-layout-sider-children::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}

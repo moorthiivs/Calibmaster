@@ -1,0 +1,13 @@
+.error {
+    color: red;
+    text-align: center;
+    margin: 0;
+    display: block;
+}
+
+.helper {
+    color: green;
+    text-align: center;
+    display: block;
+    font-size: 13px;
+}

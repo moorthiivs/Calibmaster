@@ -1,0 +1,28 @@
+.innerParent {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 10px;
+    font-size: 13px;
+    font-weight: 400;
+    flex-wrap: wrap;
+}
+
+.innerParent .eachChild {
+    flex: 0 0 33.333333%;
+    max-width: 33.333333%;
+    margin-bottom: 10px;
+}
+
+.innerParent>div>b {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.innerParent .eachChild span img {
+    width: 100px;
+    height: 100px;
+    object-fit: contain;
+    margin-top: 5px;
+}

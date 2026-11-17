@@ -1,0 +1,17 @@
+.list_uncertainty_parameter {
+    margin-bottom: 2rem;
+    border: 1px solid black;
+    border-radius: 10px;
+    padding: 1rem;
+    background-color: white;
+}
+
+.list_uncertainty_parameter_top_area {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.sc-cepbVR {
+    border-radius: 10px;
+}

@@ -1,0 +1,13 @@
+.items__filter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.searchers__container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

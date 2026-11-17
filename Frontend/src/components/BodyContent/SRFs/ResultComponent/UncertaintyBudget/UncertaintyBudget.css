@@ -1,0 +1,33 @@
+.uncertainty_budget {
+    margin-bottom: 2rem;
+    border: 1px solid black;
+    border-radius: 10px;
+    padding: 1rem;
+    background-color: white;
+}
+
+.uncertainty_budget_top_area {
+    text-align: center;
+}
+
+.uncertainty_budget_table {
+    width: 100%;
+}
+
+.uncertainty_budget_table table,
+.uncertainty_budget_table th,
+.uncertainty_budget_table td {
+    border: 1px solid black;
+    text-align: center;
+}
+
+.uncertainty_budget_table th input,
+.uncertainty_budget_table tr td input {
+    border: none;
+    height: 25px;
+    margin-right: 4px;
+    width: 115px;
+    border-radius: 5px;
+    outline: none;
+    height: 30px;
+}

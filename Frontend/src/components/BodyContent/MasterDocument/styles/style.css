@@ -1,0 +1,33 @@
+/* MasterListDocAdd.css */
+.MasterListDoc_container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    /* width: 100vw; */
+    /* background-color: #f4f6f9; */
+    padding: 10px;
+}
+
+.MasterListDoc_card {
+    width: 80%;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 0 12px rgba(0, 0, 0, 0.1);
+    background-color: #fff;
+}
+
+.heading {
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 20px;
+}
+
+.formGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.inputWrapper {
+    width: 100%;
+}

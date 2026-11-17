@@ -1,0 +1,26 @@
+.update__cal__card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  flex-wrap: wrap;
+  padding: 1rem;
+}
+
+.update__cal__item {
+  max-width: 350px;
+  width: 300px;
+  padding: 1rem;
+}
+
+.ulrno {
+  width: 100%;
+  min-width: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.w400 {
+  width: 400px;
+}

@@ -1,0 +1,32 @@
+.inputCell {
+    margin: 0;
+    border: 1px solid black !important;
+    width: 130px !important;
+    background: #ffc1075c !important;
+}
+
+.rightalign{
+    text-align: right !important;
+}
+
+.inputTable{
+    border: none !important;
+    border-radius: 0px !important;
+    background-color: transparent !important;
+}
+
+.scroll{
+    overflow: auto;
+}
+
+.print-on-container{
+    position: relative !important;
+    left: 80%;
+    margin-bottom: 1rem;
+}
+
+.table-container{
+    display: 'flex';
+    flex-direction: column;
+    overflow:  hidden !important;
+}

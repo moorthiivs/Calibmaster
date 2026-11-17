@@ -1,0 +1,20 @@
+.ump_edit_modal {
+    width: 90% !important;
+}
+
+.ump_modal_footer {
+    text-align: center;
+}
+
+.edit_modal_container {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+}
+
+.each_input_item {
+    width: 27%;
+    margin-bottom: 1rem;
+    padding: 1rem;
+}

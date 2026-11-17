@@ -1,0 +1,43 @@
+.email__page {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.email__page__card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.email__page__label {
+  width: 100%;
+}
+
+.email__page__form {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.email__page__item {
+  min-width: 250px;
+  max-width: 350px;
+  width: auto;
+  padding: 1rem;
+}
+
+.email__page__btn {
+  width: 100%;
+  margin: 1rem;
+}
+
+.email__page__item__special {
+  width: 100%;
+  padding: 1rem;
+}

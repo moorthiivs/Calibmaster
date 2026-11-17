@@ -1,0 +1,25 @@
+{
+    "development": {
+        "username": "aucmcpadmin",
+        "password": "k4Ez2efx1F0w48pi0",
+        "database": "au-calibmaster",
+        "host": "au-calibmaster-customerportal-db.postgres.database.azure.com",
+        "dialect": "postgres"
+    },
+    "test": {
+        "username": "aucmcpadmin",
+        "password": "k4Ez2efx1F0w48pi0",
+        "database": "au-calibmaster",
+        "host": "au-calibmaster-customerportal-db.postgres.database.azure.com",
+        "dialect": "postgres"
+    },
+    "production": {
+        "username": "aucmcpadmin",
+        "password": "k4Ez2efx1F0w48pi0",
+        "database": "au-calibmaster",
+        "host": "au-calibmaster-customerportal-db.postgres.database.azure.com",
+        "dialect": "postgres"
+    }
+}
+
+ CUSTOMER_PORTAL_SERVER: "https://au-customerportal.azurewebsites.net",

@@ -1,0 +1,101 @@
+'use strict';
+
+module.exports = {
+  async up(queryInterface) {
+    const now = new Date();
+
+    const data = [
+      { instrument_name: "Plain Plug Gauge", code: "PP" },
+      { instrument_name: "PLAIN PLUG GAUGE Inches", code: "PP" },
+      { instrument_name: "Progressive Plug Gauge", code: "PP" },
+      { instrument_name: "Digital Vernier Caliper", code: "VC" },
+      { instrument_name: "Vernier Caliper", code: "VC" },
+      { instrument_name: "Depth Caliper ", code: "VC" },
+      { instrument_name: "Micrometer", code: "MM" },
+      { instrument_name: "External Micrometer", code: "MM" },
+      { instrument_name: "Height Gauge", code: "HG" },
+      { instrument_name: "Digital Height Gauge", code: "HG" },
+      { instrument_name: "Snap Gauge", code: "SG" },
+      { instrument_name: "Snap Gauge Inches", code: "SG" },
+      { instrument_name: "Slot Width Gauge", code: "SWG" },
+      { instrument_name: "Key Way Gauge", code: "KWG" },
+      { instrument_name: "Taper Plug Gauge", code: "TPG" },
+      { instrument_name: "Thread Plug Gauge", code: "TPG" },
+      { instrument_name: "Taper Ring Gauge", code: "TRG" },
+      { instrument_name: "Thread Ring Gauge", code: "TRG" },
+      { instrument_name: "Plain Ring Gauge", code: "PRG" },
+      { instrument_name: "CD Master", code: "BTM" },
+      { instrument_name: "Bend & Twist Master", code: "BTM" },
+      { instrument_name: "CD, Bend & Twist Master", code: "BTM" },
+      { instrument_name: "Centre Distance Master", code: "CD" },
+      { instrument_name: "Setting Ring Gauge", code: "SRG" },
+      { instrument_name: "Setting Master Ring Gauge", code: "SMRG" },
+      { instrument_name: "Multigauge Setting Master", code: "MGM" },
+      { instrument_name: "V Block", code: "VB" },
+      { instrument_name: "MAGNETIC 'V' BLOCK", code: "VB" },
+      { instrument_name: "Hemi Sphere Master", code: "HSM" },
+      { instrument_name: "Hemi Sphere", code: "HSM" },
+      { instrument_name: "Master Cylinder", code: "MT" },
+      { instrument_name: "Master Cylinder Straightness", code: "MT" },
+      { instrument_name: "Master Cylinder Cylindricity", code: "MT" },
+      { instrument_name: "Master Cylinder Roundness", code: "MT" },
+      { instrument_name: "Standard Pin", code: "SP" },
+      { instrument_name: "Surface Plate", code: "SP" },
+      { instrument_name: "Carbide Pin", code: "CP" },
+      { instrument_name: "Cylindrical Pin", code: "CP" },
+      { instrument_name: "CYLINDRICAL PIN GUAGE  INCH", code: "CP" },
+      { instrument_name: "CYLINDRICAL PIN GUAGE", code: "CP" },
+      { instrument_name: "Straight Mandrel", code: "SM" },
+      { instrument_name: "Micrometer setting master", code: "SM" },
+      { instrument_name: "Co-Axiality Gauge", code: "CO" },
+      { instrument_name: "Radius Gauge", code: "RG" },
+      { instrument_name: "Dial Comparator Stand", code: "DCS" },
+      { instrument_name: "Parallel Block", code: "PB" },
+      { instrument_name: "Caliper Checker", code: "CC" },
+      { instrument_name: "Measuring Pin", code: "MP" },
+      { instrument_name: "Contour Master", code: "CRM" },
+      { instrument_name: "Plain Depth Gauge", code: "PDG" },
+      { instrument_name: "Feeler Gauge", code: "FG" },
+      { instrument_name: "Setting Plug Gauge", code: "SPG" },
+      { instrument_name: "Coating Thickness Gauge", code: "CG" },
+      { instrument_name: "Dial Indicator", code: "DI" },
+      { instrument_name: "Plunger Dial", code: "DI" },
+      { instrument_name: "Lever Dial", code: "LD" },
+      { instrument_name: "Standard Foils", code: "SF" },
+      { instrument_name: "Wear check plug gauge", code: "WCP" },
+      { instrument_name: "Wear check ring gauge", code: "WCR" },
+      { instrument_name: "Flat plug gauge", code: "FPG" },
+      { instrument_name: "Distance checking gauge", code: "DG" },
+      { instrument_name: "Thread Pin", code: "TP" },
+      { instrument_name: "Thread Mandrel", code: "TM" },
+      { instrument_name: "Taper Mandrel", code: "TM" },
+      { instrument_name: "Setting Disk Gauge", code: "SDG" },
+      { instrument_name: "Taper Setting Master", code: "TSM" },
+      { instrument_name: "Splin Plug Gauge", code: "SPP" },
+      { instrument_name: "Splin Ring Gauge", code: "SPR" },
+      { instrument_name: "OD Plug Gauge", code: "OP" },
+      { instrument_name: "Standard Pin Inch", code: "SI" },
+      { instrument_name: "Concentricity Gauge", code: "CO" },
+      { instrument_name: "Concentricity Gauge MM", code: "CO" },
+      { instrument_name: "Concentricity Gauge Inch", code: "CO" },
+      { instrument_name: "Plain Mandrel", code: "PM" },
+      { instrument_name: "V' BLOCK NON MAGNETIC", code: "VB" },
+      { instrument_name: "SPLAIN Plug Gauge", code: "SPP" },
+      { instrument_name: "SPLAIN Ring Gauge", code: "SPR" },
+      { instrument_name: "SPLAIN Ring Gauge NOGO", code: "SPR" },
+      { instrument_name: "CYLINDRICAL PIN GAUGE", code: "CP" },
+      { instrument_name: "CYLINDRICAL PIN GAUGE INCH", code: "CP" }
+    ];
+    const finalData = data.map(item => ({
+      ...item,
+      createdAt: now,
+      updatedAt: now
+    }));
+
+    await queryInterface.bulkInsert('InstrumentCodes', finalData);
+  },
+
+  async down(queryInterface) {
+    await queryInterface.bulkDelete('InstrumentCodes', null, {});
+  }
+};

@@ -1,0 +1,26 @@
+DATE OF ISSUE : srf.issue_date
+
+RECEIVED DATE : srf.customer_dc_date
+
+CAL.DATE : srf_items.certificate_date
+
+DUE.DATE : srf_items.calibration_due_date
+
+CONDITION : srf_items.remarks
+
+
+===========================
+DUC Details:
+===========================
+
+DESCRIPTION : srf_items.intrument_type.instrument_full_name
+
+MAKE: srf_items.make
+
+SL.NO: srf_items.serial_no
+
+ID.NO: srf_items.identification_details
+
+RANGE: srf_items.intrument_type.range_minimum - srf_items.intrument_type.range_maximum
+
+L.C: srf_items.intrument_type.least_count

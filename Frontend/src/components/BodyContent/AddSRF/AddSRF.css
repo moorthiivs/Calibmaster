@@ -1,0 +1,62 @@
+.add__srf__form__container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.add__srf__card {
+  width: 100%;
+  padding: 1rem 5%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.w_100 {
+  width: 100%;
+}
+
+.add__srf__label {
+  width: 100%;
+}
+
+.add__srf__item__container {
+  width: 20%;
+  padding: 1rem 2rem;
+}
+
+/* Extra small devices (phones, 600px and down) */
+@media only screen and (max-width: 600px) {
+  .add__srf__item__container {
+    width: 100%;
+  }
+}
+
+/* Medium devices (landscape tablets, 768px and up) */
+@media only screen and (min-width: 768px) {
+  .add__srf__item__container {
+    width: 38%;
+  }
+}
+
+/* Large devices (laptops/desktops, 992px and up) */
+@media only screen and (min-width: 992px) {
+  .add__srf__item__container {
+    width: 25%;
+  }
+}
+
+/* Extra large devices (large laptops and desktops, 1200px and up) */
+@media only screen and (min-width: 1200px) {
+  .add__srf__item__container {
+    width: 25%;
+  }
+}
+
+@media only screen and (min-width: 1600px) {
+  .add__srf__item__container {
+    width: 15%;
+  }
+}

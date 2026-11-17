@@ -1,0 +1,23 @@
+.user__info__container {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+}
+
+.signout__button__container {
+  padding: 0.5rem 1rem 0.5rem 0.5rem;
+}
+
+.user__info h3 {
+  margin: 0.5rem;
+  font-size: 1rem;
+  text-align: center;
+}
+.user__info h4 {
+  margin: 0rem 0.5rem 0.5rem 0.5rem;
+  text-align: center;
+  font-size: 0.8rem;
+}
+.user__img__container {
+  margin-right: 0.5rem;
+}

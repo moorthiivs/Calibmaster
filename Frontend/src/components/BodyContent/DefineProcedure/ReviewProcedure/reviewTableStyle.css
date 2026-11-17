@@ -1,0 +1,7 @@
+table.review_table tr td {
+    border: 1px solid black;
+}
+
+.review_table{
+    border-collapse: collapse;
+}

@@ -1,0 +1,17 @@
+.rectangular-input {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 8px 12px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .Quotation-item-input{
+    display: flex;
+    justify-content:center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .Quotation-item-input Input{
+    width: 240px;
+  }

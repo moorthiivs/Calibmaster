@@ -1,0 +1,30 @@
+.masterListEquipments .add__user__item {
+    display: revert;
+}
+
+.view__master__modal {
+    width: 95% !important;
+}
+
+.edit_master_modal_footer {
+    text-align: center;
+}
+
+.master_edit_card {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: auto;
+    flex-wrap: wrap;
+    padding: 1rem;
+}
+
+/* .add__user__form {
+    max-width: 350px;
+    width: 300px;
+    padding: 1rem;
+} */
+
+.view__master__modal .add__user__item {
+    display: block;
+}
