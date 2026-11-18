@@ -58,7 +58,7 @@ import QuotationConfigList from './Quotation/QuotationConfig/QuotationConfigList
 import QuotationItem from './Quotation/QuotationItem/QuotationItem';
 import QuotationCustomerList from './Quotation/QuotationItem/QuotationCustomerList';
 
-import AddUlr from "./AddULR/AddUlr";
+import AddUlr from "./AddULR/AddULR";
 import ListULR from "./AddULR/ListULR";
 
 import CreateUncertaintyParameter from "./Uncertainty-Parameter/CreateUncertaintyParameter";
