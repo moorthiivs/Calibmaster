@@ -1,0 +1,349 @@
+name: Deploy Calibmaster to AWS
+
+on:
+  push:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+concurrency:
+  group: calibmaster-production
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    name: Build and Deploy Calibmaster
+    runs-on: ubuntu-latest
+
+    steps:
+      # --------------------------------------------------
+      # 1. Checkout
+      # --------------------------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # --------------------------------------------------
+      # 2. Node.js
+      # --------------------------------------------------
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            Frontend/package-lock.json
+            Backend/package-lock.json
+
+      # --------------------------------------------------
+      # 3. Configure & build frontend (same-origin API)
+      # --------------------------------------------------
+      - name: Configure frontend for same-origin production
+        env:
+          CUSTOMER_PORTAL_URL: ${{ vars.CUSTOMER_PORTAL_URL }}
+        run: |
+          node -e '
+            const fs = require("fs");
+            const file = "Frontend/src/utils/config.json";
+            const cfg = JSON.parse(fs.readFileSync(file, "utf8"));
+            cfg.Calibmaster.URL = "";
+            if (process.env.CUSTOMER_PORTAL_URL) {
+              cfg.CustomerPortal.URL = process.env.CUSTOMER_PORTAL_URL;
+            }
+            fs.writeFileSync(file, JSON.stringify(cfg, null, 2) + "\n");
+            console.log("Updated Frontend config.json:", JSON.stringify(cfg.Calibmaster), JSON.stringify(cfg.CustomerPortal));
+          '
+
+      - name: Install frontend dependencies
+        working-directory: Frontend
+        run: npm install --legacy-peer-deps
+
+      - name: Build frontend
+        working-directory: Frontend
+        env:
+          NODE_OPTIONS: "--max-old-space-size=4096"
+        run: npm run build
+
+      # --------------------------------------------------
+      # 4. Copy frontend build into backend public
+      #    (Preserves Backend/public/logos and Backend/public/sign)
+      # --------------------------------------------------
+      - name: Copy frontend build to backend public
+        run: |
+          mkdir -p Backend/public
+          rm -rf \
+            Backend/public/assets \
+            Backend/public/static \
+            Backend/public/fonts \
+            Backend/public/index.html \
+            Backend/public/favicon.ico \
+            Backend/public/vite.svg \
+            Backend/public/asset-manifest.json \
+            Backend/public/manifest.json \
+            Backend/public/logo192.png \
+            Backend/public/logo512.png \
+            Backend/public/robots.txt
+          cp -R Frontend/dist/. Backend/public/
+
+      # --------------------------------------------------
+      # 5. Prepare production backend
+      # --------------------------------------------------
+      - name: Install backend dependencies
+        working-directory: Backend
+        run: npm install --legacy-peer-deps
+
+      - name: Remove development dependencies
+        working-directory: Backend
+        run: npm prune --omit=dev
+
+      # --------------------------------------------------
+      # 6. Verify deployment package contents
+      # --------------------------------------------------
+      - name: Verify build
+        run: |
+          test -f Backend/app.js
+          test -f Backend/package.json
+          test -f Backend/public/index.html
+          test -d Backend/public/logos
+          test -d Backend/public/sign
+
+          echo "Backend entry:"
+          ls -lh Backend/app.js
+
+          echo "Frontend build:"
+          ls -lh Backend/public/index.html
+
+      # --------------------------------------------------
+      # 7. Create deployment archive
+      # --------------------------------------------------
+      - name: Create deployment package
+        run: |
+          tar \
+            --exclude='.env' \
+            --exclude='.env.*' \
+            --exclude='config/config.json' \
+            --exclude='public/certificate' \
+            --exclude='public/dc_files' \
+            --exclude='public/delivery-challan' \
+            --exclude='public/employee_signature' \
+            --exclude='public/images' \
+            --exclude='public/invoices' \
+            --exclude='public/procedure_images' \
+            -czf calibmaster-${{ github.sha }}.tar.gz \
+            -C Backend \
+            app.js \
+            config \
+            controllers \
+            cron-service \
+            fonts \
+            helpers \
+            middleware \
+            migrations \
+            models \
+            public \
+            routes \
+            schemas \
+            scripts \
+            seeders \
+            utils \
+            views \
+            package.json \
+            package-lock.json \
+            node_modules
+
+      # --------------------------------------------------
+      # 8. Configure SSH
+      # --------------------------------------------------
+      - name: Configure SSH
+        shell: bash
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+
+          printf '%s\n' "${{ secrets.AWS_SSH_KEY }}" \
+            > ~/.ssh/github_actions
+
+          chmod 600 ~/.ssh/github_actions
+
+          printf '%s\n' "${{ secrets.AWS_KNOWN_HOSTS }}" \
+            > ~/.ssh/known_hosts
+
+          chmod 644 ~/.ssh/known_hosts
+
+      # --------------------------------------------------
+      # 9. Upload package to AWS
+      # --------------------------------------------------
+      - name: Upload deployment package
+        env:
+          AWS_HOST: ${{ secrets.AWS_HOST }}
+          AWS_USER: ${{ secrets.AWS_USER }}
+        run: |
+          set -e
+
+          PACKAGE="calibmaster-${{ github.sha }}.tar.gz"
+          ls -lh "$PACKAGE"
+
+          scp \
+            -i ~/.ssh/github_actions \
+            -o StrictHostKeyChecking=yes \
+            "$PACKAGE" \
+            "${AWS_USER}@${AWS_HOST}:/tmp/"
+
+      # --------------------------------------------------
+      # 10. Deploy on AWS
+      # --------------------------------------------------
+      - name: Deploy on AWS
+        env:
+          AWS_HOST: ${{ secrets.AWS_HOST }}
+          AWS_USER: ${{ secrets.AWS_USER }}
+        run: |
+          ssh \
+            -i ~/.ssh/github_actions \
+            -o StrictHostKeyChecking=yes \
+            "${AWS_USER}@${AWS_HOST}" \
+            "GITHUB_SHA=${{ github.sha }} bash -s" <<'REMOTE_SCRIPT'
+
+          set -e
+
+          APP_NAME="calibmaster"
+          APP_DIR="/srv/apps/calibmaster"
+          SHARED_DIR="$APP_DIR/shared"
+          RELEASE_DIR="$APP_DIR/releases/$GITHUB_SHA"
+          PACKAGE="/tmp/calibmaster-$GITHUB_SHA.tar.gz"
+
+          echo "======================================"
+          echo "Deploying Calibmaster"
+          echo "Commit: $GITHUB_SHA"
+          echo "======================================"
+
+          # -----------------------------------------
+          # Verify required shared configuration files
+          # -----------------------------------------
+          if [ ! -f "$SHARED_DIR/.env" ]; then
+            echo "ERROR: Missing $SHARED_DIR/.env on server."
+            exit 1
+          fi
+
+          if [ ! -f "$SHARED_DIR/config.json" ]; then
+            echo "ERROR: Missing $SHARED_DIR/config.json on server."
+            exit 1
+          fi
+
+          # -----------------------------------------
+          # Create release directory & extract package
+          # -----------------------------------------
+          mkdir -p "$RELEASE_DIR"
+          tar -xzf "$PACKAGE" -C "$RELEASE_DIR"
+
+          # -----------------------------------------
+          # Validate deployment
+          # -----------------------------------------
+          test -f "$RELEASE_DIR/app.js"
+          test -f "$RELEASE_DIR/package.json"
+          test -f "$RELEASE_DIR/public/index.html"
+
+          # -----------------------------------------
+          # Connect production environment & DB config
+          # -----------------------------------------
+          ln -sfn \
+            "$SHARED_DIR/.env" \
+            "$RELEASE_DIR/.env"
+
+          mkdir -p "$RELEASE_DIR/config"
+          ln -sfn \
+            "$SHARED_DIR/config.json" \
+            "$RELEASE_DIR/config/config.json"
+
+          # -----------------------------------------
+          # Connect persistent runtime & upload folders
+          # -----------------------------------------
+          SHARED_DIRS=(
+            "logs"
+            "certificates"
+            "delivery-challan"
+            "excel_procedure"
+            "master_certificates"
+            "quotation"
+            "invoices"
+            "uploads"
+            "public/certificate"
+            "public/dc_files"
+            "public/delivery-challan"
+            "public/employee_signature"
+            "public/images"
+            "public/invoices"
+            "public/procedure_images"
+          )
+
+          for dir in "${SHARED_DIRS[@]}"; do
+            mkdir -p "$SHARED_DIR/$dir"
+            rm -rf "$RELEASE_DIR/$dir"
+            ln -sfn "$SHARED_DIR/$dir" "$RELEASE_DIR/$dir"
+          done
+
+          mkdir -p "$SHARED_DIR/certificates/Observation"
+          mkdir -p "$SHARED_DIR/uploads/images"
+
+          # -----------------------------------------
+          # Update current symlink
+          # -----------------------------------------
+          ln -sfn \
+            "$RELEASE_DIR" \
+            "$APP_DIR/current"
+
+          # -----------------------------------------
+          # Load production environment
+          # -----------------------------------------
+          set -a
+          source "$SHARED_DIR/.env"
+          set +a
+
+          # -----------------------------------------
+          # Start / restart PM2
+          # -----------------------------------------
+          cd "$APP_DIR/current"
+
+          if pm2 describe calibmaster-api > /dev/null 2>&1; then
+            echo "Restarting Calibmaster API..."
+            pm2 restart calibmaster-api --update-env
+          else
+            echo "Starting Calibmaster API..."
+            pm2 start app.js \
+              --name calibmaster-api \
+              --cwd "$APP_DIR/current"
+          fi
+
+          # -----------------------------------------
+          # Save PM2 process list
+          # -----------------------------------------
+          pm2 save
+
+          # -----------------------------------------
+          # Cleanup uploaded package
+          # -----------------------------------------
+          rm -f "$PACKAGE"
+
+          # -----------------------------------------
+          # Keep latest 5 releases
+          # -----------------------------------------
+          cd "$APP_DIR/releases"
+
+          ls -1dt */ 2>/dev/null \
+            | tail -n +6 \
+            | xargs -r rm -rf
+
+          # -----------------------------------------
+          # Deployment verification
+          # -----------------------------------------
+          echo ""
+          echo "PM2 status:"
+          pm2 status
+
+          echo ""
+          echo "Current release:"
+          readlink -f "$APP_DIR/current"
+
+          echo ""
+          echo "Deployment completed successfully."
+
+          REMOTE_SCRIPT

@@ -1,0 +1,26 @@
+{
+  "development": {
+    "username": "postgres",
+    "password": "CHANGE_ME",
+    "database": "calibmaster_dev",
+    "host": "127.0.0.1",
+    "dialect": "postgres",
+    "logging": false
+  },
+  "test": {
+    "username": "postgres",
+    "password": "CHANGE_ME",
+    "database": "calibmaster_test",
+    "host": "127.0.0.1",
+    "dialect": "postgres",
+    "logging": false
+  },
+  "production": {
+    "username": "CHANGE_ME",
+    "password": "CHANGE_ME",
+    "database": "calibmasterprod",
+    "host": "127.0.0.1",
+    "dialect": "postgres",
+    "logging": false
+  }
+}
