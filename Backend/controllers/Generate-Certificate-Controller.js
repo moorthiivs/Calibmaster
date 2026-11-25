@@ -78,6 +78,7 @@ const { errorHandler } = require("../helpers/error-handler");
 const { generateImageContent } = require("../utils/ProcedureImage");
 const { generateObservationReport } = require("../utils/generateObservationReport");
 const generateAndAssignCertificateNo = require("../utils/generateAndAssignCertificateNo");
+const { cleanupSupersededCertificates } = require("../utils/certificateCleanup");
 const { log } = require("winston");
 
 async function imageToBuffer(imagePath) {
@@ -1363,6 +1364,13 @@ const generate = async (req, res, next) => {
             });
             await newCertificate.save();
 
+            // Clean up superseded certificates/observations/drafts for this item so regenerations do not bloat disk
+            try {
+                await cleanupSupersededCertificates(srf_item_id, newCertificate.id);
+            } catch (cleanupErr) {
+                console.error("[CERT_CLEANUP] Superseded file cleanup failed:", cleanupErr);
+            }
+
             // Update Item details
             await Item.update({
                 certificate_date: new Date().toISOString().split("T")[0],
@@ -1456,11 +1464,21 @@ const bulkDownload_Certificate = async (req, res, next) => {
 
         const srfItemIds = items.map(i => i.srf_item_id);
 
-        // Step 2: Get all certificates for those items
-        const certificates = await Certificate.findAll({
+        // Step 2: Get latest certificate per item (avoids archiving superseded regenerations)
+        const allCertificates = await Certificate.findAll({
             where: { srfitemId: srfItemIds },
-            attributes: ["fileName", "observationFileName"],
+            attributes: ["id", "srfitemId", "fileName", "observationFileName", "createdAt"],
+            order: [["createdAt", "DESC"], ["id", "DESC"]],
         });
+
+        const latestByItem = new Map();
+        for (const cert of allCertificates) {
+            const key = Number(cert.srfitemId);
+            if (!latestByItem.has(key)) {
+                latestByItem.set(key, cert);
+            }
+        }
+        const certificates = Array.from(latestByItem.values());
 
         // Count certificates and observations
         const certificateCount = certificates.filter(c => c.fileName).length;

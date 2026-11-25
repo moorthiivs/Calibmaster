@@ -311,6 +311,27 @@ const UpdateCal = (props) => {
   };
 
 
+  const confirmAndGenerateCertificate = () => {
+    if (reportGenerateDate == "") {
+      setReportGenerateDateErr("Please set the report generated date");
+      return;
+    }
+
+    if (isGenerateCertificate) {
+      Modal.confirm({
+        title: "Certificate Already Exists",
+        icon: <WarningOutlined style={{ color: "#fa8c16" }} />,
+        content: "A certificate already exists for this item. Regenerating will replace the previous PDF.",
+        okText: "Regenerate Certificate",
+        cancelText: "Cancel",
+        onOk: () => generateCertificateHandler(),
+      });
+      return;
+    }
+
+    generateCertificateHandler();
+  };
+
   // Generate Certificate Handler
   const generateCertificateHandler = async (isSubcall = false) => {
     if (!isSubcall) isActionRef.current = true;
@@ -625,12 +646,12 @@ const UpdateCal = (props) => {
                         <Button
                           type="primary"
                           icon={<FilePdfOutlined />}
-                          onClick={() => generateCertificateHandler()}
+                          onClick={confirmAndGenerateCertificate}
                           disabled={!GenerateCertificate || isMasterBlocked}
                           size="large"
                           block
                         >
-                          Generate as Certificate
+                          {isGenerateCertificate ? "Regenerate Certificate" : "Generate as Certificate"}
                         </Button>
                       ) : (
                         <Button

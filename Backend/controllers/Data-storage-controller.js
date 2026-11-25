@@ -12,6 +12,10 @@ const CalibmasterExcel = require('../models').CalibmasterExcel;
 const MasterTable = require('../models').master_design_procedure;
 const checkDiskSpace = require("check-disk-space").default;
 const { syncSequencesForLab } = require("../utils/syncSequences");
+const {
+    scanUnwantedCertificateFiles,
+    deleteUnwantedCertificateFiles,
+} = require("../utils/certificateCleanup");
 
 const { customer: Customer, User, Lab } = require("../models");
 
@@ -580,6 +584,93 @@ const RestoreSRFItem = async (req, res, next) => {
 
 
 
+const isAdminRequest = (req) =>
+    req.department === "admin" || req.department === "root" || req.bypassPermissions === true;
+
+/**
+ * Scan certificates/, certificates/Observation/, and certificates/Draft/ for
+ * unlinked orphan files, superseded regenerations, and deleted-item files.
+ */
+const getUnwantedCertificates = async (req, res) => {
+    try {
+        if (!isAdminRequest(req)) {
+            return res.status(403).json({
+                status: "FAILED",
+                code: 403,
+                message: "Access Denied: Admin login required to view unwanted certificate files.",
+            });
+        }
+
+        const graceMinutes =
+            req.query.graceMinutes !== undefined ? Number(req.query.graceMinutes) : 60;
+        const result = await scanUnwantedCertificateFiles({ graceMinutes });
+
+        return res.status(200).json({
+            status: "SUCCESS",
+            summary: result.summary,
+            items: result.items,
+        });
+    } catch (err) {
+        console.error("[DATA_STORAGE] Unwanted certificates scan error:", err);
+        return res.status(500).json({
+            status: "ERROR",
+            message: "Failed to scan unwanted certificate and observation files",
+            details: err.message,
+        });
+    }
+};
+
+/**
+ * Permanently delete selected or all safe (unlinked + superseded) unwanted files
+ * after re-verifying against live DB state.
+ */
+const deleteUnwantedCertificates = async (req, res) => {
+    try {
+        if (!isAdminRequest(req)) {
+            return res.status(403).json({
+                status: "FAILED",
+                code: 403,
+                message: "Access Denied: Admin login required to delete unwanted certificate files.",
+            });
+        }
+
+        const {
+            mode = "selected",
+            selectedKeys = [],
+            includeDeletedItems = false,
+            graceMinutes = 60,
+        } = req.body || {};
+
+        if (mode === "selected" && (!Array.isArray(selectedKeys) || selectedKeys.length === 0)) {
+            return res.status(400).json({
+                status: "FAILED",
+                message: "Please select at least one file to delete.",
+            });
+        }
+
+        const result = await deleteUnwantedCertificateFiles({
+            mode,
+            selectedKeys,
+            includeDeletedItems: Boolean(includeDeletedItems),
+            graceMinutes: Number(graceMinutes),
+            userId: req.userId,
+        });
+
+        return res.status(200).json({
+            status: "SUCCESS",
+            message: `Deleted ${result.deletedCount} file(s), freed ${result.freedFormatted}`,
+            ...result,
+        });
+    } catch (err) {
+        console.error("[DATA_STORAGE] Unwanted certificates delete error:", err);
+        return res.status(500).json({
+            status: "ERROR",
+            message: "Failed to delete unwanted certificate files",
+            details: err.message,
+        });
+    }
+};
+
 exports.diskUsageData = diskUsageData
 exports.deletedstats = deletedstats
 exports.destroySRFItem = destroySRFItem
@@ -587,3 +678,5 @@ exports.destroySRF = destroySRF
 
 exports.RestoreSRF = RestoreSRF
 exports.RestoreSRFItem = RestoreSRFItem
+exports.getUnwantedCertificates = getUnwantedCertificates
+exports.deleteUnwantedCertificates = deleteUnwantedCertificates

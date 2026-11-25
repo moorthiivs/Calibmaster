@@ -1,8 +1,9 @@
-import React, { useEffect, useState, useContext, useMemo } from "react";
+import React, { useEffect, useState, useContext, useMemo, useCallback } from "react";
 import { Row, Col, Card, Spin, Tooltip, Typography, Button, Modal, Table, Space, Tag, Popconfirm } from "antd";
-import { FileDoneOutlined, FileTextOutlined, ArrowRightOutlined, FileExcelOutlined, ReloadOutlined, DeleteOutlined, CalendarOutlined } from "@ant-design/icons";
+import { FileDoneOutlined, FileTextOutlined, ArrowRightOutlined, FileExcelOutlined, ReloadOutlined, DeleteOutlined, CalendarOutlined, FileExclamationOutlined } from "@ant-design/icons";
 import DiskUsageVisualizer from "./DiskUsageVisualizer";
 import DeleteItems from "./DeleteIteams";
+import UnwantedCertificates from "./UnwantedCertificates";
 import config from '../../../utils/config.json'
 import { AuthContext } from "../../../context/auth-context";
 import GlobalNotification from "../../../utils/GlobalNotification";
@@ -12,26 +13,57 @@ const { Title, Text, Paragraph } = Typography;
 
 const DeletedIndex = () => {
     const auth = useContext(AuthContext)
+    const isAdmin = auth.department === "admin" || auth.department === "root";
     const [loading, setLoading] = useState(true);
     const [deletedData, setDeletedData] = useState([]);
     const [diskUsage, setDiskUsage] = useState(null);
+    const [unwantedCertData, setUnwantedCertData] = useState({ summary: null, items: [] });
+    const [unwantedLoading, setUnwantedLoading] = useState(false);
     const [selectedCategoryKey, setSelectedCategoryKey] = useState(null);
     const [hoveredCard, setHoveredCard] = useState(null);
     const [deletedStats, setDeletedStats] = useState({ srfItems: 0, srf: 0, excel: 0 });
+
+    const fetchDiskUsage = useCallback(async () => {
+        const diskRes = await fetch(config.Calibmaster.URL + "/api/data-storage/disk-usage", {
+            method: 'GET',
+            headers: {
+                Authorization: 'Bearer ' + auth.token
+            }
+        });
+        const diskJson = await diskRes.json();
+        setDiskUsage(diskJson);
+    }, [auth.token]);
+
+    const fetchUnwantedCertificates = useCallback(async () => {
+        if (!isAdmin) return;
+        try {
+            setUnwantedLoading(true);
+            const res = await fetch(config.Calibmaster.URL + "/api/data-storage/unwanted-certificates", {
+                method: 'GET',
+                headers: {
+                    Authorization: 'Bearer ' + auth.token
+                }
+            });
+            if (res.ok) {
+                const json = await res.json();
+                setUnwantedCertData({ summary: json.summary || null, items: json.items || [] });
+            }
+        } catch (err) {
+            console.error("Error fetching unwanted certificates", err);
+        } finally {
+            setUnwantedLoading(false);
+        }
+    }, [auth.token, isAdmin]);
+
+    const refreshUnwantedAndDisk = useCallback(async () => {
+        await Promise.all([fetchDiskUsage(), fetchUnwantedCertificates()]);
+    }, [fetchDiskUsage, fetchUnwantedCertificates]);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
                 setLoading(true);
-                // Fetch disk usage
-                const diskRes = await fetch(config.Calibmaster.URL + "/api/data-storage/disk-usage", {
-                    method: 'GET',
-                    headers: {
-                        Authorization: 'Bearer ' + auth.token
-                    }
-                });
-                const diskJson = await diskRes.json();
-                setDiskUsage(diskJson);
+                await fetchDiskUsage();
 
                 // Fetch deleted stats
                 const statsRes = await fetch(config.Calibmaster.URL + "/api/data-storage/deleted-stats", {
@@ -42,7 +74,9 @@ const DeletedIndex = () => {
                 });
                 const statsJson = await statsRes.json();
                 setDeletedStats(statsJson.stats);
-                setDeletedData(statsJson.data)
+                setDeletedData(statsJson.data);
+
+                await fetchUnwantedCertificates();
             } catch (err) {
                 console.error("Error fetching data", err);
             } finally {
@@ -51,7 +85,7 @@ const DeletedIndex = () => {
         };
 
         fetchData();
-    }, []);
+    }, [auth.token, fetchDiskUsage, fetchUnwantedCertificates]);
 
 
 
@@ -337,11 +371,25 @@ const DeletedIndex = () => {
     };
 
 
-    const statsData = useMemo(() => [
-        { key: "srfItems", title: "Deleted SRF Items", data: deletedStats.srfItems, icon: <FileTextOutlined style={{ fontSize: 32, color: "#d35400" }} />, bgColor: "#fef3e6", tooltip: "Total number of deleted items within SRFs." },
-        { key: "srf", title: "Deleted SRFs", data: deletedStats.srf, icon: <FileDoneOutlined style={{ fontSize: 32, color: "#2980b9" }} />, bgColor: "#eaf2f8", tooltip: "Total number of deleted Service Request Forms." },
-        { key: "excel", title: "Deleted Excel Files", data: deletedStats.excel ?? 0, icon: <FileExcelOutlined style={{ fontSize: 32, color: "#27ae60" }} />, bgColor: "#eafaf1", tooltip: "Calibmaster Excel sheets moved to trash." },
-    ], [deletedStats]);
+    const statsData = useMemo(() => {
+        const base = [
+            { key: "srfItems", title: "Deleted SRF Items", data: deletedStats.srfItems, icon: <FileTextOutlined style={{ fontSize: 32, color: "#d35400" }} />, bgColor: "#fef3e6", tooltip: "Total number of deleted items within SRFs." },
+            { key: "srf", title: "Deleted SRFs", data: deletedStats.srf, icon: <FileDoneOutlined style={{ fontSize: 32, color: "#2980b9" }} />, bgColor: "#eaf2f8", tooltip: "Total number of deleted Service Request Forms." },
+            { key: "excel", title: "Deleted Excel Files", data: deletedStats.excel ?? 0, icon: <FileExcelOutlined style={{ fontSize: 32, color: "#27ae60" }} />, bgColor: "#eafaf1", tooltip: "Calibmaster Excel sheets moved to trash." },
+        ];
+        if (isAdmin) {
+            base.push({
+                key: "unwantedCertificates",
+                title: "Unwanted Certs & Observations",
+                data: unwantedCertData.summary?.totalCount ?? 0,
+                subtitle: unwantedCertData.summary ? `Reclaimable: ${unwantedCertData.summary.totalFormatted}` : null,
+                icon: <FileExclamationOutlined style={{ fontSize: 32, color: "#c0392b" }} />,
+                bgColor: "#fdedec",
+                tooltip: "Unlinked orphan and superseded certificate/observation files on disk (Admin only).",
+            });
+        }
+        return base;
+    }, [deletedStats, isAdmin, unwantedCertData.summary]);
 
     // Inline component to render the Excel trash table
     const ExcelTrashTable = () => {
@@ -443,7 +491,7 @@ const DeletedIndex = () => {
                                                     <div style={styles.cardHeader}>{stat.icon}<Title level={2} style={styles.statCount}>{stat.data}</Title></div>
                                                     <div style={styles.cardInfo}>
                                                         <Text style={styles.statTitle}>{stat.title}</Text>
-                                                        {/* <Text style={styles.detailText}>{stat.data.lastDeleted ? `Last deletion: ${new Date(stat.data.lastDeleted).toLocaleDateString()}` : 'No recent deletions'}</Text> */}
+                                                        {stat.subtitle && <Text style={styles.detailText}>{stat.subtitle}</Text>}
                                                     </div>
                                                     <Button type="text" style={styles.detailsLink} onClick={() => setSelectedCategoryKey(stat.key)}>View Details <ArrowRightOutlined /></Button>
                                                 </div>
@@ -457,6 +505,15 @@ const DeletedIndex = () => {
                 </>
             ) : selectedCategoryKey === 'excel' ? (
                 <ExcelTrashTable />
+            ) : selectedCategoryKey === 'unwantedCertificates' ? (
+                <UnwantedCertificates
+                    items={unwantedCertData.items}
+                    summary={unwantedCertData.summary}
+                    loading={unwantedLoading}
+                    token={auth.token}
+                    onRefresh={refreshUnwantedAndDisk}
+                    onBack={() => setSelectedCategoryKey(null)}
+                />
             ) : (
                 <DeleteItems
                     items={deletedData[selectedStat.key]}

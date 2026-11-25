@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const DashboardController = require("../controllers/Data-storage-controller");
+const checkPermission = require("../middleware/check-permission");
 
 // *** SRF-Item destory ***
 
@@ -8,6 +9,9 @@ const DashboardController = require("../controllers/Data-storage-controller");
 router.get("/disk-usage", DashboardController.diskUsageData);
 
 router.get("/deleted-stats", DashboardController.deletedstats)
+
+router.get("/unwanted-certificates", checkPermission("ACCESS_DATA_STORAGE"), DashboardController.getUnwantedCertificates);
+router.delete("/unwanted-certificates", checkPermission("ACCESS_DATA_STORAGE"), DashboardController.deleteUnwantedCertificates);
 
 router.delete("/destorysrf", DashboardController.destroySRF);
 

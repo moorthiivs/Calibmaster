@@ -10,6 +10,7 @@ const config = require("../utils/config");
 const { errorHandler } = require("../helpers/error-handler");
 const fsPromises = require("fs").promises;
 const { createDynamicTransport } = require('../helpers/mail-config-helper');
+const { cleanupSupersededCertificates } = require("../utils/certificateCleanup");
 // *** Helper function ***
 const sendMail = async (srfItemsQuery, filePath) => {
 
@@ -106,6 +107,12 @@ const certificateUploadHandler_old = async (req, res, next) => {
     });
     const result = await newCertificate.save();
 
+    try {
+      await cleanupSupersededCertificates(srf_item_id, newCertificate.id);
+    } catch (cleanupErr) {
+      logger.warn(`[CERT_CLEANUP] Upload cleanup skipped for srf_item_id=${srf_item_id}: ${cleanupErr.message}`);
+    }
+
     let filePath = nodePath.join(__dirname, '../' + folderName1DirUp + "/" + req.body.filename);
 
     let srfItemsQuery = await srfItem.findOne({
@@ -190,6 +197,12 @@ const certificateUploadHandler = async (req, res, next) => {
     });
 
     const result = await newCertificate.save();
+
+    try {
+      await cleanupSupersededCertificates(srf_item_id, newCertificate.id);
+    } catch (cleanupErr) {
+      logger.warn(`[CERT_CLEANUP] Upload cleanup skipped for srf_item_id=${srf_item_id}: ${cleanupErr.message}`);
+    }
 
 
 
